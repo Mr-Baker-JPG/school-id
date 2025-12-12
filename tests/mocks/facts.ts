@@ -87,7 +87,8 @@ export function getMockStaffById(staffId: number) {
 const passthroughFacts =
 	!process.env.FACTS_SUBSCRIPTION_KEY?.startsWith('MOCK_') &&
 	!process.env.FACTS_API_KEY?.startsWith('MOCK_') &&
-	process.env.NODE_ENV !== 'test'
+	process.env.NODE_ENV !== 'test' &&
+	process.env.MOCKS !== 'true'
 
 export const handlers: Array<HttpHandler> = [
 	// GET /People/Staff - List all staff with pagination

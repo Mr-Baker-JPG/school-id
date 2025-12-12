@@ -1,6 +1,6 @@
 import closeWithGrace from 'close-with-grace'
 import { setupServer } from 'msw/node'
-// import { handlers as factsHandlers } from './facts.ts'
+import { handlers as factsHandlers } from './facts.ts'
 import { handlers as githubHandlers } from './github.ts'
 import { handlers as pwnedPasswordApiHandlers } from './pwned-passwords.ts'
 import { handlers as resendHandlers } from './resend.ts'
@@ -11,7 +11,7 @@ export const server = setupServer(
 	...githubHandlers,
 	...tigrisHandlers,
 	...pwnedPasswordApiHandlers,
-	// ...factsHandlers,
+	...factsHandlers,
 )
 
 server.listen({

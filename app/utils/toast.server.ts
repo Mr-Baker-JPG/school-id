@@ -31,10 +31,16 @@ export async function redirectWithToast(
 	toast: ToastInput,
 	init?: ResponseInit,
 ) {
-	return redirect(url, {
+	const toastHeaders = await createToastHeaders(toast)
+	// Combine headers using combineHeaders (as other working routes do)
+	// React Router v7's redirect() handles Headers objects correctly
+	const combinedHeaders = combineHeaders(init?.headers, toastHeaders)
+
+	const redirectOptions: ResponseInit = {
 		...init,
-		headers: combineHeaders(init?.headers, await createToastHeaders(toast)),
-	})
+		headers: combinedHeaders,
+	}
+	return redirect(url, redirectOptions)
 }
 
 export async function createToastHeaders(toastInput: ToastInput) {

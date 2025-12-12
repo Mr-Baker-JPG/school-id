@@ -66,8 +66,13 @@ export class FactsApiError extends Error {
  * Get FACTS API configuration from environment variables
  */
 function getFactsConfig() {
-	const subscriptionKey = process.env.FACTS_SUBSCRIPTION_KEY
-	const apiKey = process.env.FACTS_API_KEY
+	// When MOCKS=true, use a default mock key if no credentials are provided
+	const useMocks = process.env.MOCKS === 'true'
+	const subscriptionKey =
+		process.env.FACTS_SUBSCRIPTION_KEY ||
+		(useMocks ? 'MOCK_SUBSCRIPTION_KEY' : undefined)
+	const apiKey =
+		process.env.FACTS_API_KEY || (useMocks ? 'MOCK_API_KEY' : undefined)
 	const baseUrl = process.env.FACTS_BASE_URL || 'https://api.factsmgt.com'
 
 	return {
