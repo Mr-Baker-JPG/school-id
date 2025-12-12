@@ -15,6 +15,12 @@ export function getNoteImgSrc(objectKey: string) {
 	return `/resources/images?objectKey=${encodeURIComponent(objectKey)}`
 }
 
+export function getEmployeePhotoSrc(objectKey?: string | null) {
+	return objectKey
+		? `/resources/images?objectKey=${encodeURIComponent(objectKey)}`
+		: '/img/user.png'
+}
+
 export function getImgSrc({
 	height,
 	optimizerEndpoint,

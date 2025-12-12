@@ -68,18 +68,17 @@ async function createEmployee(data?: {
 			jobTitle: data?.jobTitle ?? faker.person.jobTitle(),
 			email: data?.email ?? faker.internet.email(),
 			status: data?.status ?? 'active',
-			employeeId: data?.hasPhoto || data?.expirationDate
-				? {
-						create: {
-							photoUrl: data?.hasPhoto
-								? faker.internet.url()
-								: null,
-							expirationDate:
-								data?.expirationDate ??
-								new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
-						},
-					}
-				: undefined,
+			employeeId:
+				data?.hasPhoto || data?.expirationDate
+					? {
+							create: {
+								photoUrl: data?.hasPhoto ? faker.internet.url() : null,
+								expirationDate:
+									data?.expirationDate ??
+									new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+							},
+						}
+					: undefined,
 		},
 		select: {
 			id: true,
@@ -135,10 +134,7 @@ test('Admin can view list of all employees', async () => {
 		status: 'active',
 	})
 
-	const request = await createRequestWithSession(
-		admin.id,
-		'/admin/employees',
-	)
+	const request = await createRequestWithSession(admin.id, '/admin/employees')
 
 	const result = await loader({
 		request,
@@ -178,10 +174,7 @@ test('List displays employee name, job title, status, and expiration date', asyn
 		hasPhoto: true,
 	})
 
-	const request = await createRequestWithSession(
-		admin.id,
-		'/admin/employees',
-	)
+	const request = await createRequestWithSession(admin.id, '/admin/employees')
 
 	const result = await loader({
 		request,

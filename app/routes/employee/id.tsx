@@ -50,9 +50,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	return { employee }
 }
 
-export default function EmployeeIdRoute({
-	loaderData,
-}: Route.ComponentProps) {
+export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 	const { employee } = loaderData
 	const hasPhoto = !!employee.employeeId?.photoUrl
 	const expirationDate = employee.employeeId?.expirationDate
@@ -78,7 +76,7 @@ export default function EmployeeIdRoute({
 						/>
 					) : (
 						<div className="bg-muted-foreground/20 flex size-48 items-center justify-center rounded-lg">
-							<Icon name="avatar" className="size-24 text-muted-foreground" />
+							<Icon name="avatar" className="text-muted-foreground size-24" />
 						</div>
 					)}
 				</div>

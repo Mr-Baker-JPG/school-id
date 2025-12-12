@@ -264,13 +264,20 @@ This document tracks the implementation progress of features defined in
 
 **Tests:**
 
-- ✅ Employee can view their own ID page: Employee successfully views their own ID with correct data
-- ✅ Employee cannot view other employees' IDs: Email matching ensures employees only see their own ID
-- ✅ Page displays employee name, title, photo, and expiration date: All required fields displayed correctly
-- ✅ Download button is visible and functional: Download button is visible (disabled until F010)
-- ✅ Unauthenticated users are redirected to login: Unauthenticated users are properly redirected
-- ✅ Returns 404 when employee record not found: Proper error handling for missing employee records
-- ✅ Page handles employee without EmployeeID record: Gracefully handles missing EmployeeID records
+- ✅ Employee can view their own ID page: Employee successfully views their own
+  ID with correct data
+- ✅ Employee cannot view other employees' IDs: Email matching ensures employees
+  only see their own ID
+- ✅ Page displays employee name, title, photo, and expiration date: All
+  required fields displayed correctly
+- ✅ Download button is visible and functional: Download button is visible
+  (disabled until F010)
+- ✅ Unauthenticated users are redirected to login: Unauthenticated users are
+  properly redirected
+- ✅ Returns 404 when employee record not found: Proper error handling for
+  missing employee records
+- ✅ Page handles employee without EmployeeID record: Gracefully handles missing
+  EmployeeID records
 - ✅ All 6 unit tests pass
 - ✅ All existing tests continue to pass (72/72 total tests)
 
@@ -278,6 +285,49 @@ This document tracks the implementation progress of features defined in
 
 - Created `app/routes/employee/id.test.ts` with comprehensive test coverage
 - Tests cover authentication, authorization, data display, and error handling
+
+---
+
+## 2025-12-12 – F006
+
+**Feature:** Admin Photo Upload
+
+**Implementation:**
+
+- Created `uploadEmployeePhoto()` function in `app/utils/storage.server.ts` to handle employee photo uploads to S3-compatible storage
+- Created `getEmployeePhotoSrc()` helper function in `app/utils/misc.tsx` to generate image URLs for employee photos
+- Created admin photo upload route at `/admin/employees/$employeeId/photo` with:
+  - GET handler to display upload form with current photo (if any)
+  - POST handler to process photo uploads and deletions
+  - Photo upload creates or updates EmployeeID record with photoUrl (objectKey)
+  - Photo deletion removes photoUrl from EmployeeID record
+  - Automatic EmployeeID record creation with default expiration date (July 1) if it doesn't exist
+- Added link from admin employee list to photo upload page
+- Implemented photo validation:
+  - File size limit: 3MB maximum
+  - File format: accepts any image format (via `accept="image/*"`)
+  - Empty files are rejected
+- Route is protected with `requireUserWithRole(request, 'admin')` to ensure only admin users can access
+
+**Tests:**
+
+- ✅ Admin can upload photo for any employee: Admin successfully uploads photo and it's saved to EmployeeID record
+- ✅ Uploaded photo replaces existing photo if present: New photo replaces old photo URL in database
+- ✅ Photo is validated (size): Files larger than 3MB are rejected with error
+- ✅ Photo URL is saved to EmployeeID record: Photo objectKey is correctly stored in EmployeeID.photoUrl field
+- ✅ Non-admin users cannot upload photos: Non-admin users receive 403 error when attempting to upload
+- ✅ Error handling for invalid files works correctly: Empty files and invalid files are handled gracefully
+- ✅ Admin can delete employee photo: Delete functionality removes photoUrl from EmployeeID record
+- ✅ Loader returns employee data: Loader correctly returns employee information with photo status
+- ✅ Loader requires admin role: Non-admin users cannot access loader
+- ✅ Loader returns 404 for non-existent employee: Proper error handling for missing employees
+- ✅ All 10 unit tests pass
+- ✅ All existing tests continue to pass (82/82 total tests)
+
+**Test File:**
+
+- Created `app/routes/admin/employees/$employeeId/photo.test.ts` with comprehensive test coverage
+- Tests cover authentication, authorization, upload, replacement, deletion, validation, and error handling
 
 ---
 

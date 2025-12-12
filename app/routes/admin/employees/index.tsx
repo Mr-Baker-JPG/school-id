@@ -27,7 +27,9 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 	// Build where clause for filtering
 	const where: {
-		OR?: Array<{ fullName: { contains: string } } | { email: { contains: string } }>
+		OR?: Array<
+			{ fullName: { contains: string } } | { email: { contains: string } }
+		>
 		status?: string
 	} = {}
 
@@ -101,7 +103,7 @@ export default function AdminEmployeesRoute({
 			>
 				<div className="flex flex-wrap items-center gap-4">
 					<Field
-						className="flex-1 min-w-[200px]"
+						className="min-w-[200px] flex-1"
 						labelProps={{ children: 'Search' }}
 						inputProps={{
 							type: 'search',
@@ -118,7 +120,7 @@ export default function AdminEmployeesRoute({
 							id="status-filter"
 							name="status"
 							defaultValue={status}
-							className="h-16 rounded-md border border-input bg-background px-3 py-2"
+							className="border-input bg-background h-16 rounded-md border px-3 py-2"
 						>
 							<option value="all">All</option>
 							<option value="active">Active</option>
@@ -138,20 +140,17 @@ export default function AdminEmployeesRoute({
 						<table className="w-full border-collapse">
 							<thead>
 								<tr className="border-b">
-									<th className="text-left p-2">Name</th>
-									<th className="text-left p-2">Job Title</th>
-									<th className="text-left p-2">Email</th>
-									<th className="text-left p-2">Status</th>
-									<th className="text-left p-2">Expiration Date</th>
-									<th className="text-left p-2">Photo</th>
+									<th className="p-2 text-left">Name</th>
+									<th className="p-2 text-left">Job Title</th>
+									<th className="p-2 text-left">Email</th>
+									<th className="p-2 text-left">Status</th>
+									<th className="p-2 text-left">Expiration Date</th>
+									<th className="p-2 text-left">Photo</th>
 								</tr>
 							</thead>
 							<tbody>
 								{loaderData.employees.map((employee) => (
-									<tr
-										key={employee.id}
-										className="border-b hover:bg-muted/50"
-									>
+									<tr key={employee.id} className="hover:bg-muted/50 border-b">
 										<td className="p-2">
 											<Link
 												to={`/admin/employees/${employee.id}`}
@@ -185,15 +184,18 @@ export default function AdminEmployeesRoute({
 												: 'Not set'}
 										</td>
 										<td className="p-2">
-											{employee.employeeId?.photoUrl ? (
-												<span className="text-green-600 dark:text-green-400">
-													✓ Has photo
-												</span>
-											) : (
-												<span className="text-muted-foreground">
-													No photo
-												</span>
-											)}
+											<Link
+												to={`/admin/employees/${employee.id}/photo`}
+												className="text-foreground hover:underline"
+											>
+												{employee.employeeId?.photoUrl ? (
+													<span className="text-green-600 dark:text-green-400">
+														✓ Has photo
+													</span>
+												) : (
+													<span className="text-muted-foreground">No photo</span>
+												)}
+											</Link>
 										</td>
 									</tr>
 								))}
