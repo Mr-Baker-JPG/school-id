@@ -9,11 +9,17 @@ let googleProvider: AuthProvider | null = null
 function getGoogleProvider(): AuthProvider {
 	if (!googleProvider) {
 		// Only import GoogleProvider when actually needed (not in test mode)
-		if (process.env.NODE_ENV === 'test' && !process.env.GOOGLE_CLIENT_ID?.startsWith('MOCK_')) {
+		if (
+			process.env.NODE_ENV === 'test' &&
+			!process.env.GOOGLE_CLIENT_ID?.startsWith('MOCK_')
+		) {
 			// In test mode without mock credentials, return a no-op provider
 			googleProvider = {
 				getAuthStrategy: () => null,
-				resolveConnectionData: async () => ({ displayName: 'Unknown', link: null }),
+				resolveConnectionData: async () => ({
+					displayName: 'Unknown',
+					link: null,
+				}),
 				handleMockAction: async () => {},
 			}
 		} else {

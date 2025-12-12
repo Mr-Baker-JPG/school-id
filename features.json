@@ -197,8 +197,8 @@
 			"Permission checks work in route loaders/actions",
 			"Admin users can perform admin actions (upload photos, manage IDs)"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F015",

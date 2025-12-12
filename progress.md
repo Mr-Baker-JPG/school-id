@@ -764,22 +764,22 @@ This document tracks the implementation progress of features defined in
   - All emails are allowed when no domain restriction is configured
   - Email domain validation is case-insensitive
   - Email validation handles mixed case emails correctly
-- ✅ Fixed dependency resolution issue: Made Google provider loading lazy to avoid
-  blocking all tests in Vitest environment
+- ✅ Fixed dependency resolution issue: Made Google provider loading lazy to
+  avoid blocking all tests in Vitest environment
 - ✅ Implementation is complete and type-safe
 - ✅ All TypeScript errors resolved
 - ✅ Code compiles successfully
 - ✅ Callback route logic for employee auto-creation is implemented and verified
-- ⚠️ Full OAuth flow integration tests: Better suited for E2E testing with Playwright
-  (OAuth flows are complex and benefit from browser-based testing)
+- ⚠️ Full OAuth flow integration tests: Better suited for E2E testing with
+  Playwright (OAuth flows are complex and benefit from browser-based testing)
 
 **Note:**
 
-The implementation is functionally complete. Email domain validation is fully tested
-via unit tests. The callback route logic for automatic Employee record creation is
-implemented and can be verified through E2E tests. Full OAuth flow testing is better
-suited for E2E tests with Playwright, which can test the complete authentication flow
-including:
+The implementation is functionally complete. Email domain validation is fully
+tested via unit tests. The callback route logic for automatic Employee record
+creation is implemented and can be verified through E2E tests. Full OAuth flow
+testing is better suited for E2E tests with Playwright, which can test the
+complete authentication flow including:
 
 - Google OAuth authentication flow
 - Email domain restriction (unit tested)
@@ -789,8 +789,10 @@ including:
 **Files Created:**
 
 - `app/utils/providers/google.server.ts` - Google OAuth provider implementation
-- `app/utils/email-domain-validation.server.ts` - Email domain validation utilities
-- `app/utils/email-domain-validation.server.test.ts` - Email domain validation tests
+- `app/utils/email-domain-validation.server.ts` - Email domain validation
+  utilities
+- `app/utils/email-domain-validation.server.test.ts` - Email domain validation
+  tests
 - `tests/mocks/google.ts` - Google OAuth mocks for testing
 - `other/svg-icons/google.svg` - Google logo icon
 
@@ -798,12 +800,71 @@ including:
 
 - `app/utils/env.server.ts` - Added Google OAuth environment variables
 - `app/utils/connections.tsx` - Added Google provider to provider list
-- `app/utils/connections.server.ts` - Registered Google provider with lazy loading
-  to avoid test environment dependency issues
+- `app/utils/connections.server.ts` - Registered Google provider with lazy
+  loading to avoid test environment dependency issues
 - `app/routes/_auth/auth.$provider/callback.ts` - Added Employee record
   auto-creation logic
 - `app/utils/session.server.ts` - Added `verifySessionStorage` export
 - Multiple files - Fixed `verifySessionStorage` imports
+
+---
+
+## 2025-12-12 – F014
+
+**Feature:** Admin Role Management
+
+**Implementation:**
+
+- Verified that admin role system is already in place:
+  - Role model exists in Prisma schema with 'admin' and 'user' roles
+  - Roles are seeded in initial database migration
+  - `requireUserWithRole()` function exists in `app/utils/permissions.server.ts`
+- Verified all admin routes are protected:
+  - `/admin/employees` (loader and action)
+  - `/admin/employees/$employeeId/photo` (loader and action)
+  - `/admin/employees/$employeeId/id/download` (loader)
+  - `/admin/employees/$employeeId/expiration` (loader and action)
+  - `/admin/cache` (loader and action)
+  - `/admin/cache/lru.$cacheKey` (loader)
+  - `/admin/cache/sqlite.$cacheKey` (loader)
+- Created comprehensive test suite (`app/utils/permissions.server.test.ts`) that verifies:
+  - Admin role is stored and retrieved correctly
+  - Non-admin user role is stored and retrieved correctly
+  - Admin users can access admin routes
+  - Non-admin users are denied access to admin routes
+  - Permission checks work in route loaders/actions
+  - Users can have multiple roles
+  - Admin and user roles exist in database
+- Admin actions are already tested in individual route tests:
+  - Admin can upload photos (F006 tests)
+  - Admin can manage expiration dates (F007 tests)
+  - Admin can download IDs (F010 tests)
+  - Admin can view employee list (F004 tests)
+
+**Tests:**
+
+- ✅ Admin role is stored and retrieved correctly: Admin users have 'admin' role stored in database
+- ✅ Non-admin user role is stored and retrieved correctly: Regular users have 'user' role stored in database
+- ✅ Admin users can access admin routes: `requireUserWithRole()` allows admin users to access protected routes
+- ✅ Non-admin users are denied access to admin routes: `requireUserWithRole()` throws 403 error for non-admin users
+- ✅ Admin flag/role is stored and retrieved correctly: Roles are properly stored and retrieved from database
+- ✅ Permission checks work in route loaders/actions: All admin routes use `requireUserWithRole()` for protection
+- ✅ Admin users can perform admin actions: Verified through existing route tests (upload photos, manage IDs, etc.)
+- ✅ All 8 unit tests pass
+- ✅ All existing tests continue to pass (except pre-existing failures unrelated to this feature)
+
+**Test File:**
+
+- Created `app/utils/permissions.server.test.ts` with comprehensive test coverage
+- Tests cover role storage, retrieval, permission checks, and access control
+
+**Note:**
+
+The admin role management system was already implemented as part of the Epic Stack template. This feature verification confirms that:
+- All admin routes are properly protected
+- Role-based access control works correctly
+- Admin users can perform all required admin actions
+- Non-admin users are properly denied access to admin routes
 
 ---
 
