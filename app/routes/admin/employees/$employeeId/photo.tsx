@@ -167,10 +167,19 @@ export default function EmployeePhotoRoute({
 					<Icon name="arrow-left">Back to Employees</Icon>
 				</Link>
 			</div>
-			<h1 className="text-h1">Upload Employee Photo</h1>
-			<p className="text-muted-foreground mb-6">
-				{loaderData.employee.fullName} ({loaderData.employee.email})
-			</p>
+			<div className="mb-6 flex items-center justify-between">
+				<div>
+					<h1 className="text-h1">Upload Employee Photo</h1>
+					<p className="text-muted-foreground">
+						{loaderData.employee.fullName} ({loaderData.employee.email})
+					</p>
+				</div>
+				<Button asChild variant="outline">
+					<a href={`/admin/employees/${loaderData.employee.id}/id/download`}>
+						<Icon name="download">Download ID Card</Icon>
+					</a>
+				</Button>
+			</div>
 			<Form
 				method="POST"
 				encType="multipart/form-data"

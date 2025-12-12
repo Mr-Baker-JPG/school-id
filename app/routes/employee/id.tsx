@@ -128,14 +128,13 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 				<Spacer size="md" />
 
 				{/* Download Button */}
-				<Button size="lg" disabled>
-					<Icon name="download" className="scale-125">
-						Download ID Card
-					</Icon>
+				<Button size="lg" asChild>
+					<a href="/employee/id/download">
+						<Icon name="download" className="scale-125">
+							Download ID Card
+						</Icon>
+					</a>
 				</Button>
-				<p className="text-muted-foreground mt-2 text-sm">
-					PDF download will be available soon
-				</p>
 			</div>
 		</div>
 	)
