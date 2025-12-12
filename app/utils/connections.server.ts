@@ -27,6 +27,9 @@ function getGoogleProvider(): AuthProvider {
 			googleProvider = new GoogleProvider()
 		}
 	}
+	if (!googleProvider) {
+		throw new Error('Failed to initialize GoogleProvider')
+	}
 	return googleProvider
 }
 

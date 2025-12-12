@@ -338,15 +338,15 @@ test('Default expiration date set to July 1 when EmployeeID created', async () =
 		include: { employeeId: true },
 	})
 	expect(employeeAfter?.employeeId).not.toBeNull()
-	
+
 	const expirationDate = employeeAfter?.employeeId?.expirationDate
 	expect(expirationDate).toBeDefined()
-	
+
 	// Check that expiration date is July 1 of current year
 	const now = new Date()
 	const expectedYear = now.getFullYear()
 	const expectedDate = new Date(expectedYear, 6, 1) // July 1 (month is 0-indexed)
-	
+
 	expect(expirationDate?.getFullYear()).toBe(expectedYear)
 	expect(expirationDate?.getMonth()).toBe(6) // July
 	expect(expirationDate?.getDate()).toBe(1)

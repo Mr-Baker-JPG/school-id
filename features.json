@@ -225,8 +225,8 @@
 			"Photos can be retrieved by URL",
 			"Storage handles errors gracefully (full disk, permissions, etc.)"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F017",
