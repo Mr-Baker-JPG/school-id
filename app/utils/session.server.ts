@@ -36,3 +36,15 @@ Object.defineProperty(authSessionStorage, 'commitSession', {
 		return setCookieHeader
 	},
 })
+
+export const verifySessionStorage = createCookieSessionStorage({
+	cookie: {
+		name: 'en_verification',
+		sameSite: 'lax',
+		path: '/',
+		httpOnly: true,
+		secrets: process.env.SESSION_SECRET.split(','),
+		secure: process.env.NODE_ENV === 'production',
+		maxAge: 60 * 10, // 10 minutes
+	},
+})

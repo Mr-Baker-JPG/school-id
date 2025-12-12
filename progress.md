@@ -677,11 +677,12 @@ This document tracks the implementation progress of features defined in
 
 - Verification status logic was implemented as part of F011 in
   `app/utils/verification.server.ts`
-- Created `getVerificationStatus()` function that determines ID validity based on:
+- Created `getVerificationStatus()` function that determines ID validity based
+  on:
   - Employee status must be 'active'
   - Current date must be <= expiration date
-- Function returns `VerificationStatus` object with `isValid` boolean and `reason`
-  string
+- Function returns `VerificationStatus` object with `isValid` boolean and
+  `reason` string
 - Logic is used by the public verification route (`/verify/$employeeId`)
 - Handles edge cases:
   - Inactive employees return invalid status
@@ -692,7 +693,8 @@ This document tracks the implementation progress of features defined in
 **Tests:**
 
 - ✅ Valid status returned for active employee with future expiration: Function
-  correctly returns valid status for active employees with future expiration dates
+  correctly returns valid status for active employees with future expiration
+  dates
 - ✅ Invalid status returned for inactive employee: Function correctly returns
   invalid status with reason "Employee is not active"
 - ✅ Invalid status returned for expired ID (past expiration date): Function

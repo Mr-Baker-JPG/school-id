@@ -8,7 +8,7 @@ import {
 import { prisma } from '#app/utils/db.server.ts'
 import { sendEmail } from '#app/utils/email.server.ts'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
-import { verifySessionStorage } from '#app/utils/verification.server.ts'
+import { verifySessionStorage } from '#app/utils/session.server.ts'
 import { newEmailAddressSessionKey } from './change-email'
 
 export async function handleVerification({

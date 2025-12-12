@@ -12,7 +12,7 @@ import {
 } from '#app/utils/auth.server.ts'
 import { useIsPending } from '#app/utils/misc.tsx'
 import { PasswordAndConfirmPasswordSchema } from '#app/utils/user-validation.ts'
-import { verifySessionStorage } from '#app/utils/verification.server.ts'
+import { verifySessionStorage } from '#app/utils/session.server.ts'
 import { type Route } from './+types/reset-password.ts'
 
 export const handle: SEOHandle = {

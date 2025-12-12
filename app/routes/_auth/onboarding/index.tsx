@@ -23,7 +23,7 @@ import {
 	PasswordAndConfirmPasswordSchema,
 	UsernameSchema,
 } from '#app/utils/user-validation.ts'
-import { verifySessionStorage } from '#app/utils/verification.server.ts'
+import { verifySessionStorage } from '#app/utils/session.server.ts'
 import { type Route } from './+types/index.ts'
 
 export const onboardingEmailSessionKey = 'onboardingEmail'

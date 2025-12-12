@@ -28,7 +28,7 @@ import { useIsPending } from '#app/utils/misc.tsx'
 import { authSessionStorage } from '#app/utils/session.server.ts'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { NameSchema, UsernameSchema } from '#app/utils/user-validation.ts'
-import { verifySessionStorage } from '#app/utils/verification.server.ts'
+import { verifySessionStorage } from '#app/utils/session.server.ts'
 import { type Route } from './+types/$provider.ts'
 import { onboardingEmailSessionKey } from './index.tsx'
 

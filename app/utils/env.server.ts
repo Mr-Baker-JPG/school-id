@@ -18,6 +18,14 @@ const schema = z.object({
 	GITHUB_REDIRECT_URI: z.string().optional(),
 	GITHUB_TOKEN: z.string().optional(),
 
+	// If you plan to use Google auth, remove the .optional()
+	GOOGLE_CLIENT_ID: z.string().optional(),
+	GOOGLE_CLIENT_SECRET: z.string().optional(),
+	GOOGLE_REDIRECT_URI: z.string().optional(),
+
+	// School email domain for OAuth restriction
+	SCHOOL_EMAIL_DOMAIN: z.string().optional(),
+
 	ALLOW_INDEXING: z.enum(['true', 'false']).optional(),
 
 	// Tigris Object Storage Configuration

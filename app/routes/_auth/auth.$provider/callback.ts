@@ -3,9 +3,15 @@ import {
 	authenticator,
 	getSessionExpirationDate,
 	getUserId,
+	signupWithConnection,
 } from '#app/utils/auth.server.ts'
-import { ProviderNameSchema, providerLabels } from '#app/utils/connections.tsx'
+import {
+	ProviderNameSchema,
+	providerLabels,
+	GOOGLE_PROVIDER_NAME,
+} from '#app/utils/connections.tsx'
 import { prisma } from '#app/utils/db.server.ts'
+import { getDefaultExpirationDate } from '#app/utils/employee.server.ts'
 import { ensurePrimary } from '#app/utils/litefs.server.ts'
 import { combineHeaders } from '#app/utils/misc.tsx'
 import {
@@ -20,7 +26,7 @@ import {
 	createToastHeaders,
 	redirectWithToast,
 } from '#app/utils/toast.server.ts'
-import { verifySessionStorage } from '#app/utils/verification.server.ts'
+import { verifySessionStorage } from '#app/utils/session.server.ts'
 import { handleNewSession } from '../login.server.ts'
 import { prefilledProfileKey, providerIdKey } from '../onboarding/$provider.tsx'
 import { onboardingEmailSessionKey } from '../onboarding/index.tsx'
@@ -149,6 +155,68 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 				}),
 			},
 		)
+	}
+
+	// For Google OAuth: Check if employee exists in SIS (local Employee table)
+	// If they do, automatically create User record and log them in
+	if (providerName === GOOGLE_PROVIDER_NAME) {
+		const employee = await prisma.employee.findUnique({
+			where: { email: profile.email.toLowerCase() },
+			select: { id: true },
+		})
+
+		if (employee) {
+			// Employee exists in SIS, create User record automatically
+			const sessionData = await signupWithConnection({
+				email: profile.email,
+				username: (profile.username ?? profile.email.split('@')[0]) as string,
+				name: (profile.name ?? profile.email.split('@')[0]) as string,
+				providerId: String(profile.id),
+				providerName,
+				imageUrl: profile.imageUrl,
+			})
+
+			// Ensure EmployeeID record exists (create if missing)
+			await prisma.employeeID.upsert({
+				where: { employeeId: employee.id },
+				create: {
+					employeeId: employee.id,
+					expirationDate: getDefaultExpirationDate(),
+				},
+				update: {},
+			})
+
+			// Get the user ID from the connection we just created
+			const user = await prisma.user.findUnique({
+				where: { email: profile.email.toLowerCase() },
+				select: { id: true },
+			})
+
+			if (!user) {
+				throw new Error('Failed to create user')
+			}
+
+			const session = {
+				id: sessionData.id,
+				userId: user.id,
+				expirationDate: sessionData.expirationDate,
+			}
+
+			return handleNewSession(
+				{ request, session, redirectTo: redirectTo ?? '/', remember: true },
+				{
+					headers: combineHeaders(
+						await createToastHeaders({
+							title: 'Welcome!',
+							description:
+								'Your account has been created and linked to your employee record.',
+							type: 'success',
+						}),
+						destroyRedirectTo,
+					),
+				},
+			)
+		}
 	}
 
 	// this is a new user, so let's get them onboarded
