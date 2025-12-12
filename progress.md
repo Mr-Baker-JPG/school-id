@@ -73,32 +73,42 @@ This document tracks the implementation progress of features defined in
 
 **Implementation:**
 
-- Created comprehensive FACTS API service module (`app/utils/facts-api.server.ts`)
+- Created comprehensive FACTS API service module
+  (`app/utils/facts-api.server.ts`)
 - Implemented authentication using subscription key or API key via headers
 - Created `fetchAllStaff()` function with automatic pagination support
 - Created `fetchStaffById()` function for single employee lookup
-- Implemented `transformStaffToEmployee()` to convert FACTS API response to Employee schema format
+- Implemented `transformStaffToEmployee()` to convert FACTS API response to
+  Employee schema format
 - Added `FactsApiError` custom error class for API error handling
 - Service validates required fields (staffId, email) and filters invalid records
-- Handles missing fields gracefully (uses email2 fallback, default job title, builds name from parts)
+- Handles missing fields gracefully (uses email2 fallback, default job title,
+  builds name from parts)
 - Properly maps active/inactive status from FACTS API
 - Trims whitespace from all transformed fields
 
 **Tests:**
 
-- ✅ Authentication: Service successfully authenticates with FACTS API using subscription key
-- ✅ Authentication: Service successfully authenticates with FACTS API using API key
-- ✅ Authentication: Service throws error when no authentication credentials are provided
-- ✅ Fetch Employee List: Service fetches employee list and transforms data correctly
+- ✅ Authentication: Service successfully authenticates with FACTS API using
+  subscription key
+- ✅ Authentication: Service successfully authenticates with FACTS API using API
+  key
+- ✅ Authentication: Service throws error when no authentication credentials are
+  provided
+- ✅ Fetch Employee List: Service fetches employee list and transforms data
+  correctly
 - ✅ Fetch Employee List: Service handles pagination correctly
 - ✅ Fetch Employee List: Service filters out staff without required fields
 - ✅ Fetch Single Employee: Service fetches single employee by ID correctly
 - ✅ Fetch Single Employee: Service returns null for non-existent employee
-- ✅ Data Transformation: Service transforms staff data to Employee schema format correctly
+- ✅ Data Transformation: Service transforms staff data to Employee schema
+  format correctly
 - ✅ Data Transformation: Service uses name field when available
-- ✅ Data Transformation: Service builds full name from parts when name field is missing
+- ✅ Data Transformation: Service builds full name from parts when name field is
+  missing
 - ✅ Data Transformation: Service uses email2 as fallback when email is missing
-- ✅ Data Transformation: Service uses default job title when department is missing
+- ✅ Data Transformation: Service uses default job title when department is
+  missing
 - ✅ Data Transformation: Service correctly maps active status
 - ✅ Error Handling: Service handles API errors gracefully with 400 status
 - ✅ Error Handling: Service handles API errors gracefully with 500 status
@@ -115,7 +125,63 @@ This document tracks the implementation progress of features defined in
 
 - Created `app/utils/facts-api.server.test.ts` with comprehensive test coverage
 - Tests use MSW (Mock Service Worker) for API mocking
-- Tests cover authentication, data fetching, transformation, error handling, and validation
+- Tests cover authentication, data fetching, transformation, error handling, and
+  validation
+
+---
+
+## 2025-12-12 – F003
+
+**Feature:** Employee Sync Background Job
+
+**Implementation:**
+
+- Created employee sync service module (`app/utils/employee-sync.server.ts`)
+- Implemented `syncEmployeesFromFacts()` function that:
+  - Fetches all staff from FACTS SIS API
+  - Creates new employees in database when they don't exist
+  - Updates existing employees with latest SIS data
+  - Handles status changes (active/inactive)
+  - Continues processing even when individual employees fail
+- Installed and configured `node-cron` for scheduled job execution
+- Set up cron job in `server/index.ts` to run daily at 2 AM (configurable via
+  `EMPLOYEE_SYNC_CRON` environment variable)
+- Job can be disabled via `EMPLOYEE_SYNC_ENABLED=false` environment variable
+- Added comprehensive error handling:
+  - Catches and logs FACTS API errors
+  - Handles network errors gracefully
+  - Continues processing other employees when one fails
+  - Logs errors to console and Sentry (in production)
+  - Returns detailed sync result with counts of created/updated/errors
+
+**Tests:**
+
+- ✅ Job successfully runs on schedule: Sync completes successfully with valid
+  data
+- ✅ New employees from SIS are created in database: Creates single and
+  multiple new employees correctly
+- ✅ Existing employees are updated with latest SIS data: Updates single and
+  multiple existing employees correctly
+- ✅ Inactive employees have status updated correctly: Updates status from active
+  to inactive and vice versa
+- ✅ Job handles failures without crashing: Handles FACTS API errors, network
+  errors, database constraint violations, and continues processing other
+  employees when one fails
+- ✅ All 12 unit tests pass
+- ✅ All existing tests continue to pass (58/58 total tests)
+
+**Test File:**
+
+- Created `app/utils/employee-sync.server.test.ts` with comprehensive test
+  coverage
+- Tests use MSW for API mocking and Prisma for database operations
+- Tests cover success scenarios, error handling, and edge cases
+
+**Configuration:**
+
+- Cron schedule: `EMPLOYEE_SYNC_CRON` environment variable (default: `"0 2 * * *"`
+  = 2:00 AM daily)
+- Enable/disable: `EMPLOYEE_SYNC_ENABLED` environment variable (default: enabled)
 
 ---
 

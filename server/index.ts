@@ -9,6 +9,7 @@ import express from 'express'
 import rateLimit from 'express-rate-limit'
 import getPort, { portNumbers } from 'get-port'
 import morgan from 'morgan'
+import cron from 'node-cron'
 import { type ServerBuild } from 'react-router'
 
 const MODE = process.env.NODE_ENV ?? 'development'
@@ -255,6 +256,52 @@ ${styleText('bold', 'Press Ctrl+C to stop')}
 		`.trim(),
 	)
 })
+
+// Set up employee sync background job
+// Run daily at 2 AM (configurable via EMPLOYEE_SYNC_CRON env var)
+// Format: "minute hour day month day-of-week"
+// Default: "0 2 * * *" = 2:00 AM every day
+const syncCronSchedule =
+	process.env.EMPLOYEE_SYNC_CRON || '0 2 * * *'
+const syncCronEnabled = process.env.EMPLOYEE_SYNC_ENABLED !== 'false'
+
+if (syncCronEnabled) {
+	// Validate cron expression
+	if (cron.validate(syncCronSchedule)) {
+		cron.schedule(syncCronSchedule, async () => {
+			try {
+				console.log('[Employee Sync] Starting scheduled sync...')
+				const { syncEmployeesFromFacts } = await import(
+					'../app/utils/employee-sync.server.ts'
+				)
+				const result = await syncEmployeesFromFacts()
+				if (result.success) {
+					console.log(
+						`[Employee Sync] Completed: ${result.created} created, ${result.updated} updated, ${result.errors} errors`,
+					)
+				} else {
+					console.error(
+						`[Employee Sync] Failed: ${result.errorMessage || 'Unknown error'}`,
+					)
+				}
+			} catch (error) {
+				console.error('[Employee Sync] Job failed:', error)
+				if (SENTRY_ENABLED) {
+					Sentry.captureException(error)
+				}
+			}
+		})
+		console.log(
+			`[Employee Sync] Scheduled job configured: ${syncCronSchedule}`,
+		)
+	} else {
+		console.warn(
+			`[Employee Sync] Invalid cron schedule: ${syncCronSchedule}. Sync job disabled.`,
+		)
+	}
+} else {
+	console.log('[Employee Sync] Scheduled sync is disabled')
+}
 
 closeWithGrace(async ({ err }) => {
 	await new Promise((resolve, reject) => {

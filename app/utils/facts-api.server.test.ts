@@ -393,7 +393,9 @@ describe('FACTS SIS Employee Sync Service', () => {
 			)
 
 			await expect(fetchStaffById(999)).rejects.toThrow(FactsApiError)
-			await expect(fetchStaffById(999)).rejects.toThrow('Invalid staff ID format')
+			await expect(fetchStaffById(999)).rejects.toThrow(
+				'Invalid staff ID format',
+			)
 		})
 
 		test('Service handles API errors gracefully with 500 status', async () => {
@@ -451,7 +453,9 @@ describe('FACTS SIS Employee Sync Service', () => {
 			)
 
 			await expect(fetchAllStaff()).rejects.toThrow(FactsApiError)
-			await expect(fetchAllStaff()).rejects.toThrow('Database connection failed')
+			await expect(fetchAllStaff()).rejects.toThrow(
+				'Database connection failed',
+			)
 		})
 	})
 
