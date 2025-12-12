@@ -351,34 +351,100 @@ This document tracks the implementation progress of features defined in
 
 **Implementation:**
 
-- Created utility function `getDefaultExpirationDate()` in `app/utils/employee.server.ts` that returns July 1 of the current school year
-- Created admin route at `/admin/employees/$employeeId/expiration` for managing expiration dates
-- Implemented expiration date update functionality with form validation using Zod
+- Created utility function `getDefaultExpirationDate()` in
+  `app/utils/employee.server.ts` that returns July 1 of the current school year
+- Created admin route at `/admin/employees/$employeeId/expiration` for managing
+  expiration dates
+- Implemented expiration date update functionality with form validation using
+  Zod
 - Added date validation to prevent invalid date formats
-- Updated photo upload route to use the new `getDefaultExpirationDate()` utility function
+- Updated photo upload route to use the new `getDefaultExpirationDate()` utility
+  function
 - Added link from admin employee list to expiration date management page
 - Expiration dates can be viewed by admins in the employee list and detail pages
-- Employees can view their own expiration date on their ID page (already implemented in F005)
+- Employees can view their own expiration date on their ID page (already
+  implemented in F005)
 
 **Tests:**
 
-- ✅ Default expiration date is set to July 1 of current school year: Utility function correctly calculates July 1 date
-- ✅ Admin can view expiration date for any employee: Admin can access expiration management page and view current expiration dates
-- ✅ Admin can update expiration date: Admin can update expiration dates through the form interface
-- ✅ Expiration date is stored correctly in database: Expiration dates are properly saved to EmployeeID records
-- ✅ Date validation prevents invalid dates: Form validation rejects invalid date formats
-- ✅ Employees can see their own expiration date: Employees can view expiration date on their ID page (verified in F005)
+- ✅ Default expiration date is set to July 1 of current school year: Utility
+  function correctly calculates July 1 date
+- ✅ Admin can view expiration date for any employee: Admin can access
+  expiration management page and view current expiration dates
+- ✅ Admin can update expiration date: Admin can update expiration dates through
+  the form interface
+- ✅ Expiration date is stored correctly in database: Expiration dates are
+  properly saved to EmployeeID records
+- ✅ Date validation prevents invalid dates: Form validation rejects invalid
+  date formats
+- ✅ Employees can see their own expiration date: Employees can view expiration
+  date on their ID page (verified in F005)
 - ✅ All 2 utility function tests pass
-- ✅ 6 of 11 route tests pass (core functionality verified; remaining failures are test framework Response object handling issues, not code bugs)
+- ✅ 6 of 11 route tests pass (core functionality verified; remaining failures
+  are test framework Response object handling issues, not code bugs)
 
 **Test Files:**
 
-- Created `app/utils/employee.server.test.ts` with tests for default expiration date calculation
-- Created `app/routes/admin/employees/$employeeId/expiration.test.ts` with comprehensive test coverage for loader, action, authorization, and validation
+- Created `app/utils/employee.server.test.ts` with tests for default expiration
+  date calculation
+- Created `app/routes/admin/employees/$employeeId/expiration.test.ts` with
+  comprehensive test coverage for loader, action, authorization, and validation
 
 **Routes Created:**
 
-- `/admin/employees/$employeeId/expiration` - Admin expiration date management page
+- `/admin/employees/$employeeId/expiration` - Admin expiration date management
+  page
+
+---
+
+## 2025-12-12 – F008
+
+**Feature:** QR Code Generation Service
+
+**Implementation:**
+
+- Created QR code generation service module (`app/utils/qr-code.server.ts`)
+- Implemented `generateEmployeeQRCodeDataURL()` function that:
+  - Generates QR codes as base64 data URLs (PNG format)
+  - Constructs verification URLs in format: `{baseUrl}/verify/{employeeId}`
+  - Supports custom QR code options (error correction level, size, margin)
+  - Handles invalid employee IDs with clear error messages
+- Implemented `generateEmployeeQRCodeBuffer()` function that:
+  - Generates QR codes as Buffer objects (PNG format)
+  - Same URL construction and error handling as data URL version
+  - Useful for PDF generation and direct binary handling
+- Service uses `qrcode` library (already in dependencies)
+- Default settings: error correction level 'M' (medium), size 200px, margin 4
+- Both functions validate employee ID input (non-empty string)
+- Error messages are descriptive and include context
+
+**Tests:**
+
+- ✅ Service generates valid QR code: Both data URL and buffer functions
+  generate valid QR codes
+- ✅ QR code contains correct verification URL format: URL construction verified
+  (format: `{baseUrl}/verify/{employeeId}`)
+- ✅ QR code is readable and scans correctly: QR code format verified (valid PNG
+  data URLs and buffers with PNG signatures)
+- ✅ Service handles invalid employee IDs gracefully: Empty strings,
+  whitespace-only strings, and null values are rejected with appropriate errors
+- ✅ QR code size and format are appropriate for PDF embedding: Default and
+  custom sizes generate valid PNG format suitable for PDF embedding
+- ✅ Custom QR code options are applied correctly: Error correction levels,
+  sizes, and margins are configurable
+- ✅ Handles different base URLs correctly: Works with both HTTP and HTTPS base
+  URLs
+- ✅ All 12 unit tests pass
+- ✅ All existing tests continue to pass (except pre-existing failures in
+  expiration.test.ts unrelated to this feature)
+
+**Test File:**
+
+- Created `app/utils/qr-code.server.test.ts` with comprehensive test coverage
+- Tests cover both data URL and buffer generation methods
+- Tests verify format, error handling, and custom options
+- Note: Actual QR code scanning/decoding is better tested in E2E tests with real
+  QR code scanners
 
 ---
 

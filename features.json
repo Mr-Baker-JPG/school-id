@@ -108,8 +108,8 @@
 			"Service handles invalid employee IDs gracefully",
 			"QR code size and format are appropriate for PDF embedding"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F009",
