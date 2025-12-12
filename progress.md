@@ -524,40 +524,61 @@ This document tracks the implementation progress of features defined in
 - Created employee PDF download route at `/employee/id/download` that:
   - Requires authentication using `requireUserId`
   - Matches employee by authenticated user's email
-  - Ensures employees can only download their own PDF (enforced by email matching)
-  - Automatically creates EmployeeID record if missing with default expiration date
+  - Ensures employees can only download their own PDF (enforced by email
+    matching)
+  - Automatically creates EmployeeID record if missing with default expiration
+    date
   - Generates PDF using existing `generateEmployeeIDPDF` function
-  - Returns PDF response with proper headers (Content-Type, Content-Disposition, Content-Length)
-- Created admin PDF download route at `/admin/employees/$employeeId/id/download` that:
+  - Returns PDF response with proper headers (Content-Type, Content-Disposition,
+    Content-Length)
+- Created admin PDF download route at `/admin/employees/$employeeId/id/download`
+  that:
   - Requires admin role using `requireUserWithRole(request, 'admin')`
   - Allows admins to download any employee's PDF by employee ID
-  - Automatically creates EmployeeID record if missing with default expiration date
+  - Automatically creates EmployeeID record if missing with default expiration
+    date
   - Generates PDF using existing `generateEmployeeIDPDF` function
   - Returns PDF response with proper headers
-- Updated employee ID view route (`/employee/id`) to enable download button linking to download endpoint
-- Updated admin photo upload route to include download link for employee ID cards
-- Both routes handle missing EmployeeID records gracefully by creating them automatically
+- Updated employee ID view route (`/employee/id`) to enable download button
+  linking to download endpoint
+- Updated admin photo upload route to include download link for employee ID
+  cards
+- Both routes handle missing EmployeeID records gracefully by creating them
+  automatically
 
 **Tests:**
 
-- ✅ Employee can download their own PDF ID: Employee successfully downloads their own PDF with correct headers and valid PDF content
-- ✅ Employee cannot download other employees' PDFs: Email matching ensures employees only get their own PDF
-- ✅ Admin can download any employee's PDF: Admin successfully downloads any employee's PDF
-- ✅ PDF is generated and streamed correctly: PDF buffer is generated and returned with correct content type
-- ✅ Content-Type header is set to application/pdf: Response headers are correctly set
-- ✅ Download works with valid authentication: Both employee and admin routes require proper authentication
-- ✅ Returns 404 when employee record not found: Proper error handling for missing employees
-- ✅ Creates EmployeeID record if missing: Routes automatically create EmployeeID records when needed
-- ✅ Non-admin users are denied access: Admin route properly enforces admin role requirement
+- ✅ Employee can download their own PDF ID: Employee successfully downloads
+  their own PDF with correct headers and valid PDF content
+- ✅ Employee cannot download other employees' PDFs: Email matching ensures
+  employees only get their own PDF
+- ✅ Admin can download any employee's PDF: Admin successfully downloads any
+  employee's PDF
+- ✅ PDF is generated and streamed correctly: PDF buffer is generated and
+  returned with correct content type
+- ✅ Content-Type header is set to application/pdf: Response headers are
+  correctly set
+- ✅ Download works with valid authentication: Both employee and admin routes
+  require proper authentication
+- ✅ Returns 404 when employee record not found: Proper error handling for
+  missing employees
+- ✅ Creates EmployeeID record if missing: Routes automatically create
+  EmployeeID records when needed
+- ✅ Non-admin users are denied access: Admin route properly enforces admin role
+  requirement
 - ✅ All 15 unit tests pass (7 employee route tests + 8 admin route tests)
 - ✅ All existing tests continue to pass
 
 **Test Files:**
 
-- Created `app/routes/employee/id/download.test.ts` with comprehensive test coverage
-- Created `app/routes/admin/employees/$employeeId/id/download.test.ts` with comprehensive test coverage
-- Tests cover authentication, authorization, PDF generation, error handling, and edge cases
-- Tests mock console.warn to avoid failures when photo fetching fails (expected behavior)
+- Created `app/routes/employee/id/download.test.ts` with comprehensive test
+  coverage
+- Created `app/routes/admin/employees/$employeeId/id/download.test.ts` with
+  comprehensive test coverage
+- Tests cover authentication, authorization, PDF generation, error handling, and
+  edge cases
+- Tests mock console.warn to avoid failures when photo fetching fails (expected
+  behavior)
 
 **Routes Created:**
 
@@ -567,14 +588,72 @@ This document tracks the implementation progress of features defined in
 **Files Created:**
 
 - `app/routes/employee/id/download.tsx` - Employee PDF download route
-- `app/routes/admin/employees/$employeeId/id/download.tsx` - Admin PDF download route
+- `app/routes/admin/employees/$employeeId/id/download.tsx` - Admin PDF download
+  route
 - `app/routes/employee/id/download.test.ts` - Employee download route tests
-- `app/routes/admin/employees/$employeeId/id/download.test.ts` - Admin download route tests
+- `app/routes/admin/employees/$employeeId/id/download.test.ts` - Admin download
+  route tests
 
 **Files Modified:**
 
-- `app/routes/employee/id.tsx` - Enabled download button and linked to download endpoint
-- `app/routes/admin/employees/$employeeId/photo.tsx` - Added download link for employee ID cards
+- `app/routes/employee/id.tsx` - Enabled download button and linked to download
+  endpoint
+- `app/routes/admin/employees/$employeeId/photo.tsx` - Added download link for
+  employee ID cards
+
+---
+
+## 2025-12-12 – F011
+
+**Feature:** Public Verification Route
+
+**Implementation:**
+
+- Created public verification route at `/verify/$employeeId` that is accessible without authentication
+- Implemented verification status utility (`app/utils/verification.server.ts`) that determines ID validity based on:
+  - Employee status must be 'active'
+  - Current date must be <= expiration date
+- Created React component that displays:
+  - School branding (logo, name, colors)
+  - Employee photo (or placeholder if missing)
+  - Validity badge (Valid/Invalid with color coding)
+  - Employee name, job title, status, and expiration date
+  - Reason for invalidity if applicable
+- Added comprehensive error handling:
+  - 400 error for missing employeeId parameter
+  - 404 error for non-existent employees
+  - Graceful handling of employees without EmployeeID records
+- Added SEO metadata including Open Graph tags for shareability
+- Route is fully public (no authentication required)
+
+**Tests:**
+
+- ✅ Verification page is publicly accessible without authentication: Route works without any authentication
+- ✅ Page displays employee name and job title: All employee information displayed correctly
+- ✅ Page shows active/inactive status correctly: Status badges work for both active and inactive employees
+- ✅ Page displays expiration date: Expiration dates are shown correctly
+- ✅ Page shows valid/invalid badge based on status and expiration: Validity logic works correctly for all scenarios (active+future expiration = valid, inactive = invalid, expired = invalid)
+- ✅ Invalid employee IDs show appropriate error message: 404 error with clear message for non-existent employees
+- ✅ Page includes school branding: Branding configuration is loaded and displayed correctly
+- ✅ All 8 verification utility unit tests pass
+- ✅ All 9 route unit tests pass
+- ✅ All existing tests continue to pass (except pre-existing failures unrelated to this feature)
+
+**Test Files:**
+
+- Created `app/utils/verification.server.test.ts` with comprehensive test coverage for verification status logic
+- Created `app/routes/verify/$employeeId.test.ts` with comprehensive test coverage for the verification route
+
+**Files Created:**
+
+- `app/utils/verification.server.ts` - Verification status logic utility
+- `app/routes/verify/$employeeId.tsx` - Public verification route
+- `app/utils/verification.server.test.ts` - Verification utility tests
+- `app/routes/verify/$employeeId.test.ts` - Verification route tests
+
+**Routes Created:**
+
+- `/verify/$employeeId` - Public employee verification page
 
 ---
 

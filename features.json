@@ -154,8 +154,8 @@
 			"Invalid employee IDs show appropriate error message",
 			"Page includes school branding"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F012",
