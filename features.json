@@ -1,0 +1,364 @@
+[
+	{
+		"id": "F001",
+		"title": "Employee Prisma Schema Models",
+		"description": "Create Prisma schema models for Employee and EmployeeID. Employee mirrors SIS data (sisEmployeeId, fullName, jobTitle, email, status). EmployeeID stores local metadata (photoUrl, expirationDate, createdAt, updatedAt).",
+		"tests": [
+			"Schema file validates with Prisma",
+			"Migration creates tables correctly",
+			"Relations between Employee and EmployeeID are properly defined",
+			"Required fields have appropriate constraints"
+		],
+		"implemented": true,
+		"tests_passed": true
+	},
+	{
+		"id": "F002",
+		"title": "FACTS SIS Employee Sync Service",
+		"description": "Create a service module to fetch employee data from FACTS SIS REST API. Includes authentication, error handling, and data transformation to match Employee schema.",
+		"tests": [
+			"Service successfully authenticates with FACTS API",
+			"Service fetches employee list and transforms data correctly",
+			"Service handles API errors gracefully",
+			"Service validates required fields from SIS response"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F003",
+		"title": "Employee Sync Background Job",
+		"description": "Implement a scheduled background job (daily/hourly) that syncs employee data from FACTS SIS to local database. Updates existing employees and creates new ones based on SIS status.",
+		"tests": [
+			"Job successfully runs on schedule",
+			"New employees from SIS are created in database",
+			"Existing employees are updated with latest SIS data",
+			"Inactive employees have status updated correctly",
+			"Job handles failures without crashing"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F004",
+		"title": "Admin Employee List View",
+		"description": "Create an admin route that displays a list of all employees with their status, expiration dates, and photo status. Includes search/filter capabilities.",
+		"tests": [
+			"Admin can view list of all employees",
+			"List displays employee name, job title, status, and expiration date",
+			"Search filters employees by name or email",
+			"Filter by status (active/inactive) works correctly",
+			"Non-admin users cannot access this route"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F005",
+		"title": "Employee ID Route (Own ID View)",
+		"description": "Create a route for employees to view their own ID. Displays employee information and provides download button. Employees can only access their own ID.",
+		"tests": [
+			"Employee can view their own ID page",
+			"Employee cannot view other employees' IDs",
+			"Page displays employee name, title, photo, and expiration date",
+			"Download button is visible and functional",
+			"Unauthenticated users are redirected to login"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F006",
+		"title": "Admin Photo Upload",
+		"description": "Implement photo upload functionality for admins. Admins can upload/replace employee photos. Photos are stored in file storage and URLs saved to EmployeeID record.",
+		"tests": [
+			"Admin can upload photo for any employee",
+			"Uploaded photo replaces existing photo if present",
+			"Photo is validated (format, size)",
+			"Photo URL is saved to EmployeeID record",
+			"Non-admin users cannot upload photos",
+			"Error handling for invalid files works correctly"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F007",
+		"title": "Expiration Date Management",
+		"description": "Implement expiration date management. Default expiration is July 1 of current school year. Admins can view and override expiration dates for any employee.",
+		"tests": [
+			"Default expiration date is set to July 1 of current school year",
+			"Admin can view expiration date for any employee",
+			"Admin can update expiration date",
+			"Expiration date is stored correctly in database",
+			"Date validation prevents invalid dates",
+			"Employees can see their own expiration date"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F008",
+		"title": "QR Code Generation Service",
+		"description": "Create a service that generates QR codes for employee IDs. QR code links to public verification URL: /verify/:employeeId. Service handles error cases and returns base64 or buffer.",
+		"tests": [
+			"Service generates valid QR code",
+			"QR code contains correct verification URL format",
+			"QR code is readable and scans correctly",
+			"Service handles invalid employee IDs gracefully",
+			"QR code size and format are appropriate for PDF embedding"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F009",
+		"title": "PDF ID Card Generation",
+		"description": "Implement PDF generation for employee IDs using @react-pdf/renderer. ID includes front (name, title, photo, expiration, logo) and back (QR code). Wallet-size format with proper branding.",
+		"tests": [
+			"PDF generates successfully for valid employee",
+			"PDF includes all required fields (name, title, photo, expiration, logo)",
+			"PDF includes QR code on back",
+			"PDF is wallet-sized and printable",
+			"School branding (logo, colors) is correctly applied",
+			"Error handling for missing photo or data works correctly"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F010",
+		"title": "PDF Download Endpoint",
+		"description": "Create server endpoint/loader that generates and streams PDF ID card for download. Employees can download their own PDF, admins can download any employee's PDF.",
+		"tests": [
+			"Employee can download their own PDF ID",
+			"Employee cannot download other employees' PDFs",
+			"Admin can download any employee's PDF",
+			"PDF is generated and streamed correctly",
+			"Content-Type header is set to application/pdf",
+			"Download works with valid authentication"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F011",
+		"title": "Public Verification Route",
+		"description": "Create public (unauthenticated) route at /verify/:employeeId that displays employee verification status. Shows name, title, status (active/inactive), expiration, and validity badge.",
+		"tests": [
+			"Verification page is publicly accessible without authentication",
+			"Page displays employee name and job title",
+			"Page shows active/inactive status correctly",
+			"Page displays expiration date",
+			"Page shows valid/invalid badge based on status and expiration",
+			"Invalid employee IDs show appropriate error message",
+			"Page includes school branding"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F012",
+		"title": "Verification Status Logic",
+		"description": "Implement business logic to determine if an ID is valid: active status from SIS AND current date <= expiration date. Invalid otherwise. Logic used by verification page.",
+		"tests": [
+			"Valid status returned for active employee with future expiration",
+			"Invalid status returned for inactive employee",
+			"Invalid status returned for expired ID (past expiration date)",
+			"Invalid status returned for employee missing from SIS",
+			"Status calculation uses current date correctly"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F013",
+		"title": "Google OAuth Integration for Employees",
+		"description": "Integrate Google OAuth authentication with school email domain restriction. Only users with school email domain can authenticate. On first login, create Employee record if user exists in SIS.",
+		"tests": [
+			"Google OAuth authentication works correctly",
+			"Only school email domain users can authenticate",
+			"Non-school email users are rejected",
+			"First-time employee login creates Employee record if in SIS",
+			"Returning employees can log in successfully",
+			"Session is created and maintained correctly"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F014",
+		"title": "Admin Role Management",
+		"description": "Implement admin role assignment system. Admins are identified by a flag in User model or separate Admin model. Admin permissions enforced across all admin routes.",
+		"tests": [
+			"Admin users can access admin routes",
+			"Non-admin users are denied access to admin routes",
+			"Admin flag/role is stored and retrieved correctly",
+			"Permission checks work in route loaders/actions",
+			"Admin users can perform admin actions (upload photos, manage IDs)"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F015",
+		"title": "Employee ID Creation on First View",
+		"description": "When an employee first views their ID (or admin views employee ID), automatically create EmployeeID record if it doesn't exist. Set default expiration date (July 1) if not set.",
+		"tests": [
+			"EmployeeID record created when employee first views their ID",
+			"Default expiration date set to July 1 if not provided",
+			"Record creation happens automatically without admin intervention",
+			"Subsequent views don't recreate the record",
+			"Admin viewing employee ID triggers creation if missing"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F016",
+		"title": "Photo Storage Integration",
+		"description": "Implement file storage integration for employee photos. Use Fly.io volume or S3-compatible storage. Store photos with unique keys and generate URLs for database storage.",
+		"tests": [
+			"Photos are uploaded to configured storage backend",
+			"Photos are stored with unique, secure keys",
+			"Photo URLs are generated and stored in database",
+			"Photos can be retrieved by URL",
+			"Storage handles errors gracefully (full disk, permissions, etc.)"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F017",
+		"title": "Admin Employee Detail View",
+		"description": "Create admin route to view individual employee details including SIS sync status, photo, expiration date, and actions (upload photo, update expiration, view/download ID).",
+		"tests": [
+			"Admin can view employee detail page",
+			"Page displays all employee information",
+			"Page shows photo upload interface",
+			"Page shows expiration date editing",
+			"Page includes download/view ID button",
+			"Non-admin users cannot access employee detail pages"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F018",
+		"title": "School Branding Configuration",
+		"description": "Create configuration system for school branding (logo URL, colors, name). Branding applied to PDF IDs and verification pages. Configuration stored in environment variables or database.",
+		"tests": [
+			"School logo is displayed on PDF IDs",
+			"School colors are applied correctly",
+			"School name appears on ID and verification pages",
+			"Branding configuration can be updated",
+			"Default branding is used if not configured"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F019",
+		"title": "Verification Page SEO and Metadata",
+		"description": "Add proper SEO metadata to verification page including title, description, and Open Graph tags. Ensures verification pages are shareable and indexable appropriately.",
+		"tests": [
+			"Verification page has appropriate title tag",
+			"Page includes meta description",
+			"Open Graph tags are present and correct",
+			"Page title includes employee name and status",
+			"Metadata updates based on verification status"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F020",
+		"title": "Error Handling and User Feedback",
+		"description": "Implement comprehensive error handling for ID generation, photo uploads, and verification. Display user-friendly error messages. Log errors for debugging.",
+		"tests": [
+			"Missing employee data shows appropriate error message",
+			"Photo upload errors are displayed to user",
+			"PDF generation errors are handled gracefully",
+			"Verification errors show clear messages",
+			"Errors are logged for debugging",
+			"Users see helpful feedback messages for all actions"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F021",
+		"title": "Rate Limiting on Verification Endpoint",
+		"description": "Implement rate limiting on public verification endpoint to prevent abuse and scraping. Use express-rate-limit or similar. Allow reasonable access while blocking excessive requests.",
+		"tests": [
+			"Verification endpoint enforces rate limits",
+			"Normal usage is not blocked by rate limits",
+			"Excessive requests are rate-limited correctly",
+			"Rate limit errors return appropriate status codes",
+			"Rate limits are configurable",
+			"Rate limiting doesn't affect authenticated routes"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F022",
+		"title": "Employee ID Layout Component",
+		"description": "Create reusable React component for rendering ID card layout (front and back). Component used for both PDF generation and preview. Includes all fields and proper styling.",
+		"tests": [
+			"Component renders ID front with all required fields",
+			"Component renders ID back with QR code",
+			"Component handles missing photo gracefully",
+			"Component applies school branding correctly",
+			"Component is responsive and printable",
+			"Component validates required props"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F023",
+		"title": "SIS Sync Status Dashboard",
+		"description": "Create admin dashboard showing SIS sync status: last sync time, sync errors, employees pending sync, sync statistics. Helps admins monitor data freshness.",
+		"tests": [
+			"Dashboard displays last sync timestamp",
+			"Dashboard shows sync errors if any occurred",
+			"Dashboard lists employees with sync issues",
+			"Dashboard shows sync statistics (total, active, inactive)",
+			"Dashboard is only accessible to admins",
+			"Dashboard refreshes sync status on demand"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F024",
+		"title": "Employee ID Expiration Notifications",
+		"description": "Implement system to identify and notify admins of upcoming ID expirations (e.g., within 30 days). Display warnings in admin interface and optionally send email alerts.",
+		"tests": [
+			"System identifies IDs expiring within 30 days",
+			"Expiring IDs are displayed in admin interface",
+			"Warning messages are clear and actionable",
+			"Expiration calculation uses correct date logic",
+			"Already expired IDs are identified separately",
+			"Email notifications can be sent (optional)"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F025",
+		"title": "Integration Tests for Full ID Workflow",
+		"description": "Create end-to-end integration tests covering complete ID workflow: SIS sync → employee login → view ID → admin uploads photo → generate PDF → verify via QR code.",
+		"tests": [
+			"E2E test: Employee can complete full ID workflow",
+			"E2E test: Admin can manage employee ID end-to-end",
+			"E2E test: Public verification works from QR code scan",
+			"E2E test: Expiration logic works in real scenarios",
+			"All integration tests pass reliably",
+			"Tests cover error scenarios as well as happy paths"
+		],
+		"implemented": false,
+		"tests_passed": false
+	}
+]

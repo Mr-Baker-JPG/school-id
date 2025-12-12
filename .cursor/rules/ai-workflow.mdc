@@ -1,0 +1,299 @@
+---
+description: AI Development Workflow Rules — Strict Version-Aware Feature-by-Feature Development With Testing
+globs: **/*
+alwaysApply: true
+---
+
+# AI Development Workflow Rules (Strict, Version-Aware)
+
+These rules govern ALL AI-assisted development activity in this repository.
+
+---
+
+## ALWAYS_READ
+
+At the start of EVERY session, the agent MUST read:
+
+- `Claude.md` — Project overview and context
+- `features.json` — Feature list and progress tracking
+- `progress.md` — Development history and status
+- `versions.json` — Version states and feature associations (if present)
+- `package.json` — At least the `"name"` and `"version"` fields (for awareness;
+  NOT for arbitrary changes)
+
+If `versions.json` does NOT exist:
+
+- The agent MUST operate in **legacy flat mode**, treating `features.json` as a
+  single global list.
+
+---
+
+## ROLES & RESPONSIBILITIES
+
+Different command types have different permissions:
+
+- **Planning Commands** (e.g., `@plan-version`):
+  - MAY create or update:
+    - `versions.json` entries with `status="planned"`
+    - PRD sections for planned versions
+    - Architecture sections for planned versions
+    - Roadmap and Claude.md planning sections
+  - MUST NOT:
+    - Modify `features.json`
+    - Modify `package.json`
+    - Touch code files
+
+- **Activation Commands** (e.g., `@activate-version`):
+  - MAY:
+    - Change version statuses in `versions.json` (e.g., `"planned" → "active"`,
+      `"active" → "implemented"`/`"released"`)
+    - Attach feature IDs to a version’s `features` array
+    - Populate `deferred_features` when activating a new version with unfinished
+      work
+    - Update the `"version"` field in `package.json` in a controlled, explicit
+      way
+  - MUST NOT:
+    - Mark any feature as `implemented=true` or `tests_passed=true`
+    - Modify code files
+    - Run tests
+
+- **Coding Commands** (e.g., `@next-feature`, `@fix-tests`):
+  - MAY:
+    - Implement code for a single feature at a time
+    - Run tests
+    - Mark that feature’s `implemented` / `tests_passed` as `true` when tests
+      pass
+    - Append entries to `progress.md`
+    - Make git commits
+  - MUST NOT:
+    - Modify `versions.json`
+    - Modify the `"version"` field in `package.json`
+    - Add/remove/reorder features in `features.json`
+    - Modify feature titles, descriptions, or tests
+
+---
+
+## GENERAL CONDUCT
+
+- Always operate **feature-by-feature**.
+- Never modify any feature fields in `features.json` except:
+  - `implemented: false → true`
+  - `tests_passed: false → true`
+- Never add, remove, reorder, or rename features in `features.json` from coding
+  sessions.
+- Never change feature titles, descriptions, or tests from coding sessions.
+- Never infer progress from code alone; always trust:
+  - `features.json`
+  - `progress.md`
+  - `git log`
+  - `versions.json`
+- Keep code in a working, mergeable state.
+- Never implement features belonging to a **planned** (non-active) version.
+- Never implement features listed in a version’s `deferred_features` unless
+  explicitly instructed.
+
+---
+
+## VERSION AWARENESS & TARGET SELECTION
+
+If `versions.json` exists:
+
+1. Identify the **active version**:
+   - A version whose `status` is `"active"`.
+   - If more than one is active, the agent MUST ask the user which to treat as
+     the current target and then use only that one.
+
+2. Determine the **active feature set**:
+   - If an active version exists and has a non-empty `features` array:
+     - The active version’s features define the **only** features eligible for
+       implementation.
+   - If there is no active version or `features` array is empty:
+     - The agent MUST ask the user whether to:
+       - Activate a planned version (via `@activate-version`), or
+       - Work in legacy flat mode over `features.json`.
+
+3. Deferred features:
+   - If a version lists `deferred_features`, coding agents MUST NOT implement
+     them unless the user explicitly requests working on deferred/backlog items
+     and confirms the target version/feature IDs.
+
+If `versions.json` does NOT exist:
+
+- Treat all features in `features.json` as a single flat backlog, ordered as
+  they appear.
+
+---
+
+## DEVELOPMENT LOOP (Strict, Version-Aware)
+
+For CODING AGENT sessions (e.g., `@next-feature`):
+
+1. **Read Context**:
+   - Re-read `Claude.md`, `features.json`, `progress.md`, `versions.json` (if
+     present), and `package.json` (version awareness only).
+
+2. **Determine Implementation Scope**:
+   - If there is an active version with a non-empty `features` array:
+     - Implementation scope is LIMITED to those features.
+   - Otherwise:
+     - Ask the user whether to:
+       - Activate a planned version (via `@activate-version`), or
+       - Proceed in flat mode over `features.json`.
+
+3. **Check Active Version Completion**:
+   - If an active version exists:
+     - For all feature IDs in `activeVersion.features`:
+       - Confirm that they exist in `features.json`.
+       - Confirm that `implemented=true` and `tests_passed=true`.
+   - IF ALL such features are complete:
+     - The agent MUST:
+       - Announce that the active version is fully implemented and passing
+         tests.
+       - Ask the user whether to run `@activate-version` to transition (e.g.
+         mark as implemented/released and/or activate the next planned version).
+       - MUST NOT implement additional features until the user responds.
+
+4. **Identify Next Feature**:
+   - Within the active version’s `features` list (if present), or within the
+     global `features.json` list (if no active version):
+     - Find the first feature where:
+       - `implemented=false` OR `tests_passed=false`
+   - Announce:
+     - Feature ID
+     - Title
+     - Description
+     - Which version it belongs to (if any)
+
+5. **Implement ONLY That Feature**:
+   - Modify only code relevant to this feature.
+   - Do NOT implement any other feature in the same pass.
+
+6. **Run Tests**:
+   - Run `npm test` (unit tests).
+   - Run `npm run test:e2e` (e2e/browser tests).
+   - Perform manual checks from the feature’s `tests` array if required.
+
+7. **Mark Feature Complete Only If**:
+   - Implementation is correct to the best of the agent’s ability, AND
+   - All relevant tests for that feature pass.
+
+   Then:
+   - Set `"implemented": true` and `"tests_passed": true` for that feature in
+     `features.json`.
+   - Append a dated entry to `progress.md` describing:
+     - What was implemented.
+     - Which tests were run and their results.
+   - Create a git commit:
+     - `feat: {id} {short description}`
+
+8. **Show Summary**:
+   - Git diff summary.
+   - Updated feature snippet from `features.json`.
+   - New `progress.md` entry.
+
+9. **Recheck Version Completion**:
+   - If the feature belongs to the active version, repeat the completion check.
+   - If now ALL features of the active version are complete:
+     - Announce completion.
+     - Ask whether to run `@activate-version`.
+     - Do NOT proceed to implement other features until the user has answered.
+
+---
+
+## STASHING DEFERRED FEATURES (Rules Layer)
+
+Stashing deferred features is handled by **activation commands**, not coding
+commands.
+
+At the rules level:
+
+- Only an activation command (e.g., `@activate-version`) MAY:
+  - Move unfinished features from an active version into its `deferred_features`
+    array.
+  - Update version statuses (e.g., `"active" → "implemented"`).
+  - Activate another version (`"planned" → "active"`).
+
+- Coding commands MUST obey:
+  - If a feature ID is listed in `deferred_features` for any version:
+    - Do NOT implement it unless the user explicitly states:
+      - Which version’s deferred features should be worked on, and
+      - Which feature IDs to target.
+
+---
+
+## VERSION BUMPING WORKFLOWS
+
+- Only activation-level commands (e.g., `@activate-version`, or a dedicated
+  `@bump-version` command) MAY change `package.json`'s `"version"` field.
+- Coding commands MUST NOT alter `package.json`'s `"version"`.
+
+Version bumping rules:
+
+1. Bumping MUST be explicit:
+   - The agent MUST ask the user whether to:
+     - Use semantic bump (major/minor/patch from the current version), OR
+     - Set the version directly to an explicit label (e.g., `"2.0.0"`).
+
+2. The agent MUST:
+   - Avoid decreasing the version (no downgrades).
+   - Avoid changing any other `package.json` fields during the bump.
+   - Ensure the new version string is valid JSON and a plausible version
+     identifier.
+
+3. After a successful bump:
+   - The agent SHOULD:
+     - Mention which version entry in `versions.json` corresponds to the new
+       `"version"` in `package.json`.
+     - Confirm that the bump aligns with the status of that version (e.g.,
+       activating `"2.0.0"` and setting package.json to `"2.0.0"`).
+
+---
+
+## RESUMING (Version-Aware)
+
+On a new chat, the agent MUST:
+
+1. Read:
+   - `Claude.md`
+   - `features.json`
+   - `progress.md`
+   - `versions.json` (if present)
+   - `package.json` (for the current version string)
+
+2. Summarize:
+   - Active version (if any).
+   - Which features (by id) belong to the active version and their status.
+   - Any deferred features.
+   - The `package.json` version and how it relates to `versions.json`.
+   - The next recommended action:
+     - Implement next feature,
+     - Activate a new version,
+     - Or plan a new version.
+
+Then follow the DEVELOPMENT LOOP, obeying all version and stashing constraints.
+
+---
+
+## PROHIBITIONS
+
+- Do NOT compact, rewrite, or reorder the feature list in `features.json`.
+- Do NOT modify existing feature definitions (title, description, tests).
+- Do NOT modify `versions.json` from coding sessions.
+- Do NOT modify the `"version"` field of `package.json` from coding sessions.
+- Do NOT skip tests when marking features complete.
+- Do NOT implement more than one feature per iteration.
+- Do NOT treat partially implemented features as done.
+
+---
+
+## COMPLETION
+
+When ALL features for the active version have `implemented=true` and
+`tests_passed=true`:
+
+- Announce that the active version is complete.
+- Append a final summary section for that version to `progress.md`.
+- Ask the user whether to run `@activate-version` to:
+  - Mark that version as `"implemented"`/`"released"`, and/or
+  - Activate the next planned version.
+- Suggest optional cleanup tasks only if explicitly requested.
