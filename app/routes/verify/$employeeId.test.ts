@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker'
 import { describe, expect, test } from 'vitest'
 import { prisma } from '#app/utils/db.server.ts'
-import { loader } from './$employeeId.tsx'
+import { loader, meta } from './$employeeId.tsx'
 
 async function createEmployee(data?: {
 	fullName?: string
@@ -440,5 +440,368 @@ describe('verify/$employeeId route', () => {
 				expect(text).toBe('Employee ID is required')
 			}
 		}
+	})
+
+	describe('SEO Metadata', () => {
+		test('Verification page has appropriate title tag', async () => {
+			const employee = await createEmployee({
+				fullName: 'John Doe',
+				jobTitle: 'Teacher',
+				email: 'john.doe@school.edu',
+				status: 'active',
+			})
+
+			// Use a future date to ensure valid status
+			const futureDate = new Date()
+			futureDate.setFullYear(futureDate.getFullYear() + 1)
+
+			await createEmployeeId({
+				employeeId: employee.id,
+				expirationDate: futureDate,
+			})
+
+			const request = new Request('http://localhost/verify/' + employee.id)
+			const data = await loader({
+				params: { employeeId: employee.id },
+				request,
+				context: {},
+			} as any)
+
+			const metaTags = meta({ data, params: { employeeId: employee.id } } as any)
+
+			const titleTag = metaTags.find((tag) => 'title' in tag)
+			expect(titleTag).toBeDefined()
+			expect(titleTag?.title).toContain('John Doe')
+			expect(titleTag?.title).toContain('Valid')
+
+			// Cleanup
+			await prisma.employeeID.deleteMany({
+				where: { employeeId: employee.id },
+			})
+			await prisma.employee.delete({ where: { id: employee.id } })
+		})
+
+		test('Page includes meta description', async () => {
+			const employee = await createEmployee({
+				fullName: 'Jane Smith',
+				jobTitle: 'Principal',
+				email: 'jane.smith@school.edu',
+				status: 'active',
+			})
+
+			// Use a future date to ensure valid status
+			const futureDate = new Date()
+			futureDate.setFullYear(futureDate.getFullYear() + 1)
+
+			await createEmployeeId({
+				employeeId: employee.id,
+				expirationDate: futureDate,
+			})
+
+			const request = new Request('http://localhost/verify/' + employee.id)
+			const data = await loader({
+				params: { employeeId: employee.id },
+				request,
+				context: {},
+			} as any)
+
+			const metaTags = meta({ data, params: { employeeId: employee.id } } as any)
+
+			const descriptionTag = metaTags.find(
+				(tag) => 'name' in tag && tag.name === 'description',
+			)
+			expect(descriptionTag).toBeDefined()
+			expect(descriptionTag?.content).toContain('Jane Smith')
+			expect(descriptionTag?.content).toContain('Principal')
+			expect(descriptionTag?.content).toContain('Valid')
+
+			// Cleanup
+			await prisma.employeeID.deleteMany({
+				where: { employeeId: employee.id },
+			})
+			await prisma.employee.delete({ where: { id: employee.id } })
+		})
+
+		test('Open Graph tags are present and correct', async () => {
+			const employee = await createEmployee({
+				fullName: 'Test Employee',
+				jobTitle: 'Teacher',
+				email: 'test@school.edu',
+				status: 'active',
+			})
+
+			// Use a future date to ensure valid status
+			const futureDate = new Date()
+			futureDate.setFullYear(futureDate.getFullYear() + 1)
+
+			await createEmployeeId({
+				employeeId: employee.id,
+				expirationDate: futureDate,
+			})
+
+			const request = new Request('http://localhost/verify/' + employee.id)
+			const data = await loader({
+				params: { employeeId: employee.id },
+				request,
+				context: {},
+			} as any)
+
+			const metaTags = meta({ data, params: { employeeId: employee.id } } as any)
+
+			// Check Open Graph tags
+			const ogTitle = metaTags.find(
+				(tag) => 'property' in tag && tag.property === 'og:title',
+			)
+			expect(ogTitle).toBeDefined()
+			expect(ogTitle?.content).toContain('Test Employee')
+			expect(ogTitle?.content).toContain('Valid')
+
+			const ogDescription = metaTags.find(
+				(tag) => 'property' in tag && tag.property === 'og:description',
+			)
+			expect(ogDescription).toBeDefined()
+			expect(ogDescription?.content).toContain('Test Employee')
+
+			const ogType = metaTags.find(
+				(tag) => 'property' in tag && tag.property === 'og:type',
+			)
+			expect(ogType).toBeDefined()
+			expect(ogType?.content).toBe('profile')
+
+			const ogUrl = metaTags.find(
+				(tag) => 'property' in tag && tag.property === 'og:url',
+			)
+			expect(ogUrl).toBeDefined()
+			expect(ogUrl?.content).toContain('/verify/')
+			expect(ogUrl?.content).toContain(employee.id)
+
+			const ogSiteName = metaTags.find(
+				(tag) => 'property' in tag && tag.property === 'og:site_name',
+			)
+			expect(ogSiteName).toBeDefined()
+			expect(ogSiteName?.content).toBeTruthy()
+
+			// Cleanup
+			await prisma.employeeID.deleteMany({
+				where: { employeeId: employee.id },
+			})
+			await prisma.employee.delete({ where: { id: employee.id } })
+		})
+
+		test('Open Graph image tag includes employee photo when available', async () => {
+			const photoUrl = 'https://example.com/photo.jpg'
+			const employee = await createEmployee({
+				fullName: 'Photo Employee',
+				jobTitle: 'Teacher',
+				email: 'photo@school.edu',
+				status: 'active',
+			})
+
+			// Use a future date to ensure valid status
+			const futureDate = new Date()
+			futureDate.setFullYear(futureDate.getFullYear() + 1)
+
+			await createEmployeeId({
+				employeeId: employee.id,
+				expirationDate: futureDate,
+				photoUrl,
+			})
+
+			const request = new Request('http://localhost/verify/' + employee.id)
+			const data = await loader({
+				params: { employeeId: employee.id },
+				request,
+				context: {},
+			} as any)
+
+			const metaTags = meta({ data, params: { employeeId: employee.id } } as any)
+
+			const ogImage = metaTags.find(
+				(tag) => 'property' in tag && tag.property === 'og:image',
+			)
+			expect(ogImage).toBeDefined()
+			expect(ogImage?.content).toBe(photoUrl)
+
+			// Cleanup
+			await prisma.employeeID.deleteMany({
+				where: { employeeId: employee.id },
+			})
+			await prisma.employee.delete({ where: { id: employee.id } })
+		})
+
+		test('Twitter Card tags are present and correct', async () => {
+			const employee = await createEmployee({
+				fullName: 'Twitter Test',
+				jobTitle: 'Teacher',
+				email: 'twitter@school.edu',
+				status: 'active',
+			})
+
+			// Use a future date to ensure valid status
+			const futureDate = new Date()
+			futureDate.setFullYear(futureDate.getFullYear() + 1)
+
+			await createEmployeeId({
+				employeeId: employee.id,
+				expirationDate: futureDate,
+			})
+
+			const request = new Request('http://localhost/verify/' + employee.id)
+			const data = await loader({
+				params: { employeeId: employee.id },
+				request,
+				context: {},
+			} as any)
+
+			const metaTags = meta({ data, params: { employeeId: employee.id } } as any)
+
+			const twitterCard = metaTags.find(
+				(tag) => 'name' in tag && tag.name === 'twitter:card',
+			)
+			expect(twitterCard).toBeDefined()
+			expect(twitterCard?.content).toBe('summary')
+
+			const twitterTitle = metaTags.find(
+				(tag) => 'name' in tag && tag.name === 'twitter:title',
+			)
+			expect(twitterTitle).toBeDefined()
+			expect(twitterTitle?.content).toContain('Twitter Test')
+
+			const twitterDescription = metaTags.find(
+				(tag) => 'name' in tag && tag.name === 'twitter:description',
+			)
+			expect(twitterDescription).toBeDefined()
+			expect(twitterDescription?.content).toContain('Twitter Test')
+
+			// Cleanup
+			await prisma.employeeID.deleteMany({
+				where: { employeeId: employee.id },
+			})
+			await prisma.employee.delete({ where: { id: employee.id } })
+		})
+
+		test('Page title includes employee name and status', async () => {
+			const employee = await createEmployee({
+				fullName: 'Status Test',
+				jobTitle: 'Teacher',
+				email: 'status@school.edu',
+				status: 'inactive',
+			})
+
+			await createEmployeeId({
+				employeeId: employee.id,
+				expirationDate: new Date('2025-07-01'),
+			})
+
+			const request = new Request('http://localhost/verify/' + employee.id)
+			const data = await loader({
+				params: { employeeId: employee.id },
+				request,
+				context: {},
+			} as any)
+
+			const metaTags = meta({ data, params: { employeeId: employee.id } } as any)
+
+			const titleTag = metaTags.find((tag) => 'title' in tag)
+			expect(titleTag).toBeDefined()
+			expect(titleTag?.title).toContain('Status Test')
+			expect(titleTag?.title).toContain('Invalid')
+
+			// Cleanup
+			await prisma.employeeID.deleteMany({
+				where: { employeeId: employee.id },
+			})
+			await prisma.employee.delete({ where: { id: employee.id } })
+		})
+
+		test('Metadata updates based on verification status', async () => {
+			// Test with valid status
+			const validEmployee = await createEmployee({
+				fullName: 'Valid Employee',
+				jobTitle: 'Teacher',
+				email: 'valid@school.edu',
+				status: 'active',
+			})
+
+			const futureDate = new Date()
+			futureDate.setFullYear(futureDate.getFullYear() + 1)
+
+			await createEmployeeId({
+				employeeId: validEmployee.id,
+				expirationDate: futureDate,
+			})
+
+			const request1 = new Request('http://localhost/verify/' + validEmployee.id)
+			const data1 = await loader({
+				params: { employeeId: validEmployee.id },
+				request: request1,
+				context: {},
+			} as any)
+
+			const metaTags1 = meta({
+				data: data1,
+				params: { employeeId: validEmployee.id },
+			} as any)
+
+			const title1 = metaTags1.find((tag) => 'title' in tag)
+			expect(title1?.title).toContain('Valid')
+
+			// Test with invalid status (expired)
+			const expiredEmployee = await createEmployee({
+				fullName: 'Expired Employee',
+				jobTitle: 'Teacher',
+				email: 'expired@school.edu',
+				status: 'active',
+			})
+
+			const pastDate = new Date()
+			pastDate.setFullYear(pastDate.getFullYear() - 1)
+
+			await createEmployeeId({
+				employeeId: expiredEmployee.id,
+				expirationDate: pastDate,
+			})
+
+			const request2 = new Request(
+				'http://localhost/verify/' + expiredEmployee.id,
+			)
+			const data2 = await loader({
+				params: { employeeId: expiredEmployee.id },
+				request: request2,
+				context: {},
+			} as any)
+
+			const metaTags2 = meta({
+				data: data2,
+				params: { employeeId: expiredEmployee.id },
+			} as any)
+
+			const title2 = metaTags2.find((tag) => 'title' in tag)
+			expect(title2?.title).toContain('Invalid')
+
+			// Cleanup
+			await prisma.employeeID.deleteMany({
+				where: {
+					employeeId: { in: [validEmployee.id, expiredEmployee.id] },
+				},
+			})
+			await prisma.employee.deleteMany({
+				where: { id: { in: [validEmployee.id, expiredEmployee.id] } },
+			})
+		})
+
+		test('Returns default metadata when data is missing', () => {
+			const metaTags = meta({ data: undefined } as any)
+
+			const titleTag = metaTags.find((tag) => 'title' in tag)
+			expect(titleTag).toBeDefined()
+			expect(titleTag?.title).toBe('Employee Verification')
+
+			const descriptionTag = metaTags.find(
+				(tag) => 'name' in tag && tag.name === 'description',
+			)
+			expect(descriptionTag).toBeDefined()
+			expect(descriptionTag?.content).toBe('Verify employee ID status')
+		})
 	})
 })

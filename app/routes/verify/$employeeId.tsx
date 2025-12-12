@@ -6,7 +6,7 @@ import { Spacer } from '#app/components/spacer.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { getBrandingConfig } from '#app/utils/branding.server.ts'
 import { getVerificationStatus } from '#app/utils/verification.server.ts'
-import { cn } from '#app/utils/misc.tsx'
+import { cn, getDomainUrl } from '#app/utils/misc.tsx'
 import { type Route } from './+types/$employeeId.ts'
 
 export const handle: SEOHandle = {
@@ -54,6 +54,10 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 	// Get branding config
 	const branding = getBrandingConfig()
 
+	// Construct verification URL for SEO metadata
+	const domainUrl = getDomainUrl(request)
+	const verificationUrl = `${domainUrl}/verify/${employeeId}`
+
 	return {
 		employee: {
 			id: employee.id,
@@ -65,6 +69,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 		},
 		verificationStatus,
 		branding,
+		verificationUrl,
 	}
 }
 
@@ -266,30 +271,73 @@ export const meta: Route.MetaFunction = ({ data }) => {
 		]
 	}
 
-	const { employee, verificationStatus, branding } = data
+	const { employee, verificationStatus, branding, verificationUrl } = data
 	const statusText = verificationStatus.isValid ? 'Valid' : 'Invalid'
+	const title = `${employee.fullName} - ${statusText} | ${branding.schoolName} Employee Verification`
+	const description = `Employee verification for ${employee.fullName} (${employee.jobTitle}). Status: ${statusText}.`
 
-	return [
+	// Determine image URL for Open Graph (prefer employee photo, fallback to school logo)
+	const imageUrl = employee.photoUrl
+		? employee.photoUrl
+		: branding.logoUrl ?? undefined
+
+	const metaTags = [
 		{
-			title: `${employee.fullName} - ${statusText} | ${branding.schoolName} Employee Verification`,
+			title,
 		},
 		{
 			name: 'description',
-			content: `Employee verification for ${employee.fullName} (${employee.jobTitle}). Status: ${statusText}.`,
+			content: description,
 		},
+		// Open Graph tags
 		{
 			property: 'og:title',
 			content: `${employee.fullName} - ${statusText} | ${branding.schoolName}`,
 		},
 		{
 			property: 'og:description',
-			content: `Employee verification for ${employee.fullName} (${employee.jobTitle}). Status: ${statusText}.`,
+			content: description,
 		},
 		{
 			property: 'og:type',
 			content: 'profile',
 		},
+		{
+			property: 'og:url',
+			content: verificationUrl,
+		},
+		{
+			property: 'og:site_name',
+			content: branding.schoolName,
+		},
+		// Twitter Card tags
+		{
+			name: 'twitter:card',
+			content: 'summary' as const,
+		},
+		{
+			name: 'twitter:title',
+			content: `${employee.fullName} - ${statusText} | ${branding.schoolName}`,
+		},
+		{
+			name: 'twitter:description',
+			content: description,
+		},
 	]
+
+	// Add image tags if image URL is available
+	if (imageUrl) {
+		metaTags.push({
+			property: 'og:image',
+			content: imageUrl,
+		})
+		metaTags.push({
+			name: 'twitter:image',
+			content: imageUrl,
+		})
+	}
+
+	return metaTags
 }
 
 export function ErrorBoundary() {

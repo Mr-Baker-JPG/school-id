@@ -268,8 +268,8 @@
 			"Page title includes employee name and status",
 			"Metadata updates based on verification status"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F020",

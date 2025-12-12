@@ -1083,23 +1083,25 @@ Stack template. This feature verification confirms that:
 **Implementation:**
 
 - Updated PDF ID generation to use branding colors dynamically:
-  - `createPDFStyles()` function now accepts branding config and creates styles with
-    `primaryColor` and `secondaryColor`
+  - `createPDFStyles()` function now accepts branding config and creates styles
+    with `primaryColor` and `secondaryColor`
   - PDF front and back pages use `secondaryColor` for background
-  - Text elements (school name, employee name, job title, etc.) use `primaryColor`
+  - Text elements (school name, employee name, job title, etc.) use
+    `primaryColor`
   - Secondary text uses `primaryColor` with opacity for visual hierarchy
 - Updated verification page (`/verify/$employeeId`) to use branding colors:
   - Page background uses `secondaryColor` from branding config
   - Headings and text use `primaryColor` with appropriate opacity
   - Labels and secondary text use `primaryColor` with reduced opacity
-  - Error/invalid reason boxes use `primaryColor` with low opacity for background
+  - Error/invalid reason boxes use `primaryColor` with low opacity for
+    background
 - Branding configuration system already existed via environment variables:
   - `SCHOOL_NAME` / `SCHOOL_BRAND_NAME` for school name
   - `SCHOOL_LOGO_URL` for logo URL
   - `SCHOOL_PRIMARY_COLOR` for primary brand color (default: `#1a1a1a`)
   - `SCHOOL_SECONDARY_COLOR` for secondary brand color (default: `#ffffff`)
-- Removed duplicate test file (`pdf-id.server.test.ts`) that was causing build errors
-  (correct `.tsx` version already exists and passes)
+- Removed duplicate test file (`pdf-id.server.test.ts`) that was causing build
+  errors (correct `.tsx` version already exists and passes)
 
 **Tests:**
 
@@ -1123,12 +1125,12 @@ Stack template. This feature verification confirms that:
 
 **Test Files:**
 
-- Updated `app/utils/pdf-id.server.test.tsx` - Added test to verify branding colors
-  are used in PDF generation
-- Updated `app/routes/verify/$employeeId.test.ts` - Added test to verify branding
-  colors are present and valid
-- `app/utils/branding.server.test.ts` - Existing comprehensive tests for branding
-  configuration
+- Updated `app/utils/pdf-id.server.test.tsx` - Added test to verify branding
+  colors are used in PDF generation
+- Updated `app/routes/verify/$employeeId.test.ts` - Added test to verify
+  branding colors are present and valid
+- `app/utils/branding.server.test.ts` - Existing comprehensive tests for
+  branding configuration
 
 **Files Modified:**
 
@@ -1144,6 +1146,68 @@ Stack template. This feature verification confirms that:
 
 - `app/utils/pdf-id.server.test.ts` - Removed duplicate test file (incorrect
   extension, causing build errors)
+
+---
+
+## 2025-12-12 – F019
+
+**Feature:** Verification Page SEO and Metadata
+
+**Implementation:**
+
+- Enhanced SEO metadata in verification route (`/verify/$employeeId`) meta function
+- Added comprehensive Open Graph tags:
+  - `og:title` - Employee name and status with school name
+  - `og:description` - Employee verification details
+  - `og:type` - Set to 'profile' for employee verification pages
+  - `og:url` - Full verification URL (constructed from request domain)
+  - `og:site_name` - School name from branding config
+  - `og:image` - Employee photo (if available) or school logo (if available)
+- Added Twitter Card tags:
+  - `twitter:card` - Set to 'summary'
+  - `twitter:title` - Employee name and status with school name
+  - `twitter:description` - Employee verification details
+  - `twitter:image` - Employee photo (if available) or school logo (if available)
+- Updated loader to include `verificationUrl` in returned data for meta function
+- Meta function dynamically updates based on verification status (Valid/Invalid)
+- Image selection logic: prefers employee photo, falls back to school logo, omits if neither available
+- Default metadata provided when data is missing (error states)
+
+**Tests:**
+
+- ✅ Verification page has appropriate title tag: Title includes employee name and
+  status correctly
+- ✅ Page includes meta description: Description includes employee name, job title,
+  and status
+- ✅ Open Graph tags are present and correct: All required OG tags (title,
+  description, type, url, site_name) are present with correct values
+- ✅ Open Graph image tag includes employee photo when available: OG image tag
+  includes employee photo URL when photo exists
+- ✅ Twitter Card tags are present and correct: All Twitter Card tags (card, title,
+  description) are present with correct values
+- ✅ Page title includes employee name and status: Title dynamically includes
+  employee name and verification status
+- ✅ Metadata updates based on verification status: Metadata correctly reflects
+  Valid/Invalid status based on employee status and expiration date
+- ✅ Returns default metadata when data is missing: Default metadata provided for
+  error states
+- ✅ All 8 SEO metadata unit tests pass
+- ✅ All existing verification route tests continue to pass (18/18 total tests)
+- ✅ All existing tests continue to pass (except pre-existing failures in
+  expiration.test.ts unrelated to this feature)
+
+**Test File:**
+
+- Updated `app/routes/verify/$employeeId.test.ts` with comprehensive SEO metadata
+  test coverage
+- Tests verify title tags, meta descriptions, Open Graph tags, Twitter Card tags,
+  and dynamic status updates
+
+**Files Modified:**
+
+- `app/routes/verify/$employeeId.tsx` - Enhanced meta function with comprehensive
+  SEO metadata
+- `app/routes/verify/$employeeId.test.ts` - Added 8 new SEO metadata tests
 
 ---
 
