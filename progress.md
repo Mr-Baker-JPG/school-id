@@ -457,7 +457,8 @@ This document tracks the implementation progress of features defined in
 - Installed `@react-pdf/renderer` for PDF generation
 - Created PDF generation service (`app/utils/pdf-id.server.tsx`) that:
   - Generates wallet-size ID cards (3.375" x 2.125" = 243 points x 153 points)
-  - Creates front page with employee photo, name, job title, employee ID, expiration date, and school logo
+  - Creates front page with employee photo, name, job title, employee ID,
+    expiration date, and school logo
   - Creates back page with QR code for verification
   - Handles missing photos gracefully (shows placeholder)
   - Handles missing logos gracefully (omits logo if not configured)
@@ -465,7 +466,8 @@ This document tracks the implementation progress of features defined in
   - Fetches school logos from configured URL
   - Integrates with existing QR code generation service
 - Created branding configuration utility (`app/utils/branding.server.ts`) that:
-  - Reads school branding from environment variables (SCHOOL_NAME, SCHOOL_LOGO_URL, SCHOOL_PRIMARY_COLOR, SCHOOL_SECONDARY_COLOR)
+  - Reads school branding from environment variables (SCHOOL_NAME,
+    SCHOOL_LOGO_URL, SCHOOL_PRIMARY_COLOR, SCHOOL_SECONDARY_COLOR)
   - Provides sensible defaults when not configured
   - Supports SCHOOL_BRAND_NAME as alias for SCHOOL_NAME
 - Added branding environment variables to `app/utils/env.server.ts` schema
@@ -477,15 +479,21 @@ This document tracks the implementation progress of features defined in
 
 **Tests:**
 
-- ✅ PDF generates successfully for valid employee: PDF buffer is generated correctly
-- ✅ PDF includes all required fields: All employee data is used in generation (verified via function calls)
+- ✅ PDF generates successfully for valid employee: PDF buffer is generated
+  correctly
+- ✅ PDF includes all required fields: All employee data is used in generation
+  (verified via function calls)
 - ✅ PDF includes QR code on back: QR code generation is called and integrated
-- ✅ PDF is wallet-sized and printable: PDF dimensions are set to standard ID card size (243x153 points)
-- ✅ School branding (logo, colors) is correctly applied: Branding config is used and logo is fetched when configured
-- ✅ Error handling for missing photo or data works correctly: Missing photos, logos, and invalid data are handled gracefully
+- ✅ PDF is wallet-sized and printable: PDF dimensions are set to standard ID
+  card size (243x153 points)
+- ✅ School branding (logo, colors) is correctly applied: Branding config is
+  used and logo is fetched when configured
+- ✅ Error handling for missing photo or data works correctly: Missing photos,
+  logos, and invalid data are handled gracefully
 - ✅ All 13 PDF generation unit tests pass
 - ✅ All 8 branding configuration unit tests pass
-- ✅ All existing tests continue to pass (except pre-existing failures in expiration.test.ts unrelated to this feature)
+- ✅ All existing tests continue to pass (except pre-existing failures in
+  expiration.test.ts unrelated to this feature)
 
 **Test Files:**
 

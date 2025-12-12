@@ -1,4 +1,12 @@
-import { Document, Page, Text, View, Image, StyleSheet, pdf } from '@react-pdf/renderer'
+import {
+	Document,
+	Page,
+	Text,
+	View,
+	Image,
+	StyleSheet,
+	pdf,
+} from '@react-pdf/renderer'
 import { format } from 'date-fns'
 import { getBrandingConfig } from './branding.server.ts'
 import { generateEmployeeQRCodeBuffer } from './qr-code.server.ts'
