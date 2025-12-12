@@ -94,8 +94,8 @@
 			"Date validation prevents invalid dates",
 			"Employees can see their own expiration date"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F008",

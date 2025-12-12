@@ -177,11 +177,16 @@ export default function AdminEmployeesRoute({
 											</span>
 										</td>
 										<td className="p-2">
-											{employee.employeeId?.expirationDate
-												? new Date(
-														employee.employeeId.expirationDate,
-													).toLocaleDateString()
-												: 'Not set'}
+											<Link
+												to={`/admin/employees/${employee.id}/expiration`}
+												className="text-foreground hover:underline"
+											>
+												{employee.employeeId?.expirationDate
+													? new Date(
+															employee.employeeId.expirationDate,
+														).toLocaleDateString()
+													: 'Not set'}
+											</Link>
 										</td>
 										<td className="p-2">
 											<Link
@@ -193,7 +198,9 @@ export default function AdminEmployeesRoute({
 														✓ Has photo
 													</span>
 												) : (
-													<span className="text-muted-foreground">No photo</span>
+													<span className="text-muted-foreground">
+														No photo
+													</span>
 												)}
 											</Link>
 										</td>

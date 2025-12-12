@@ -17,6 +17,7 @@ import {
 	useIsPending,
 } from '#app/utils/misc.tsx'
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
+import { getDefaultExpirationDate } from '#app/utils/employee.server.ts'
 import { uploadEmployeePhoto } from '#app/utils/storage.server.ts'
 import { type Route } from './+types/photo.ts'
 
@@ -122,11 +123,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 			employeeId,
 			photoUrl: objectKey,
 			// Set default expiration date to July 1 of current school year
-			expirationDate: new Date(
-				new Date().getFullYear(),
-				6, // July (0-indexed)
-				1,
-			),
+			expirationDate: getDefaultExpirationDate(),
 		},
 		update: {
 			photoUrl: objectKey,
