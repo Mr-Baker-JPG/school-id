@@ -111,7 +111,11 @@ test('loader requires admin role', async () => {
 	)
 
 	await expect(
-		loader({ request, params: { employeeId: employee.id }, context: {} } as any),
+		loader({
+			request,
+			params: { employeeId: employee.id },
+			context: {},
+		} as any),
 	).rejects.toThrow
 
 	// Cleanup
@@ -178,7 +182,11 @@ test('loader returns 404 for non-existent employee', async () => {
 	)
 
 	await expect(
-		loader({ request, params: { employeeId: fakeEmployeeId }, context: {} } as any),
+		loader({
+			request,
+			params: { employeeId: fakeEmployeeId },
+			context: {},
+		} as any),
 	).rejects.toThrow()
 
 	// Cleanup

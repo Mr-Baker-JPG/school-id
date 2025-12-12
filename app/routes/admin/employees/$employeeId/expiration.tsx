@@ -22,21 +22,15 @@ const ExpirationFormSchema = z.object({
 	expirationDate: z
 		.string()
 		.min(1, 'Expiration date is required')
-		.refine(
-			(dateString) => {
-				const date = new Date(dateString)
-				return !isNaN(date.getTime())
-			},
-			'Invalid date format',
-		)
-		.refine(
-			(dateString) => {
-				const date = new Date(dateString)
-				// Allow dates in the past (for expired IDs) but ensure it's a valid date
-				return date instanceof Date && !isNaN(date.getTime())
-			},
-			'Invalid date',
-		),
+		.refine((dateString) => {
+			const date = new Date(dateString)
+			return !isNaN(date.getTime())
+		}, 'Invalid date format')
+		.refine((dateString) => {
+			const date = new Date(dateString)
+			// Allow dates in the past (for expired IDs) but ensure it's a valid date
+			return date instanceof Date && !isNaN(date.getTime())
+		}, 'Invalid date'),
 })
 
 export async function loader({ request, params }: Route.LoaderArgs) {
