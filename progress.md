@@ -11,8 +11,8 @@ This document tracks the implementation progress of features defined in
 
 **Last Updated:** 2025-12-12  
 **Total Features:** 25  
-**Implemented:** 2  
-**Tests Passing:** 2
+**Implemented:** 3  
+**Tests Passing:** 3
 
 ---
 
@@ -158,12 +158,12 @@ This document tracks the implementation progress of features defined in
 
 - ✅ Job successfully runs on schedule: Sync completes successfully with valid
   data
-- ✅ New employees from SIS are created in database: Creates single and
-  multiple new employees correctly
+- ✅ New employees from SIS are created in database: Creates single and multiple
+  new employees correctly
 - ✅ Existing employees are updated with latest SIS data: Updates single and
   multiple existing employees correctly
-- ✅ Inactive employees have status updated correctly: Updates status from active
-  to inactive and vice versa
+- ✅ Inactive employees have status updated correctly: Updates status from
+  active to inactive and vice versa
 - ✅ Job handles failures without crashing: Handles FACTS API errors, network
   errors, database constraint violations, and continues processing other
   employees when one fails
@@ -179,9 +179,65 @@ This document tracks the implementation progress of features defined in
 
 **Configuration:**
 
-- Cron schedule: `EMPLOYEE_SYNC_CRON` environment variable (default: `"0 2 * * *"`
-  = 2:00 AM daily)
-- Enable/disable: `EMPLOYEE_SYNC_ENABLED` environment variable (default: enabled)
+- Cron schedule: `EMPLOYEE_SYNC_CRON` environment variable (default:
+  `"0 2 * * *"` = 2:00 AM daily)
+- Enable/disable: `EMPLOYEE_SYNC_ENABLED` environment variable (default:
+  enabled)
+
+---
+
+## 2025-12-12 – F004
+
+**Feature:** Admin Employee List View
+
+**Implementation:**
+
+- Created admin route at `/admin/employees` with loader and component
+- Implemented employee list display with table format showing:
+  - Employee name (linked to detail page)
+  - Job title
+  - Email
+  - Status (active/inactive) with visual badges
+  - Expiration date
+  - Photo status (has photo / no photo)
+- Implemented search functionality:
+  - Search by employee name (fullName field)
+  - Search by email address
+  - Debounced search input with auto-submit
+- Implemented status filter:
+  - Filter by "All", "Active", or "Inactive" status
+  - Filter works in combination with search
+- Protected route with `requireUserWithRole(request, 'admin')` to ensure only
+  admin users can access
+- Added error boundary with 403 error handling for unauthorized access
+- Employees are ordered alphabetically by full name
+
+**Tests:**
+
+- ✅ Admin can view list of all employees: Admin users can successfully access
+  and view the employee list
+- ✅ List displays employee name, job title, status, and expiration date: All
+  required fields are displayed correctly in the table
+- ✅ Search filters employees by name: Search by name correctly filters the
+  employee list
+- ✅ Search filters employees by email: Search by email correctly filters the
+  employee list
+- ✅ Filter by status (active) works correctly: Active filter shows only active
+  employees
+- ✅ Filter by status (inactive) works correctly: Inactive filter shows only
+  inactive employees
+- ✅ Non-admin users cannot access this route: Non-admin users receive 403
+  error when attempting to access
+- ✅ Unauthenticated users cannot access this route: Unauthenticated users are
+  redirected/denied access
+- ✅ All 8 unit tests pass
+- ✅ All existing tests continue to pass (66/66 total tests)
+
+**Test File:**
+
+- Created `app/routes/admin/employees/index.test.ts` with comprehensive test
+  coverage
+- Tests cover authentication, authorization, search, filtering, and data display
 
 ---
 

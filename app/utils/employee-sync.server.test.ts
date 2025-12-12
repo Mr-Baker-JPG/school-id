@@ -2,10 +2,7 @@ import { describe, expect, test, beforeEach, afterEach } from 'vitest'
 import { prisma } from './db.server.ts'
 import { syncEmployeesFromFacts } from './employee-sync.server.ts'
 import { server } from '#tests/mocks/index.ts'
-import {
-	clearMockStaff,
-	insertMockStaff,
-} from '#tests/mocks/facts.ts'
+import { clearMockStaff, insertMockStaff } from '#tests/mocks/facts.ts'
 import { http, HttpResponse } from 'msw'
 import { FactsApiError } from './facts-api.server.ts'
 import { consoleError } from '#tests/setup/setup-test-env.ts'

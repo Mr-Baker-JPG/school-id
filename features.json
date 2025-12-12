@@ -50,8 +50,8 @@
 			"Filter by status (active/inactive) works correctly",
 			"Non-admin users cannot access this route"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F005",

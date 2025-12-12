@@ -261,8 +261,7 @@ ${styleText('bold', 'Press Ctrl+C to stop')}
 // Run daily at 2 AM (configurable via EMPLOYEE_SYNC_CRON env var)
 // Format: "minute hour day month day-of-week"
 // Default: "0 2 * * *" = 2:00 AM every day
-const syncCronSchedule =
-	process.env.EMPLOYEE_SYNC_CRON || '0 2 * * *'
+const syncCronSchedule = process.env.EMPLOYEE_SYNC_CRON || '0 2 * * *'
 const syncCronEnabled = process.env.EMPLOYEE_SYNC_ENABLED !== 'false'
 
 if (syncCronEnabled) {
@@ -291,9 +290,7 @@ if (syncCronEnabled) {
 				}
 			}
 		})
-		console.log(
-			`[Employee Sync] Scheduled job configured: ${syncCronSchedule}`,
-		)
+		console.log(`[Employee Sync] Scheduled job configured: ${syncCronSchedule}`)
 	} else {
 		console.warn(
 			`[Employee Sync] Invalid cron schedule: ${syncCronSchedule}. Sync job disabled.`,
