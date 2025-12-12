@@ -64,8 +64,8 @@
 			"Download button is visible and functional",
 			"Unauthenticated users are redirected to login"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F006",

@@ -226,8 +226,8 @@ This document tracks the implementation progress of features defined in
   employees
 - ✅ Filter by status (inactive) works correctly: Inactive filter shows only
   inactive employees
-- ✅ Non-admin users cannot access this route: Non-admin users receive 403
-  error when attempting to access
+- ✅ Non-admin users cannot access this route: Non-admin users receive 403 error
+  when attempting to access
 - ✅ Unauthenticated users cannot access this route: Unauthenticated users are
   redirected/denied access
 - ✅ All 8 unit tests pass
@@ -238,6 +238,46 @@ This document tracks the implementation progress of features defined in
 - Created `app/routes/admin/employees/index.test.ts` with comprehensive test
   coverage
 - Tests cover authentication, authorization, search, filtering, and data display
+
+---
+
+## 2025-12-12 – F005
+
+**Feature:** Employee ID Route (Own ID View)
+
+**Implementation:**
+
+- Created employee ID route at `/employee/id` for employees to view their own ID
+- Implemented loader that:
+  - Requires authentication using `requireUserId`
+  - Finds employee by matching authenticated user's email to Employee.email
+  - Ensures employees can only view their own ID (enforced by email matching)
+  - Returns 404 if employee record not found
+- Created React component that displays:
+  - Employee photo (or placeholder if no photo)
+  - Employee name, job title, email
+  - Status badge (active/inactive)
+  - Expiration date
+  - Download button (disabled placeholder for F010)
+- Added error boundary with appropriate error handling
+- Route handles cases where EmployeeID record doesn't exist yet
+
+**Tests:**
+
+- ✅ Employee can view their own ID page: Employee successfully views their own ID with correct data
+- ✅ Employee cannot view other employees' IDs: Email matching ensures employees only see their own ID
+- ✅ Page displays employee name, title, photo, and expiration date: All required fields displayed correctly
+- ✅ Download button is visible and functional: Download button is visible (disabled until F010)
+- ✅ Unauthenticated users are redirected to login: Unauthenticated users are properly redirected
+- ✅ Returns 404 when employee record not found: Proper error handling for missing employee records
+- ✅ Page handles employee without EmployeeID record: Gracefully handles missing EmployeeID records
+- ✅ All 6 unit tests pass
+- ✅ All existing tests continue to pass (72/72 total tests)
+
+**Test File:**
+
+- Created `app/routes/employee/id.test.ts` with comprehensive test coverage
+- Tests cover authentication, authorization, data display, and error handling
 
 ---
 
