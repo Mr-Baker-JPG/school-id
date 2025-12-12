@@ -11,8 +11,8 @@ This document tracks the implementation progress of features defined in
 
 **Last Updated:** 2025-12-12  
 **Total Features:** 25  
-**Implemented:** 1  
-**Tests Passing:** 1
+**Implemented:** 2  
+**Tests Passing:** 2
 
 ---
 
@@ -64,6 +64,58 @@ This document tracks the implementation progress of features defined in
 - Tables created: `Employee`, `EmployeeID`
 - Indexes created: 7 indexes (2 unique, 5 regular)
 - Foreign key: `EmployeeID.employeeId` → `Employee.id` with CASCADE
+
+---
+
+## 2025-12-12 – F002
+
+**Feature:** FACTS SIS Employee Sync Service
+
+**Implementation:**
+
+- Created comprehensive FACTS API service module (`app/utils/facts-api.server.ts`)
+- Implemented authentication using subscription key or API key via headers
+- Created `fetchAllStaff()` function with automatic pagination support
+- Created `fetchStaffById()` function for single employee lookup
+- Implemented `transformStaffToEmployee()` to convert FACTS API response to Employee schema format
+- Added `FactsApiError` custom error class for API error handling
+- Service validates required fields (staffId, email) and filters invalid records
+- Handles missing fields gracefully (uses email2 fallback, default job title, builds name from parts)
+- Properly maps active/inactive status from FACTS API
+- Trims whitespace from all transformed fields
+
+**Tests:**
+
+- ✅ Authentication: Service successfully authenticates with FACTS API using subscription key
+- ✅ Authentication: Service successfully authenticates with FACTS API using API key
+- ✅ Authentication: Service throws error when no authentication credentials are provided
+- ✅ Fetch Employee List: Service fetches employee list and transforms data correctly
+- ✅ Fetch Employee List: Service handles pagination correctly
+- ✅ Fetch Employee List: Service filters out staff without required fields
+- ✅ Fetch Single Employee: Service fetches single employee by ID correctly
+- ✅ Fetch Single Employee: Service returns null for non-existent employee
+- ✅ Data Transformation: Service transforms staff data to Employee schema format correctly
+- ✅ Data Transformation: Service uses name field when available
+- ✅ Data Transformation: Service builds full name from parts when name field is missing
+- ✅ Data Transformation: Service uses email2 as fallback when email is missing
+- ✅ Data Transformation: Service uses default job title when department is missing
+- ✅ Data Transformation: Service correctly maps active status
+- ✅ Error Handling: Service handles API errors gracefully with 400 status
+- ✅ Error Handling: Service handles API errors gracefully with 500 status
+- ✅ Error Handling: Service handles network errors gracefully
+- ✅ Error Handling: Service handles malformed JSON responses
+- ✅ Error Handling: Service handles pagination errors during fetchAllStaff
+- ✅ Required Field Validation: Service validates required staffId field
+- ✅ Required Field Validation: Service validates required email field
+- ✅ Required Field Validation: Service trims whitespace from transformed fields
+- ✅ All 22 unit tests pass
+- ✅ All existing tests continue to pass (46/46 total tests)
+
+**Test File:**
+
+- Created `app/utils/facts-api.server.test.ts` with comprehensive test coverage
+- Tests use MSW (Mock Service Worker) for API mocking
+- Tests cover authentication, data fetching, transformation, error handling, and validation
 
 ---
 

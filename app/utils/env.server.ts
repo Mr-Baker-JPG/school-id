@@ -26,6 +26,11 @@ const schema = z.object({
 	AWS_REGION: z.string(),
 	AWS_ENDPOINT_URL_S3: z.string().url(),
 	BUCKET_NAME: z.string(),
+
+	// FACTS SIS API Configuration
+	FACTS_SUBSCRIPTION_KEY: z.string().optional(),
+	FACTS_API_KEY: z.string().optional(),
+	FACTS_BASE_URL: z.string().url().optional(),
 })
 
 declare global {
