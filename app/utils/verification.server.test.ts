@@ -45,20 +45,12 @@ describe('getVerificationStatus', () => {
 		const expirationDate = new Date('2024-07-01')
 
 		// Should be valid (expiration is in the future)
-		const status1 = getVerificationStatus(
-			'active',
-			expirationDate,
-			currentDate,
-		)
+		const status1 = getVerificationStatus('active', expirationDate, currentDate)
 		expect(status1.isValid).toBe(true)
 
 		// Test with expiration date in the past
 		const pastExpiration = new Date('2024-06-01')
-		const status2 = getVerificationStatus(
-			'active',
-			pastExpiration,
-			currentDate,
-		)
+		const status2 = getVerificationStatus('active', pastExpiration, currentDate)
 		expect(status2.isValid).toBe(false)
 		expect(status2.reason).toBe('ID has expired')
 
@@ -72,11 +64,7 @@ describe('getVerificationStatus', () => {
 		const currentDate = new Date('2024-07-01T12:00:00Z')
 		const expirationDate = new Date('2024-07-01T12:00:00Z')
 
-		const status = getVerificationStatus(
-			'active',
-			expirationDate,
-			currentDate,
-		)
+		const status = getVerificationStatus('active', expirationDate, currentDate)
 
 		// Should be valid (current date <= expiration date)
 		expect(status.isValid).toBe(true)
@@ -86,11 +74,7 @@ describe('getVerificationStatus', () => {
 		const currentDate = new Date('2024-07-02T12:00:00Z')
 		const expirationDate = new Date('2024-07-01T12:00:00Z')
 
-		const status = getVerificationStatus(
-			'active',
-			expirationDate,
-			currentDate,
-		)
+		const status = getVerificationStatus('active', expirationDate, currentDate)
 
 		expect(status.isValid).toBe(false)
 		expect(status.reason).toBe('ID has expired')

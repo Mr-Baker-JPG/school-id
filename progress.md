@@ -609,8 +609,10 @@ This document tracks the implementation progress of features defined in
 
 **Implementation:**
 
-- Created public verification route at `/verify/$employeeId` that is accessible without authentication
-- Implemented verification status utility (`app/utils/verification.server.ts`) that determines ID validity based on:
+- Created public verification route at `/verify/$employeeId` that is accessible
+  without authentication
+- Implemented verification status utility (`app/utils/verification.server.ts`)
+  that determines ID validity based on:
   - Employee status must be 'active'
   - Current date must be <= expiration date
 - Created React component that displays:
@@ -628,21 +630,31 @@ This document tracks the implementation progress of features defined in
 
 **Tests:**
 
-- ✅ Verification page is publicly accessible without authentication: Route works without any authentication
-- ✅ Page displays employee name and job title: All employee information displayed correctly
-- ✅ Page shows active/inactive status correctly: Status badges work for both active and inactive employees
+- ✅ Verification page is publicly accessible without authentication: Route
+  works without any authentication
+- ✅ Page displays employee name and job title: All employee information
+  displayed correctly
+- ✅ Page shows active/inactive status correctly: Status badges work for both
+  active and inactive employees
 - ✅ Page displays expiration date: Expiration dates are shown correctly
-- ✅ Page shows valid/invalid badge based on status and expiration: Validity logic works correctly for all scenarios (active+future expiration = valid, inactive = invalid, expired = invalid)
-- ✅ Invalid employee IDs show appropriate error message: 404 error with clear message for non-existent employees
-- ✅ Page includes school branding: Branding configuration is loaded and displayed correctly
+- ✅ Page shows valid/invalid badge based on status and expiration: Validity
+  logic works correctly for all scenarios (active+future expiration = valid,
+  inactive = invalid, expired = invalid)
+- ✅ Invalid employee IDs show appropriate error message: 404 error with clear
+  message for non-existent employees
+- ✅ Page includes school branding: Branding configuration is loaded and
+  displayed correctly
 - ✅ All 8 verification utility unit tests pass
 - ✅ All 9 route unit tests pass
-- ✅ All existing tests continue to pass (except pre-existing failures unrelated to this feature)
+- ✅ All existing tests continue to pass (except pre-existing failures unrelated
+  to this feature)
 
 **Test Files:**
 
-- Created `app/utils/verification.server.test.ts` with comprehensive test coverage for verification status logic
-- Created `app/routes/verify/$employeeId.test.ts` with comprehensive test coverage for the verification route
+- Created `app/utils/verification.server.test.ts` with comprehensive test
+  coverage for verification status logic
+- Created `app/routes/verify/$employeeId.test.ts` with comprehensive test
+  coverage for the verification route
 
 **Files Created:**
 

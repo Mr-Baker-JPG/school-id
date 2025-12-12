@@ -52,7 +52,6 @@ async function createEmployeeId(data: {
 }
 
 describe('verify/$employeeId route', () => {
-
 	test('Verification page is publicly accessible without authentication', async () => {
 		const employee = await createEmployee({
 			fullName: 'John Doe',

@@ -60,9 +60,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 			fullName: employee.fullName,
 			jobTitle: employee.jobTitle,
 			status: employee.status,
-			expirationDate: expirationDate
-				? expirationDate.toISOString()
-				: null,
+			expirationDate: expirationDate ? expirationDate.toISOString() : null,
 			photoUrl: employee.employeeId?.photoUrl ?? null,
 		},
 		verificationStatus,
@@ -95,7 +93,7 @@ export default function VerifyRoute({ loaderData }: Route.ComponentProps) {
 
 				{/* School Name */}
 				<h1 className="text-h2 mb-6">{branding.schoolName}</h1>
-				<h2 className="text-h3 mb-8 text-muted-foreground">
+				<h2 className="text-h3 text-muted-foreground mb-8">
 					Employee Verification
 				</h2>
 
@@ -174,7 +172,7 @@ export default function VerifyRoute({ loaderData }: Route.ComponentProps) {
 					</div>
 
 					{!verificationStatus.isValid && (
-						<div className="mt-4 rounded-lg bg-muted-foreground/10 p-4">
+						<div className="bg-muted-foreground/10 mt-4 rounded-lg p-4">
 							<p className="text-body-sm text-muted-foreground">
 								<strong>Reason:</strong> {verificationStatus.reason}
 							</p>
