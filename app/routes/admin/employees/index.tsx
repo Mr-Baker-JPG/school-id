@@ -3,10 +3,18 @@ import { redirect, Form, Link, useSearchParams, useSubmit } from 'react-router'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Field } from '#app/components/forms.tsx'
 import { Spacer } from '#app/components/spacer.tsx'
+import { Icon } from '#app/components/ui/icon.tsx'
+import { StatusButton } from '#app/components/ui/status-button.tsx'
 import { prisma } from '#app/utils/db.server.ts'
-import { useDebounce, useDelayedIsPending } from '#app/utils/misc.tsx'
+import { syncEmployeesFromFacts } from '#app/utils/employee-sync.server.ts'
+import {
+	cn,
+	useDebounce,
+	useDelayedIsPending,
+	useIsPending,
+} from '#app/utils/misc.tsx'
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
-import { cn } from '#app/utils/misc.tsx'
+import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { type Route } from './+types/index.ts'
 
 export const handle: SEOHandle = {
@@ -75,6 +83,50 @@ export async function loader({ request }: Route.LoaderArgs) {
 	}
 }
 
+export async function action({ request }: Route.ActionArgs) {
+	await requireUserWithRole(request, 'admin')
+	const formData = await request.formData()
+	const intent = formData.get('intent')
+
+	if (intent === 'sync') {
+		const result = await syncEmployeesFromFacts()
+		console.log('result', JSON.stringify(result, null, 2))
+
+		// Preserve search params
+		const searchParams = new URL(request.url).searchParams
+		const redirectUrl = `/admin/employees${
+			searchParams.toString() ? `?${searchParams.toString()}` : ''
+		}`
+
+		if (result.success) {
+			const message =
+				result.created > 0 || result.updated > 0
+					? `Sync completed: ${result.created} created, ${result.updated} updated${
+							result.errors > 0 ? `, ${result.errors} errors` : ''
+						}`
+					: 'Sync completed: No changes needed'
+
+			return redirectWithToast(redirectUrl, {
+				type: 'success',
+				title: 'Sync Successful',
+				description: message,
+			})
+		} else {
+			return redirectWithToast(redirectUrl, {
+				type: 'error',
+				title: 'Sync Failed',
+				description: result.errorMessage || 'An error occurred during sync',
+			})
+		}
+	}
+
+	const searchParams = new URL(request.url).searchParams
+	const redirectUrl = `/admin/employees${
+		searchParams.toString() ? `?${searchParams.toString()}` : ''
+	}`
+	return redirect(redirectUrl)
+}
+
 export default function AdminEmployeesRoute({
 	loaderData,
 }: Route.ComponentProps) {
@@ -88,13 +140,29 @@ export default function AdminEmployeesRoute({
 		formAction: '/admin/employees',
 	})
 
+	const syncPending = useIsPending({ formAction: '/admin/employees' })
+
 	const handleFormChange = useDebounce(async (form: HTMLFormElement) => {
 		await submit(form)
 	}, 400)
 
 	return (
 		<div className="container">
-			<h1 className="text-h1">Employee Management</h1>
+			<div className="flex items-center justify-between">
+				<h1 className="text-h1">Employee Management</h1>
+				<Form method="post">
+					<input type="hidden" name="intent" value="sync" />
+					<StatusButton
+						type="submit"
+						variant="outline"
+						status={syncPending ? 'pending' : 'idle'}
+						disabled={syncPending}
+					>
+						<Icon name="update" />
+						Sync from FACTS
+					</StatusButton>
+				</Form>
+			</div>
 			<Spacer size="2xs" />
 			<Form
 				method="get"
