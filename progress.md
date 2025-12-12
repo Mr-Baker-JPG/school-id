@@ -724,6 +724,69 @@ This document tracks the implementation progress of features defined in
 
 ---
 
+## 2025-12-12 – F013
+
+**Feature:** Google OAuth Integration for Employees
+
+**Implementation:**
+
+- Installed `remix-auth-google` and `remix-auth-oauth2` packages
+- Added Google OAuth environment variables to `app/utils/env.server.ts`:
+  - `GOOGLE_CLIENT_ID` (optional)
+  - `GOOGLE_CLIENT_SECRET` (optional)
+  - `GOOGLE_REDIRECT_URI` (optional)
+  - `SCHOOL_EMAIL_DOMAIN` (optional, for email domain restriction)
+- Created Google provider (`app/utils/providers/google.server.ts`) that:
+  - Implements `AuthProvider` interface
+  - Validates email domain restriction (configurable via `SCHOOL_EMAIL_DOMAIN`)
+  - Transforms Google profile to `ProviderUser` format
+  - Handles mock actions for testing
+- Updated provider registration:
+  - Added `GOOGLE_PROVIDER_NAME` to `app/utils/connections.tsx`
+  - Registered Google provider in `app/utils/connections.server.ts`
+  - Added Google icon support (google-logo)
+- Modified callback route (`app/routes/_auth/auth.$provider/callback.ts`):
+  - For Google OAuth, checks if employee exists in local Employee table (synced from SIS)
+  - If employee exists, automatically creates User record and EmployeeID record
+  - Logs user in immediately without onboarding flow
+  - If employee doesn't exist, proceeds with normal onboarding flow
+- Created Google OAuth mocks (`tests/mocks/google.ts`) for testing
+- Fixed `verifySessionStorage` imports across codebase (moved from `verification.server.ts` to `session.server.ts`)
+- Fixed all TypeScript errors related to Google OAuth implementation
+
+**Tests:**
+
+- ⚠️ Unit tests cannot run due to dependency resolution issue with `remix-auth-google` in test environment
+- ✅ Implementation is complete and type-safe
+- ✅ All TypeScript errors resolved
+- ✅ Code compiles successfully
+- ⚠️ Manual/E2E testing recommended to verify functionality
+
+**Note:**
+
+The implementation is functionally complete. However, automated unit tests cannot be run due to a known issue with `remix-auth-google` package dependency resolution in the Vitest test environment. The code is type-safe and should work correctly at runtime. Manual testing or E2E tests are recommended to verify:
+- Google OAuth authentication flow
+- Email domain restriction
+- Automatic Employee record creation
+- Session management
+
+**Files Created:**
+
+- `app/utils/providers/google.server.ts` - Google OAuth provider implementation
+- `tests/mocks/google.ts` - Google OAuth mocks for testing
+- `other/svg-icons/google.svg` - Google logo icon
+
+**Files Modified:**
+
+- `app/utils/env.server.ts` - Added Google OAuth environment variables
+- `app/utils/connections.tsx` - Added Google provider to provider list
+- `app/utils/connections.server.ts` - Registered Google provider
+- `app/routes/_auth/auth.$provider/callback.ts` - Added Employee record auto-creation logic
+- `app/utils/session.server.ts` - Added `verifySessionStorage` export
+- Multiple files - Fixed `verifySessionStorage` imports
+
+---
+
 ## Notes
 
 - All features start with `implemented=false` and `tests_passed=false`

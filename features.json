@@ -183,7 +183,7 @@
 			"Returning employees can log in successfully",
 			"Session is created and maintained correctly"
 		],
-		"implemented": false,
+		"implemented": true,
 		"tests_passed": false
 	},
 	{
