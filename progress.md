@@ -669,6 +669,59 @@ This document tracks the implementation progress of features defined in
 
 ---
 
+## 2025-12-12 – F012
+
+**Feature:** Verification Status Logic
+
+**Implementation:**
+
+- Verification status logic was implemented as part of F011 in
+  `app/utils/verification.server.ts`
+- Created `getVerificationStatus()` function that determines ID validity based on:
+  - Employee status must be 'active'
+  - Current date must be <= expiration date
+- Function returns `VerificationStatus` object with `isValid` boolean and `reason`
+  string
+- Logic is used by the public verification route (`/verify/$employeeId`)
+- Handles edge cases:
+  - Inactive employees return invalid status
+  - Expired IDs (past expiration date) return invalid status
+  - Missing expiration dates return invalid status
+  - Missing employees are handled at route level with 404 response
+
+**Tests:**
+
+- ✅ Valid status returned for active employee with future expiration: Function
+  correctly returns valid status for active employees with future expiration dates
+- ✅ Invalid status returned for inactive employee: Function correctly returns
+  invalid status with reason "Employee is not active"
+- ✅ Invalid status returned for expired ID (past expiration date): Function
+  correctly returns invalid status with reason "ID has expired" for past dates
+- ✅ Invalid status returned for employee missing from SIS: Route returns 404
+  "Employee not found" for non-existent employees (handled at route level)
+- ✅ Status calculation uses current date correctly: Function correctly uses
+  current date parameter for expiration comparison, including edge cases (same
+  date, one day before, etc.)
+- ✅ All 8 verification utility unit tests pass
+- ✅ All 9 verification route tests pass (including missing employee handling)
+- ✅ All existing tests continue to pass
+
+**Test Files:**
+
+- `app/utils/verification.server.test.ts` - Comprehensive unit tests for
+  verification status logic
+- `app/routes/verify/$employeeId.test.ts` - Route tests including missing
+  employee handling
+
+**Note:**
+
+- This feature was implemented alongside F011 (Public Verification Route) but is
+  tracked separately as it represents the core business logic for ID validation
+- The verification status function is reusable and can be used by other parts of
+  the application that need to check ID validity
+
+---
+
 ## Notes
 
 - All features start with `implemented=false` and `tests_passed=false`

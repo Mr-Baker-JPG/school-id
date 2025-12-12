@@ -168,8 +168,8 @@
 			"Invalid status returned for employee missing from SIS",
 			"Status calculation uses current date correctly"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F013",
