@@ -938,9 +938,11 @@ Stack template. This feature verification confirms that:
 
 **Implementation:**
 
-- Photo storage integration was already implemented in `app/utils/storage.server.ts` using
-  S3-compatible storage (Tigris Object Storage)
-- Created comprehensive test suite (`app/utils/storage.server.test.ts`) that verifies:
+- Photo storage integration was already implemented in
+  `app/utils/storage.server.ts` using S3-compatible storage (Tigris Object
+  Storage)
+- Created comprehensive test suite (`app/utils/storage.server.test.ts`) that
+  verifies:
   - Photos are uploaded to configured storage backend (S3-compatible)
   - Photos are stored with unique, secure keys (format:
     `employees/{employeeId}/photos/{timestamp}-{fileId}.{ext}`)
@@ -953,7 +955,8 @@ Stack template. This feature verification confirms that:
     - Storage full errors (507)
 - Storage implementation includes:
   - `uploadEmployeePhoto()` function for uploading employee photos
-  - `getSignedGetRequestInfo()` function for generating signed URLs for photo retrieval
+  - `getSignedGetRequestInfo()` function for generating signed URLs for photo
+    retrieval
   - AWS4-HMAC-SHA256 signature generation for secure access
   - Support for both File and FileUpload objects
   - Automatic file extension preservation in object keys
@@ -961,14 +964,14 @@ Stack template. This feature verification confirms that:
 
 **Tests:**
 
-- ✅ Photos are uploaded to configured storage backend: Photos successfully uploaded
-  to S3-compatible storage via MSW mocks
+- ✅ Photos are uploaded to configured storage backend: Photos successfully
+  uploaded to S3-compatible storage via MSW mocks
 - ✅ Photos are stored with unique, secure keys: Keys follow secure pattern with
   timestamps and unique IDs, ensuring no collisions
 - ✅ Photo URLs are generated and stored in database: Signed URLs are generated
   correctly with proper authentication headers
-- ✅ Photos can be retrieved by URL: Photos can be fetched using signed URLs with
-  correct content type and length
+- ✅ Photos can be retrieved by URL: Photos can be fetched using signed URLs
+  with correct content type and length
 - ✅ Storage handles errors gracefully: All error scenarios (network, server,
   permission, storage full) are handled with proper error throwing and logging
 - ✅ Storage works with FileUpload objects: FileUpload stream handling works
@@ -977,8 +980,8 @@ Stack template. This feature verification confirms that:
   preserved in object keys
 - ✅ Storage generates unique keys: Multiple uploads for same employee generate
   unique keys
-- ✅ Signed URLs include proper authentication: Headers include Authorization and
-  X-Amz-Date for secure access
+- ✅ Signed URLs include proper authentication: Headers include Authorization
+  and X-Amz-Date for secure access
 - ✅ All 13 unit tests pass
 - ✅ All existing tests continue to pass (except pre-existing failures unrelated
   to this feature)
@@ -992,12 +995,80 @@ Stack template. This feature verification confirms that:
 
 **Note:**
 
-- Photo storage functionality was already implemented as part of F006 (Admin Photo
-  Upload)
-- This feature adds comprehensive test coverage to verify all storage requirements
-  are met
+- Photo storage functionality was already implemented as part of F006 (Admin
+  Photo Upload)
+- This feature adds comprehensive test coverage to verify all storage
+  requirements are met
 - Storage uses S3-compatible API with AWS signature v4 authentication
 - Photos are stored with unique keys to prevent collisions and ensure security
+
+---
+
+## 2025-12-12 – F017
+
+**Feature:** Admin Employee Detail View
+
+**Implementation:**
+
+- Created admin employee detail route at `/admin/employees/$employeeId` that displays
+  comprehensive employee information
+- Implemented loader that:
+  - Requires admin role using `requireUserWithRole(request, 'admin')`
+  - Fetches employee with all related data (SIS sync status, photo, expiration date)
+  - Automatically creates EmployeeID record if missing (per F015)
+  - Returns 404 for non-existent employees
+- Created React component that displays:
+  - Employee photo (or placeholder if no photo)
+  - Employee information (full name, job title, email, SIS employee ID, status)
+  - SIS sync status (last updated time from `updatedAt` field)
+  - ID card information (expiration date)
+  - Action buttons/links:
+    - Upload/Change Photo (links to `/admin/employees/$employeeId/photo`)
+    - Update Expiration Date (links to `/admin/employees/$employeeId/expiration`)
+    - Download ID Card (links to `/admin/employees/$employeeId/id/download`)
+- Added error boundary with appropriate error handling for 403 and 404 errors
+- Added SEO metadata for the detail page
+- Route follows existing admin route patterns and styling conventions
+
+**Tests:**
+
+- ✅ Admin can view employee detail page: Admin users can successfully access and view
+  employee detail pages
+- ✅ Page displays all employee information: All required fields (name, email, job title,
+  SIS ID, status, last updated time) are displayed correctly
+- ✅ Page shows photo upload interface: Photo section displays with link to photo upload
+  page
+- ✅ Page shows expiration date editing: Expiration date is displayed with link to
+  expiration management page
+- ✅ Page includes download/view ID button: Download ID card button is present and
+  functional
+- ✅ Non-admin users cannot access employee detail pages: Non-admin users receive 403
+  error when attempting to access
+- ✅ Returns 404 for non-existent employee: Proper error handling for missing employees
+- ✅ Creates EmployeeID record if missing: Route automatically creates EmployeeID record
+  with default expiration date when missing (per F015)
+- ✅ Shows SIS sync status: Last updated time is displayed correctly
+- ✅ Shows employee with photo: Photo is displayed correctly when present
+- ✅ Shows employee without photo: Placeholder is shown when photo is missing
+- ✅ All 11 unit tests pass
+- ✅ All existing tests continue to pass (except pre-existing failures unrelated to this
+  feature)
+
+**Test File:**
+
+- Created `app/routes/admin/employees/$employeeId.test.ts` with comprehensive test
+  coverage
+- Tests cover authentication, authorization, data display, SIS sync status, photo
+  handling, and error handling
+
+**Files Created:**
+
+- `app/routes/admin/employees/$employeeId.tsx` - Admin employee detail view route
+- `app/routes/admin/employees/$employeeId.test.ts` - Employee detail view tests
+
+**Routes Created:**
+
+- `/admin/employees/$employeeId` - Admin employee detail page
 
 ---
 
