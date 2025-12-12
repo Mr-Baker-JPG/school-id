@@ -5,6 +5,7 @@ import { type Strategy } from 'remix-auth/strategy'
 import { GoogleStrategy } from 'remix-auth-google'
 import { z } from 'zod'
 import { cache, cachified } from '../cache.server.ts'
+import { validateEmailDomain } from '../email-domain-validation.server.ts'
 import { type Timings } from '../timing.server.ts'
 import { MOCK_CODE_GOOGLE_HEADER, MOCK_CODE_GOOGLE } from './constants.ts'
 import { type AuthProvider, type ProviderUser } from './provider.ts'
@@ -24,28 +25,6 @@ const GoogleUserParseResult = z
 const shouldMock =
 	process.env.GOOGLE_CLIENT_ID?.startsWith('MOCK_') ||
 	process.env.NODE_ENV === 'test'
-
-/**
- * Get the allowed school email domain from environment variables
- */
-function getAllowedEmailDomain(): string | null {
-	return process.env.SCHOOL_EMAIL_DOMAIN || null
-}
-
-/**
- * Validate that the email belongs to the allowed school domain
- */
-function validateEmailDomain(email: string): boolean {
-	const allowedDomain = getAllowedEmailDomain()
-	if (!allowedDomain) {
-		// If no domain restriction is configured, allow all emails
-		// This is useful for development/testing
-		return true
-	}
-
-	const emailDomain = email.toLowerCase().split('@')[1]
-	return emailDomain === allowedDomain.toLowerCase()
-}
 
 export class GoogleProvider implements AuthProvider {
 	getAuthStrategy(): Strategy<ProviderUser, any> | null {
