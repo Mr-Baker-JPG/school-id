@@ -38,6 +38,13 @@ need a simple, centralized way to manage and validate employee IDs.
 
 ---
 
+## Documentation
+
+- **FACTS API Documentation:** See `docs/FACTS.md` for detailed FACTS SIS API
+  integration documentation.
+
+---
+
 ## Non-negotiable Workflow
 
 **MUST follow rules in `.cursor/rules/` directory, especially

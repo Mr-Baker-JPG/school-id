@@ -21,6 +21,11 @@ At the start of EVERY session, the agent MUST read:
 - `package.json` — At least the `"name"` and `"version"` fields (for awareness;
   NOT for arbitrary changes)
 
+**Additional Documentation:**
+
+- `docs/FACTS.md` — FACTS SIS API integration documentation (reference when
+  working with FACTS API integration)
+
 If `versions.json` does NOT exist:
 
 - The agent MUST operate in **legacy flat mode**, treating `features.json` as a
