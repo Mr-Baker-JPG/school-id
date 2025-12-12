@@ -254,8 +254,8 @@
 			"Branding configuration can be updated",
 			"Default branding is used if not configured"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F019",

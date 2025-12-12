@@ -151,6 +151,27 @@ describe('generateEmployeeIDPDF', () => {
 		expect(logoFetchCall).toBeDefined()
 	})
 
+	it('uses branding colors (primaryColor and secondaryColor) in PDF', async () => {
+		const customBranding = {
+			schoolName: 'Custom School',
+			logoUrl: 'https://example.com/logo.png',
+			primaryColor: '#ff0000',
+			secondaryColor: '#00ff00',
+		}
+		vi.mocked(getBrandingConfig).mockReturnValue(customBranding)
+
+		const pdfBuffer = await generateEmployeeIDPDF(mockEmployee, mockRequest)
+
+		expect(pdfBuffer).toBeInstanceOf(Buffer)
+		// Verify branding config with custom colors was used
+		expect(getBrandingConfig).toHaveBeenCalled()
+		// PDF should be generated successfully with custom colors
+		expect(pdfBuffer.toString('utf8', 0, 4)).toBe('%PDF')
+		// Verify that the PDF was generated (colors are applied in the component styles)
+		// Note: We can't easily verify exact color values in binary PDF without parsing,
+		// but we verify that branding config with colors was used
+	})
+
 	it('handles missing photo gracefully', async () => {
 		const employeeWithoutPhoto = {
 			...mockEmployee,

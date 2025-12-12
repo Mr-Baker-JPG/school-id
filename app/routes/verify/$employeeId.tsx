@@ -77,7 +77,12 @@ export default function VerifyRoute({ loaderData }: Route.ComponentProps) {
 	return (
 		<div className="container mt-36 mb-48 flex flex-col items-center justify-center">
 			<Spacer size="4xs" />
-			<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
+			<div
+				className="container flex flex-col items-center rounded-3xl p-12"
+				style={{
+					backgroundColor: branding.secondaryColor,
+				}}
+			>
 				{/* School Logo */}
 				{branding.logoUrl && (
 					<div className="mb-6">
@@ -92,8 +97,21 @@ export default function VerifyRoute({ loaderData }: Route.ComponentProps) {
 				)}
 
 				{/* School Name */}
-				<h1 className="text-h2 mb-6">{branding.schoolName}</h1>
-				<h2 className="text-h3 text-muted-foreground mb-8">
+				<h1
+					className="text-h2 mb-6"
+					style={{
+						color: branding.primaryColor,
+					}}
+				>
+					{branding.schoolName}
+				</h1>
+				<h2
+					className="text-h3 mb-8"
+					style={{
+						color: branding.primaryColor,
+						opacity: 0.7,
+					}}
+				>
 					Employee Verification
 				</h2>
 
@@ -136,15 +154,43 @@ export default function VerifyRoute({ loaderData }: Route.ComponentProps) {
 				{/* Employee Information */}
 				<div className="flex w-full max-w-md flex-col gap-4">
 					<div className="flex flex-col gap-2">
-						<label className="text-body-xs text-muted-foreground">Name</label>
-						<p className="text-body-lg">{employee.fullName}</p>
+						<label
+							className="text-body-xs"
+							style={{
+								color: branding.primaryColor,
+								opacity: 0.7,
+							}}
+						>
+							Name
+						</label>
+						<p
+							className="text-body-lg"
+							style={{
+								color: branding.primaryColor,
+							}}
+						>
+							{employee.fullName}
+						</p>
 					</div>
 
 					<div className="flex flex-col gap-2">
-						<label className="text-body-xs text-muted-foreground">
+						<label
+							className="text-body-xs"
+							style={{
+								color: branding.primaryColor,
+								opacity: 0.7,
+							}}
+						>
 							Job Title
 						</label>
-						<p className="text-body-lg">{employee.jobTitle}</p>
+						<p
+							className="text-body-lg"
+							style={{
+								color: branding.primaryColor,
+							}}
+						>
+							{employee.jobTitle}
+						</p>
 					</div>
 
 					<div className="flex flex-col gap-2">
@@ -165,15 +211,40 @@ export default function VerifyRoute({ loaderData }: Route.ComponentProps) {
 					</div>
 
 					<div className="flex flex-col gap-2">
-						<label className="text-body-xs text-muted-foreground">
+						<label
+							className="text-body-xs"
+							style={{
+								color: branding.primaryColor,
+								opacity: 0.7,
+							}}
+						>
 							Expiration Date
 						</label>
-						<p className="text-body-lg">{expirationDate}</p>
+						<p
+							className="text-body-lg"
+							style={{
+								color: branding.primaryColor,
+							}}
+						>
+							{expirationDate}
+						</p>
 					</div>
 
 					{!verificationStatus.isValid && (
-						<div className="bg-muted-foreground/10 mt-4 rounded-lg p-4">
-							<p className="text-body-sm text-muted-foreground">
+						<div
+							className="mt-4 rounded-lg p-4"
+							style={{
+								backgroundColor: branding.primaryColor,
+								opacity: 0.1,
+							}}
+						>
+							<p
+								className="text-body-sm"
+								style={{
+									color: branding.primaryColor,
+									opacity: 0.8,
+								}}
+							>
 								<strong>Reason:</strong> {verificationStatus.reason}
 							</p>
 						</div>

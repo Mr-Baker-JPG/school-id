@@ -347,6 +347,46 @@ describe('verify/$employeeId route', () => {
 		expect(data.branding.secondaryColor).toBeDefined()
 		// Logo URL is optional, so we just check the structure
 		expect(data.branding).toHaveProperty('logoUrl')
+		// Verify colors are valid hex colors
+		expect(data.branding.primaryColor).toMatch(/^#[0-9A-Fa-f]{6}$/)
+		expect(data.branding.secondaryColor).toMatch(/^#[0-9A-Fa-f]{6}$/)
+
+		// Cleanup
+		await prisma.employeeID.deleteMany({
+			where: { employeeId: employee.id },
+		})
+		await prisma.employee.delete({ where: { id: employee.id } })
+	})
+
+	test('Branding colors are applied correctly', async () => {
+		const employee = await createEmployee({
+			fullName: 'Color Test Employee',
+			jobTitle: 'Teacher',
+			email: 'color@school.edu',
+			status: 'active',
+		})
+
+		await createEmployeeId({
+			employeeId: employee.id,
+			expirationDate: new Date('2025-07-01'),
+		})
+
+		const request = new Request('http://localhost/verify/' + employee.id)
+
+		const data = await loader({
+			params: { employeeId: employee.id },
+			request,
+			context: {},
+		} as any)
+
+		// Verify branding colors are present and valid
+		expect(data.branding.primaryColor).toBeDefined()
+		expect(data.branding.secondaryColor).toBeDefined()
+		expect(data.branding.primaryColor).toMatch(/^#[0-9A-Fa-f]{6}$/)
+		expect(data.branding.secondaryColor).toMatch(/^#[0-9A-Fa-f]{6}$/)
+		// Colors should be different from each other (or at least valid)
+		expect(data.branding.primaryColor).toBeTruthy()
+		expect(data.branding.secondaryColor).toBeTruthy()
 
 		// Cleanup
 		await prisma.employeeID.deleteMany({

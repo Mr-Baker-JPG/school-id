@@ -152,7 +152,9 @@ export default function AdminEmployeeDetailRoute({
 						</div>
 
 						<div className="flex flex-col gap-2">
-							<label className="text-body-xs text-muted-foreground">Email</label>
+							<label className="text-body-xs text-muted-foreground">
+								Email
+							</label>
 							<p className="text-body-lg">{employee.email}</p>
 						</div>
 
@@ -164,7 +166,9 @@ export default function AdminEmployeeDetailRoute({
 						</div>
 
 						<div className="flex flex-col gap-2">
-							<label className="text-body-xs text-muted-foreground">Status</label>
+							<label className="text-body-xs text-muted-foreground">
+								Status
+							</label>
 							<span
 								className={cn(
 									'inline-flex w-fit items-center rounded-full px-3 py-1 text-sm font-medium',

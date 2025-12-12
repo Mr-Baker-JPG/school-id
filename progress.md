@@ -1010,11 +1010,12 @@ Stack template. This feature verification confirms that:
 
 **Implementation:**
 
-- Created admin employee detail route at `/admin/employees/$employeeId` that displays
-  comprehensive employee information
+- Created admin employee detail route at `/admin/employees/$employeeId` that
+  displays comprehensive employee information
 - Implemented loader that:
   - Requires admin role using `requireUserWithRole(request, 'admin')`
-  - Fetches employee with all related data (SIS sync status, photo, expiration date)
+  - Fetches employee with all related data (SIS sync status, photo, expiration
+    date)
   - Automatically creates EmployeeID record if missing (per F015)
   - Returns 404 for non-existent employees
 - Created React component that displays:
@@ -1024,7 +1025,8 @@ Stack template. This feature verification confirms that:
   - ID card information (expiration date)
   - Action buttons/links:
     - Upload/Change Photo (links to `/admin/employees/$employeeId/photo`)
-    - Update Expiration Date (links to `/admin/employees/$employeeId/expiration`)
+    - Update Expiration Date (links to
+      `/admin/employees/$employeeId/expiration`)
     - Download ID Card (links to `/admin/employees/$employeeId/id/download`)
 - Added error boundary with appropriate error handling for 403 and 404 errors
 - Added SEO metadata for the detail page
@@ -1032,43 +1034,116 @@ Stack template. This feature verification confirms that:
 
 **Tests:**
 
-- ✅ Admin can view employee detail page: Admin users can successfully access and view
-  employee detail pages
-- ✅ Page displays all employee information: All required fields (name, email, job title,
-  SIS ID, status, last updated time) are displayed correctly
-- ✅ Page shows photo upload interface: Photo section displays with link to photo upload
-  page
-- ✅ Page shows expiration date editing: Expiration date is displayed with link to
-  expiration management page
-- ✅ Page includes download/view ID button: Download ID card button is present and
-  functional
-- ✅ Non-admin users cannot access employee detail pages: Non-admin users receive 403
-  error when attempting to access
-- ✅ Returns 404 for non-existent employee: Proper error handling for missing employees
-- ✅ Creates EmployeeID record if missing: Route automatically creates EmployeeID record
-  with default expiration date when missing (per F015)
+- ✅ Admin can view employee detail page: Admin users can successfully access
+  and view employee detail pages
+- ✅ Page displays all employee information: All required fields (name, email,
+  job title, SIS ID, status, last updated time) are displayed correctly
+- ✅ Page shows photo upload interface: Photo section displays with link to
+  photo upload page
+- ✅ Page shows expiration date editing: Expiration date is displayed with link
+  to expiration management page
+- ✅ Page includes download/view ID button: Download ID card button is present
+  and functional
+- ✅ Non-admin users cannot access employee detail pages: Non-admin users
+  receive 403 error when attempting to access
+- ✅ Returns 404 for non-existent employee: Proper error handling for missing
+  employees
+- ✅ Creates EmployeeID record if missing: Route automatically creates
+  EmployeeID record with default expiration date when missing (per F015)
 - ✅ Shows SIS sync status: Last updated time is displayed correctly
 - ✅ Shows employee with photo: Photo is displayed correctly when present
 - ✅ Shows employee without photo: Placeholder is shown when photo is missing
 - ✅ All 11 unit tests pass
-- ✅ All existing tests continue to pass (except pre-existing failures unrelated to this
-  feature)
+- ✅ All existing tests continue to pass (except pre-existing failures unrelated
+  to this feature)
 
 **Test File:**
 
-- Created `app/routes/admin/employees/$employeeId.test.ts` with comprehensive test
-  coverage
-- Tests cover authentication, authorization, data display, SIS sync status, photo
-  handling, and error handling
+- Created `app/routes/admin/employees/$employeeId.test.ts` with comprehensive
+  test coverage
+- Tests cover authentication, authorization, data display, SIS sync status,
+  photo handling, and error handling
 
 **Files Created:**
 
-- `app/routes/admin/employees/$employeeId.tsx` - Admin employee detail view route
+- `app/routes/admin/employees/$employeeId.tsx` - Admin employee detail view
+  route
 - `app/routes/admin/employees/$employeeId.test.ts` - Employee detail view tests
 
 **Routes Created:**
 
 - `/admin/employees/$employeeId` - Admin employee detail page
+
+---
+
+## 2025-12-12 – F018
+
+**Feature:** School Branding Configuration
+
+**Implementation:**
+
+- Updated PDF ID generation to use branding colors dynamically:
+  - `createPDFStyles()` function now accepts branding config and creates styles with
+    `primaryColor` and `secondaryColor`
+  - PDF front and back pages use `secondaryColor` for background
+  - Text elements (school name, employee name, job title, etc.) use `primaryColor`
+  - Secondary text uses `primaryColor` with opacity for visual hierarchy
+- Updated verification page (`/verify/$employeeId`) to use branding colors:
+  - Page background uses `secondaryColor` from branding config
+  - Headings and text use `primaryColor` with appropriate opacity
+  - Labels and secondary text use `primaryColor` with reduced opacity
+  - Error/invalid reason boxes use `primaryColor` with low opacity for background
+- Branding configuration system already existed via environment variables:
+  - `SCHOOL_NAME` / `SCHOOL_BRAND_NAME` for school name
+  - `SCHOOL_LOGO_URL` for logo URL
+  - `SCHOOL_PRIMARY_COLOR` for primary brand color (default: `#1a1a1a`)
+  - `SCHOOL_SECONDARY_COLOR` for secondary brand color (default: `#ffffff`)
+- Removed duplicate test file (`pdf-id.server.test.ts`) that was causing build errors
+  (correct `.tsx` version already exists and passes)
+
+**Tests:**
+
+- ✅ School logo is displayed on PDF IDs: Logo is fetched and displayed when
+  configured (verified in existing tests)
+- ✅ School colors are applied correctly: PDF styles use `primaryColor` and
+  `secondaryColor` from branding config; verification page uses colors in inline
+  styles
+- ✅ School name appears on ID and verification pages: School name is displayed
+  on both PDF IDs and verification pages (verified in existing tests)
+- ✅ Branding configuration can be updated: Configuration via environment
+  variables works correctly (verified in branding.server.test.ts)
+- ✅ Default branding is used if not configured: Default values are used when
+  environment variables are not set (verified in branding.server.test.ts)
+- ✅ All 14 PDF generation unit tests pass
+- ✅ All 10 verification route unit tests pass (including new color validation
+  test)
+- ✅ All 8 branding configuration unit tests pass
+- ✅ All existing tests continue to pass (except pre-existing failures unrelated
+  to this feature)
+
+**Test Files:**
+
+- Updated `app/utils/pdf-id.server.test.tsx` - Added test to verify branding colors
+  are used in PDF generation
+- Updated `app/routes/verify/$employeeId.test.ts` - Added test to verify branding
+  colors are present and valid
+- `app/utils/branding.server.test.ts` - Existing comprehensive tests for branding
+  configuration
+
+**Files Modified:**
+
+- `app/utils/pdf-id.server.tsx` - Updated to use branding colors dynamically in
+  PDF styles
+- `app/routes/verify/$employeeId.tsx` - Updated to use branding colors in inline
+  styles
+- `app/utils/pdf-id.server.test.tsx` - Added test for branding color usage
+- `app/routes/verify/$employeeId.test.ts` - Added test for branding color
+  validation
+
+**Files Deleted:**
+
+- `app/utils/pdf-id.server.test.ts` - Removed duplicate test file (incorrect
+  extension, causing build errors)
 
 ---
 

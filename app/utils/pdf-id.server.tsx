@@ -104,122 +104,132 @@ async function getSchoolLogoDataURL(logoUrl?: string): Promise<string | null> {
 const ID_WIDTH = 243
 const ID_HEIGHT = 153
 
-// Create styles for the PDF
-const styles = StyleSheet.create({
-	page: {
-		width: ID_WIDTH,
-		height: ID_HEIGHT,
-		padding: 0,
-	},
-	frontPage: {
-		width: ID_WIDTH,
-		height: ID_HEIGHT,
-		backgroundColor: '#ffffff',
-		padding: 12,
-		display: 'flex',
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 12,
-	},
-	backPage: {
-		width: ID_WIDTH,
-		height: ID_HEIGHT,
-		backgroundColor: '#ffffff',
-		padding: 12,
-		display: 'flex',
-		flexDirection: 'column',
-		alignItems: 'center',
-		justifyContent: 'center',
-		gap: 8,
-	},
-	logoContainer: {
-		width: 40,
-		height: 40,
-		display: 'flex',
-		alignItems: 'center',
-		justifyContent: 'center',
-		marginBottom: 4,
-	},
-	logo: {
-		width: 40,
-		height: 40,
-		objectFit: 'contain',
-	},
-	photoContainer: {
-		width: 80,
-		height: 100,
-		display: 'flex',
-		alignItems: 'center',
-		justifyContent: 'center',
-		backgroundColor: '#f0f0f0',
-		borderRadius: 4,
-		overflow: 'hidden',
-	},
-	photo: {
-		width: 80,
-		height: 100,
-		objectFit: 'cover',
-	},
-	photoPlaceholder: {
-		width: 80,
-		height: 100,
-		display: 'flex',
-		alignItems: 'center',
-		justifyContent: 'center',
-		backgroundColor: '#e0e0e0',
-		borderRadius: 4,
-	},
-	infoContainer: {
-		flex: 1,
-		display: 'flex',
-		flexDirection: 'column',
-		gap: 4,
-	},
-	schoolName: {
-		fontSize: 10,
-		fontWeight: 'bold',
-		color: '#1a1a1a',
-		marginBottom: 2,
-	},
-	name: {
-		fontSize: 14,
-		fontWeight: 'bold',
-		color: '#1a1a1a',
-		marginBottom: 2,
-	},
-	jobTitle: {
-		fontSize: 10,
-		color: '#666666',
-		marginBottom: 4,
-	},
-	employeeId: {
-		fontSize: 8,
-		color: '#666666',
-		marginBottom: 2,
-	},
-	expiration: {
-		fontSize: 8,
-		color: '#666666',
-		marginTop: 'auto',
-	},
-	qrCodeContainer: {
-		display: 'flex',
-		alignItems: 'center',
-		justifyContent: 'center',
-		width: 120,
-		height: 120,
-	},
-	qrCode: {
-		width: 120,
-		height: 120,
-	},
-	verificationText: {
-		fontSize: 8,
-		color: '#666666',
-		textAlign: 'center',
-		marginTop: 4,
-	},
-})
+/**
+ * Creates PDF styles with branding colors
+ * Note: React PDF StyleSheet.create doesn't support dynamic values,
+ * so we create styles dynamically based on branding config
+ */
+function createPDFStyles(branding: ReturnType<typeof getBrandingConfig>) {
+	return StyleSheet.create({
+		page: {
+			width: ID_WIDTH,
+			height: ID_HEIGHT,
+			padding: 0,
+		},
+		frontPage: {
+			width: ID_WIDTH,
+			height: ID_HEIGHT,
+			backgroundColor: branding.secondaryColor,
+			padding: 12,
+			display: 'flex',
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 12,
+		},
+		backPage: {
+			width: ID_WIDTH,
+			height: ID_HEIGHT,
+			backgroundColor: branding.secondaryColor,
+			padding: 12,
+			display: 'flex',
+			flexDirection: 'column',
+			alignItems: 'center',
+			justifyContent: 'center',
+			gap: 8,
+		},
+		logoContainer: {
+			width: 40,
+			height: 40,
+			display: 'flex',
+			alignItems: 'center',
+			justifyContent: 'center',
+			marginBottom: 4,
+		},
+		logo: {
+			width: 40,
+			height: 40,
+			objectFit: 'contain',
+		},
+		photoContainer: {
+			width: 80,
+			height: 100,
+			display: 'flex',
+			alignItems: 'center',
+			justifyContent: 'center',
+			backgroundColor: '#f0f0f0',
+			borderRadius: 4,
+			overflow: 'hidden',
+		},
+		photo: {
+			width: 80,
+			height: 100,
+			objectFit: 'cover',
+		},
+		photoPlaceholder: {
+			width: 80,
+			height: 100,
+			display: 'flex',
+			alignItems: 'center',
+			justifyContent: 'center',
+			backgroundColor: '#e0e0e0',
+			borderRadius: 4,
+		},
+		infoContainer: {
+			flex: 1,
+			display: 'flex',
+			flexDirection: 'column',
+			gap: 4,
+		},
+		schoolName: {
+			fontSize: 10,
+			fontWeight: 'bold',
+			color: branding.primaryColor,
+			marginBottom: 2,
+		},
+		name: {
+			fontSize: 14,
+			fontWeight: 'bold',
+			color: branding.primaryColor,
+			marginBottom: 2,
+		},
+		jobTitle: {
+			fontSize: 10,
+			color: branding.primaryColor,
+			opacity: 0.7,
+			marginBottom: 4,
+		},
+		employeeId: {
+			fontSize: 8,
+			color: branding.primaryColor,
+			opacity: 0.7,
+			marginBottom: 2,
+		},
+		expiration: {
+			fontSize: 8,
+			color: branding.primaryColor,
+			opacity: 0.7,
+			marginTop: 'auto',
+		},
+		qrCodeContainer: {
+			display: 'flex',
+			alignItems: 'center',
+			justifyContent: 'center',
+			width: 120,
+			height: 120,
+		},
+		qrCode: {
+			width: 120,
+			height: 120,
+		},
+		verificationText: {
+			fontSize: 8,
+			color: branding.primaryColor,
+			opacity: 0.7,
+			textAlign: 'center',
+			marginTop: 4,
+		},
+	})
+}
 
 /**
  * React PDF component for ID card front
@@ -235,6 +245,7 @@ function IDCardFront({
 	logoDataURL: string | null
 	branding: ReturnType<typeof getBrandingConfig>
 }) {
+	const styles = createPDFStyles(branding)
 	return (
 		<Page size={[ID_WIDTH, ID_HEIGHT]} style={styles.page}>
 			<View style={styles.frontPage}>
@@ -244,7 +255,15 @@ function IDCardFront({
 						<Image src={photoDataURL} style={styles.photo} />
 					) : (
 						<View style={styles.photoPlaceholder}>
-							<Text style={{ fontSize: 8, color: '#999999' }}>No Photo</Text>
+							<Text
+								style={{
+									fontSize: 8,
+									color: branding.primaryColor,
+									opacity: 0.5,
+								}}
+							>
+								No Photo
+							</Text>
 						</View>
 					)}
 				</View>
@@ -279,6 +298,7 @@ function IDCardBack({
 	qrCodeDataURL: string
 	branding: ReturnType<typeof getBrandingConfig>
 }) {
+	const styles = createPDFStyles(branding)
 	return (
 		<Page size={[ID_WIDTH, ID_HEIGHT]} style={styles.page}>
 			<View style={styles.backPage}>
