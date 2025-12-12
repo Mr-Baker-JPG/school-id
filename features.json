@@ -123,8 +123,8 @@
 			"School branding (logo, colors) is correctly applied",
 			"Error handling for missing photo or data works correctly"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F010",

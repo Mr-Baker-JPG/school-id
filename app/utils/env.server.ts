@@ -31,6 +31,13 @@ const schema = z.object({
 	FACTS_SUBSCRIPTION_KEY: z.string().optional(),
 	FACTS_API_KEY: z.string().optional(),
 	FACTS_BASE_URL: z.string().url().optional(),
+
+	// School Branding Configuration (optional)
+	SCHOOL_NAME: z.string().optional(),
+	SCHOOL_BRAND_NAME: z.string().optional(), // Alias for SCHOOL_NAME
+	SCHOOL_LOGO_URL: z.string().url().optional(),
+	SCHOOL_PRIMARY_COLOR: z.string().optional(),
+	SCHOOL_SECONDARY_COLOR: z.string().optional(),
 })
 
 declare global {

@@ -448,6 +448,65 @@ This document tracks the implementation progress of features defined in
 
 ---
 
+## 2025-12-12 – F009
+
+**Feature:** PDF ID Card Generation
+
+**Implementation:**
+
+- Installed `@react-pdf/renderer` for PDF generation
+- Created PDF generation service (`app/utils/pdf-id.server.tsx`) that:
+  - Generates wallet-size ID cards (3.375" x 2.125" = 243 points x 153 points)
+  - Creates front page with employee photo, name, job title, employee ID, expiration date, and school logo
+  - Creates back page with QR code for verification
+  - Handles missing photos gracefully (shows placeholder)
+  - Handles missing logos gracefully (omits logo if not configured)
+  - Fetches employee photos from storage using signed URLs
+  - Fetches school logos from configured URL
+  - Integrates with existing QR code generation service
+- Created branding configuration utility (`app/utils/branding.server.ts`) that:
+  - Reads school branding from environment variables (SCHOOL_NAME, SCHOOL_LOGO_URL, SCHOOL_PRIMARY_COLOR, SCHOOL_SECONDARY_COLOR)
+  - Provides sensible defaults when not configured
+  - Supports SCHOOL_BRAND_NAME as alias for SCHOOL_NAME
+- Added branding environment variables to `app/utils/env.server.ts` schema
+- PDF generation handles errors gracefully:
+  - Missing photos show placeholder
+  - Missing logos are omitted
+  - Photo/logo fetch errors are logged but don't prevent PDF generation
+  - Missing required employee data throws descriptive errors
+
+**Tests:**
+
+- ✅ PDF generates successfully for valid employee: PDF buffer is generated correctly
+- ✅ PDF includes all required fields: All employee data is used in generation (verified via function calls)
+- ✅ PDF includes QR code on back: QR code generation is called and integrated
+- ✅ PDF is wallet-sized and printable: PDF dimensions are set to standard ID card size (243x153 points)
+- ✅ School branding (logo, colors) is correctly applied: Branding config is used and logo is fetched when configured
+- ✅ Error handling for missing photo or data works correctly: Missing photos, logos, and invalid data are handled gracefully
+- ✅ All 13 PDF generation unit tests pass
+- ✅ All 8 branding configuration unit tests pass
+- ✅ All existing tests continue to pass (except pre-existing failures in expiration.test.ts unrelated to this feature)
+
+**Test Files:**
+
+- Created `app/utils/pdf-id.server.test.tsx` with comprehensive test coverage
+- Created `app/utils/branding.server.test.ts` with comprehensive test coverage
+- Tests cover success scenarios, error handling, missing data, and edge cases
+
+**Files Created:**
+
+- `app/utils/pdf-id.server.tsx` - PDF generation service
+- `app/utils/branding.server.ts` - Branding configuration utility
+- `app/utils/pdf-id.server.test.tsx` - PDF generation tests
+- `app/utils/branding.server.test.ts` - Branding configuration tests
+
+**Files Modified:**
+
+- `app/utils/env.server.ts` - Added branding environment variables to schema
+- `package.json` - Added `@react-pdf/renderer` dependency
+
+---
+
 ## Notes
 
 - All features start with `implemented=false` and `tests_passed=false`

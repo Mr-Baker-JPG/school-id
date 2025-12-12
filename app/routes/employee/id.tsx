@@ -68,7 +68,7 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 				<div className="mb-6">
 					{hasPhoto && hasEmployeeId ? (
 						<Img
-							src={employee.employeeId.photoUrl!}
+							src={employee.employeeId?.photoUrl!}
 							alt={employee.fullName}
 							className="size-48 rounded-lg object-cover"
 							width={384}
