@@ -241,6 +241,13 @@ test('Page handles employee without EmployeeID record', async () => {
 		},
 	})
 
+	// Verify EmployeeID doesn't exist before
+	const employeeBefore = await prisma.employee.findUnique({
+		where: { id: employee.id },
+		include: { employeeId: true },
+	})
+	expect(employeeBefore?.employeeId).toBeNull()
+
 	const request = await createRequestWithSession(user.id, '/employee/id')
 
 	const result = await loader({
@@ -250,7 +257,141 @@ test('Page handles employee without EmployeeID record', async () => {
 	} as any)
 
 	expect(result.employee.fullName).toBe('No EmployeeID Employee')
-	expect(result.employee.employeeId).toBeNull()
+	// EmployeeID should now exist (created automatically)
+	expect(result.employee.employeeId).not.toBeNull()
+	expect(result.employee.employeeId?.expirationDate).toBeDefined()
+	expect(result.employee.employeeId?.photoUrl).toBeNull()
+
+	// Verify EmployeeID was created in database
+	const employeeAfter = await prisma.employee.findUnique({
+		where: { id: employee.id },
+		include: { employeeId: true },
+	})
+	expect(employeeAfter?.employeeId).not.toBeNull()
+	expect(employeeAfter?.employeeId?.expirationDate).toBeDefined()
+
+	// Cleanup
+	await prisma.employee.delete({ where: { id: employee.id } })
+	await prisma.user.delete({ where: { id: user.id } })
+})
+
+test('EmployeeID record created when employee first views their ID', async () => {
+	const { user, employee } = await createUserWithEmployee({
+		// Don't create EmployeeID record
+		hasPhoto: undefined,
+		expirationDate: undefined,
+	})
+
+	// Verify EmployeeID doesn't exist before
+	const employeeBefore = await prisma.employee.findUnique({
+		where: { id: employee.id },
+		include: { employeeId: true },
+	})
+	expect(employeeBefore?.employeeId).toBeNull()
+
+	const request = await createRequestWithSession(user.id, '/employee/id')
+
+	const result = await loader({
+		request,
+		params: {},
+		context: {},
+	} as any)
+
+	// Should succeed and create EmployeeID
+	expect(result.employee).toBeDefined()
+	expect(result.employee.id).toBe(employee.id)
+	expect(result.employee.employeeId).not.toBeNull()
+	expect(result.employee.employeeId?.expirationDate).toBeDefined()
+	expect(result.employee.employeeId?.photoUrl).toBeNull()
+
+	// Verify EmployeeID was created in database
+	const employeeAfter = await prisma.employee.findUnique({
+		where: { id: employee.id },
+		include: { employeeId: true },
+	})
+	expect(employeeAfter?.employeeId).not.toBeNull()
+	expect(employeeAfter?.employeeId?.expirationDate).toBeDefined()
+
+	// Cleanup
+	await prisma.employee.delete({ where: { id: employee.id } })
+	await prisma.user.delete({ where: { id: user.id } })
+})
+
+test('Default expiration date set to July 1 when EmployeeID created', async () => {
+	const { user, employee } = await createUserWithEmployee({
+		// Don't create EmployeeID record
+		hasPhoto: undefined,
+		expirationDate: undefined,
+	})
+
+	const request = await createRequestWithSession(user.id, '/employee/id')
+
+	await loader({
+		request,
+		params: {},
+		context: {},
+	} as any)
+
+	// Verify EmployeeID was created with default expiration date
+	const employeeAfter = await prisma.employee.findUnique({
+		where: { id: employee.id },
+		include: { employeeId: true },
+	})
+	expect(employeeAfter?.employeeId).not.toBeNull()
+	
+	const expirationDate = employeeAfter?.employeeId?.expirationDate
+	expect(expirationDate).toBeDefined()
+	
+	// Check that expiration date is July 1 of current year
+	const now = new Date()
+	const expectedYear = now.getFullYear()
+	const expectedDate = new Date(expectedYear, 6, 1) // July 1 (month is 0-indexed)
+	
+	expect(expirationDate?.getFullYear()).toBe(expectedYear)
+	expect(expirationDate?.getMonth()).toBe(6) // July
+	expect(expirationDate?.getDate()).toBe(1)
+
+	// Cleanup
+	await prisma.employee.delete({ where: { id: employee.id } })
+	await prisma.user.delete({ where: { id: user.id } })
+})
+
+test('Subsequent views do not recreate EmployeeID record', async () => {
+	const { user, employee } = await createUserWithEmployee({
+		// Don't create EmployeeID record
+		hasPhoto: undefined,
+		expirationDate: undefined,
+	})
+
+	const request1 = await createRequestWithSession(user.id, '/employee/id')
+	const result1 = await loader({
+		request: request1,
+		params: {},
+		context: {},
+	} as any)
+
+	// Get the EmployeeID ID that was created
+	const employeeAfterFirst = await prisma.employee.findUnique({
+		where: { id: employee.id },
+		include: { employeeId: true },
+	})
+	const employeeIdRecordId = employeeAfterFirst?.employeeId?.id
+	expect(employeeIdRecordId).toBeDefined()
+
+	// View again
+	const request2 = await createRequestWithSession(user.id, '/employee/id')
+	const result2 = await loader({
+		request: request2,
+		params: {},
+		context: {},
+	} as any)
+
+	// Verify same EmployeeID record exists (not recreated)
+	const employeeAfterSecond = await prisma.employee.findUnique({
+		where: { id: employee.id },
+		include: { employeeId: true },
+	})
+	expect(employeeAfterSecond?.employeeId?.id).toBe(employeeIdRecordId)
 
 	// Cleanup
 	await prisma.employee.delete({ where: { id: employee.id } })

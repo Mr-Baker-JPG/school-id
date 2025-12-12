@@ -211,8 +211,8 @@
 			"Subsequent views don't recreate the record",
 			"Admin viewing employee ID triggers creation if missing"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F016",

@@ -827,7 +827,8 @@ complete authentication flow including:
   - `/admin/cache` (loader and action)
   - `/admin/cache/lru.$cacheKey` (loader)
   - `/admin/cache/sqlite.$cacheKey` (loader)
-- Created comprehensive test suite (`app/utils/permissions.server.test.ts`) that verifies:
+- Created comprehensive test suite (`app/utils/permissions.server.test.ts`) that
+  verifies:
   - Admin role is stored and retrieved correctly
   - Non-admin user role is stored and retrieved correctly
   - Admin users can access admin routes
@@ -843,28 +844,91 @@ complete authentication flow including:
 
 **Tests:**
 
-- ✅ Admin role is stored and retrieved correctly: Admin users have 'admin' role stored in database
-- ✅ Non-admin user role is stored and retrieved correctly: Regular users have 'user' role stored in database
-- ✅ Admin users can access admin routes: `requireUserWithRole()` allows admin users to access protected routes
-- ✅ Non-admin users are denied access to admin routes: `requireUserWithRole()` throws 403 error for non-admin users
-- ✅ Admin flag/role is stored and retrieved correctly: Roles are properly stored and retrieved from database
-- ✅ Permission checks work in route loaders/actions: All admin routes use `requireUserWithRole()` for protection
-- ✅ Admin users can perform admin actions: Verified through existing route tests (upload photos, manage IDs, etc.)
+- ✅ Admin role is stored and retrieved correctly: Admin users have 'admin' role
+  stored in database
+- ✅ Non-admin user role is stored and retrieved correctly: Regular users have
+  'user' role stored in database
+- ✅ Admin users can access admin routes: `requireUserWithRole()` allows admin
+  users to access protected routes
+- ✅ Non-admin users are denied access to admin routes: `requireUserWithRole()`
+  throws 403 error for non-admin users
+- ✅ Admin flag/role is stored and retrieved correctly: Roles are properly
+  stored and retrieved from database
+- ✅ Permission checks work in route loaders/actions: All admin routes use
+  `requireUserWithRole()` for protection
+- ✅ Admin users can perform admin actions: Verified through existing route
+  tests (upload photos, manage IDs, etc.)
 - ✅ All 8 unit tests pass
-- ✅ All existing tests continue to pass (except pre-existing failures unrelated to this feature)
+- ✅ All existing tests continue to pass (except pre-existing failures unrelated
+  to this feature)
 
 **Test File:**
 
-- Created `app/utils/permissions.server.test.ts` with comprehensive test coverage
+- Created `app/utils/permissions.server.test.ts` with comprehensive test
+  coverage
 - Tests cover role storage, retrieval, permission checks, and access control
 
 **Note:**
 
-The admin role management system was already implemented as part of the Epic Stack template. This feature verification confirms that:
+The admin role management system was already implemented as part of the Epic
+Stack template. This feature verification confirms that:
+
 - All admin routes are properly protected
 - Role-based access control works correctly
 - Admin users can perform all required admin actions
 - Non-admin users are properly denied access to admin routes
+
+---
+
+## 2025-12-12 – F015
+
+**Feature:** Employee ID Creation on First View
+
+**Implementation:**
+
+- Updated employee ID view route (`/employee/id`) loader to automatically create
+  EmployeeID record if it doesn't exist when an employee first views their ID
+- EmployeeID record creation includes:
+  - Default expiration date set to July 1 of current school year (using
+    `getDefaultExpirationDate()` utility)
+  - Photo URL set to null (can be uploaded later by admin)
+- Implementation ensures:
+  - EmployeeID is created only if missing (doesn't recreate on subsequent views)
+  - Default expiration date is properly set
+  - Employee can view their ID immediately without admin intervention
+- Note: Admin employee detail view (F017) is not yet implemented. When F017 is
+  implemented, it should also create EmployeeID records if missing when admins
+  view employee IDs.
+
+**Tests:**
+
+- ✅ EmployeeID record created when employee first views their ID: EmployeeID
+  record is automatically created when employee views their ID page for the
+  first time
+- ✅ Default expiration date set to July 1 if not provided: Default expiration
+  date is correctly set to July 1 of current school year
+- ✅ Record creation happens automatically without admin intervention:
+  EmployeeID records are created automatically when employees view their ID
+- ✅ Subsequent views don't recreate the record: EmployeeID records are not
+  recreated on subsequent views (same record ID is maintained)
+- ✅ Page handles employee without EmployeeID record: Route gracefully handles
+  employees without EmployeeID records by creating them automatically
+- ✅ All 9 unit tests pass
+- ✅ All existing tests continue to pass (except pre-existing failures
+  unrelated to this feature)
+
+**Test File:**
+
+- Updated `app/routes/employee/id.test.ts` with comprehensive test coverage
+- Added tests for automatic EmployeeID creation, default expiration date
+  setting, and subsequent view behavior
+- Tests verify database state before and after EmployeeID creation
+
+**Files Modified:**
+
+- `app/routes/employee/id.tsx` - Added automatic EmployeeID creation in loader
+- `app/routes/employee/id.test.ts` - Added comprehensive tests for EmployeeID
+  creation behavior
 
 ---
 

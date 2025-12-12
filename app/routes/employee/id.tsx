@@ -7,6 +7,7 @@ import { Button } from '#app/components/ui/button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { requireUserId } from '#app/utils/auth.server.ts'
+import { getDefaultExpirationDate } from '#app/utils/employee.server.ts'
 import { cn } from '#app/utils/misc.tsx'
 import { type Route } from './+types/id.ts'
 
@@ -47,7 +48,27 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 	invariantResponse(employee, 'Employee record not found', { status: 404 })
 
-	return { employee }
+	// Ensure EmployeeID record exists (create if missing)
+	let employeeId = employee.employeeId
+	if (!employeeId) {
+		employeeId = await prisma.employeeID.create({
+			data: {
+				employeeId: employee.id,
+				expirationDate: getDefaultExpirationDate(),
+			},
+			select: {
+				photoUrl: true,
+				expirationDate: true,
+			},
+		})
+	}
+
+	return {
+		employee: {
+			...employee,
+			employeeId,
+		},
+	}
 }
 
 export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {

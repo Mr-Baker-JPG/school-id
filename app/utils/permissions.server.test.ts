@@ -122,10 +122,7 @@ test('requireUserWithRole allows admin users to access admin routes', async () =
 
 test('requireUserWithRole denies non-admin users access to admin routes', async () => {
 	const nonAdmin = await createNonAdminUser()
-	const request = await createRequestWithSession(
-		nonAdmin.id,
-		'/admin/test',
-	)
+	const request = await createRequestWithSession(nonAdmin.id, '/admin/test')
 
 	// Should throw 403 error
 	await expect(requireUserWithRole(request, 'admin')).rejects.toThrow()
@@ -136,10 +133,7 @@ test('requireUserWithRole denies non-admin users access to admin routes', async 
 
 test('requireUserWithRole throws 403 with correct error message for non-admin users', async () => {
 	const nonAdmin = await createNonAdminUser()
-	const request = await createRequestWithSession(
-		nonAdmin.id,
-		'/admin/test',
-	)
+	const request = await createRequestWithSession(nonAdmin.id, '/admin/test')
 
 	try {
 		await requireUserWithRole(request, 'admin')
