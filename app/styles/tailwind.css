@@ -4,6 +4,27 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+	/* --- Brand (JP2 Academy) --- */
+	--brand-navy: oklch(32% 0.07 265); /* ~ #2F3E63 */
+	--brand-navy-foreground: oklch(98% 0.01 95);
+
+	--brand-gold: oklch(78% 0.12 85); /* ~ #C9A24D */
+	--brand-gold-foreground: oklch(20% 0.04 85);
+
+	--brand-red: oklch(50% 0.18 28); /* ~ #A33A32 (accent only) */
+
+	/* --- Map into shadcn tokens --- */
+	--primary: var(--brand-navy);
+	--primary-foreground: var(--brand-navy-foreground);
+
+	--secondary: oklch(92% 0.03 90); /* warm ivory-muted */
+	--secondary-foreground: var(--brand-navy);
+
+	--accent: var(--brand-gold);
+	--accent-foreground: var(--brand-gold-foreground);
+
+	--ring: oklch(65% 0.08 265); /* navy-tinted focus */
+
 	--radius: 0.5rem;
 
 	--background: oklch(100% 0 0);
@@ -14,12 +35,6 @@
 
 	--popover: oklch(100% 0 0);
 	--popover-foreground: oklch(13.71% 0.036 258.53);
-
-	--primary: oklch(20.79% 0.0399 265.73);
-	--primary-foreground: oklch(98.38% 0.0035 247.86);
-
-	--secondary: oklch(86.48% 0.0153 248);
-	--secondary-foreground: oklch(20.79% 0.0399 265.73);
 
 	--muted: oklch(94.32% 0.0123 247.96);
 	--muted-foreground: oklch(40.68% 0.0281 257.44);
@@ -35,11 +50,30 @@
 	--destructive-foreground: oklch(98.38% 0.0035 247.86);
 	/* prefixed with foreground because it should look good on the background */
 	--foreground-destructive: oklch(51.46% 0.1979 16.57);
-
-	--ring: oklch(71.07% 0.0351 256.79);
 }
 
 .dark {
+	/* --- Map into shadcn tokens --- */ /* --- Brand (JP2 Academy) --- */
+	--brand-navy: oklch(92% 0.02 265);
+	--brand-navy-foreground: oklch(28% 0.06 265);
+
+	--brand-gold: oklch(70% 0.11 85);
+	--brand-gold-foreground: oklch(18% 0.04 85);
+
+	--brand-red: oklch(62% 0.18 28);
+
+	/* --- Map into shadcn tokens --- */
+	--primary: var(--brand-navy);
+	--primary-foreground: var(--brand-navy-foreground);
+
+	--secondary: oklch(24% 0.03 260);
+	--secondary-foreground: var(--brand-navy);
+
+	--accent: var(--brand-gold);
+	--accent-foreground: var(--brand-gold-foreground);
+
+	--ring: oklch(72% 0.1 265);
+
 	--background: oklch(13.71% 0.036 258.53);
 	--foreground: oklch(98.38% 0.0035 247.86);
 
@@ -49,17 +83,8 @@
 	--popover: oklch(13.71% 0.036 258.53);
 	--popover-foreground: oklch(98.38% 0.0035 247.86);
 
-	--primary: oklch(98.38% 0.0035 247.86);
-	--primary-foreground: oklch(20.79% 0.0399 265.73);
-
-	--secondary: oklch(34.74% 0.0295 260.13);
-	--secondary-foreground: oklch(98.38% 0.0035 247.86);
-
 	--muted: oklch(22.6% 0.0267 260.02);
 	--muted-foreground: oklch(71.07% 0.0351 256.79);
-
-	--accent: oklch(20.56% 0.022816 260.0464);
-	--accent-foreground: oklch(98.38% 0.0035 247.86);
 
 	--border: oklch(28% 0.0369 259.97);
 	--input: oklch(28% 0.0369 259.97);
@@ -69,8 +94,6 @@
 	--destructive-foreground: oklch(97.1% 0.0127 17.38);
 	/* prefixed with foreground because it should look good on the background */
 	--foreground-destructive: oklch(63.72% 0.2071 21.89);
-
-	--ring: oklch(65.28% 0.0684 260.07);
 }
 
 @theme inline {
