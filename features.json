@@ -313,8 +313,8 @@
 			"Component is responsive and printable",
 			"Component validates required props"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F023",

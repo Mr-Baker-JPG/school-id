@@ -1365,8 +1365,8 @@ error messages. Toast notifications provide immediate feedback for user actions.
 
 **Implementation:**
 
-- Created dedicated rate limiter utility (`app/utils/rate-limit.server.ts`) for the
-  verification endpoint
+- Created dedicated rate limiter utility (`app/utils/rate-limit.server.ts`) for
+  the verification endpoint
 - Implemented `createVerificationRateLimiter()` function that:
   - Creates configurable rate limiter using `express-rate-limit`
   - Defaults to 30 requests per minute (reasonable access)
@@ -1376,23 +1376,26 @@ error messages. Toast notifications provide immediate feedback for user actions.
   - Skips rate limiting for health check endpoints
   - Uses high limits in test environments to prevent test failures
 - Added environment variable configuration:
-  - `VERIFICATION_RATE_LIMIT_WINDOW_MS` - Time window in milliseconds (default: 60000)
-  - `VERIFICATION_RATE_LIMIT_MAX_REQUESTS` - Maximum requests per window (default: 30)
+  - `VERIFICATION_RATE_LIMIT_WINDOW_MS` - Time window in milliseconds
+    (default: 60000)
+  - `VERIFICATION_RATE_LIMIT_MAX_REQUESTS` - Maximum requests per window
+    (default: 30)
 - Updated `server/index.ts` to use dedicated verification rate limiter:
   - Replaced generic rate limiting for `/verify` route with dedicated limiter
-  - Rate limiter applies specifically to verification endpoint (not `/resources/verify`)
+  - Rate limiter applies specifically to verification endpoint (not
+    `/resources/verify`)
   - Maintains separation from other rate-limited routes
 
 **Tests:**
 
-- ✅ Verification endpoint enforces rate limits: Dedicated rate limiter is created
-  and applied to verification endpoint
-- ✅ Normal usage is not blocked by rate limits: Default limit of 30 requests per
-  minute allows reasonable access
+- ✅ Verification endpoint enforces rate limits: Dedicated rate limiter is
+  created and applied to verification endpoint
+- ✅ Normal usage is not blocked by rate limits: Default limit of 30 requests
+  per minute allows reasonable access
 - ✅ Excessive requests are rate-limited correctly: Rate limiter configured to
   block requests exceeding the limit
-- ✅ Rate limit errors return appropriate status codes: Handler returns 429 status
-  code with clear error message and retryAfter information
+- ✅ Rate limit errors return appropriate status codes: Handler returns 429
+  status code with clear error message and retryAfter information
 - ✅ Rate limits are configurable: Environment variables allow configuration of
   both window size and maximum requests
 - ✅ Rate limiting doesn't affect authenticated routes: Verification route is
@@ -1408,13 +1411,14 @@ error messages. Toast notifications provide immediate feedback for user actions.
 
 **Files Created:**
 
-- `app/utils/rate-limit.server.ts` - Rate limiter utility for verification endpoint
+- `app/utils/rate-limit.server.ts` - Rate limiter utility for verification
+  endpoint
 - `app/utils/rate-limit.server.test.ts` - Rate limiter tests
 
 **Files Modified:**
 
-- `app/utils/env.server.ts` - Added environment variable schema for rate limiting
-  configuration
+- `app/utils/env.server.ts` - Added environment variable schema for rate
+  limiting configuration
 - `server/index.ts` - Updated to use dedicated verification rate limiter
 
 **Configuration:**
@@ -1423,8 +1427,71 @@ error messages. Toast notifications provide immediate feedback for user actions.
 - Configurable via environment variables:
   - `VERIFICATION_RATE_LIMIT_WINDOW_MS` (optional)
   - `VERIFICATION_RATE_LIMIT_MAX_REQUESTS` (optional)
-- Test environments automatically use high limits (10,000 requests) to prevent test
-  failures
+- Test environments automatically use high limits (10,000 requests) to prevent
+  test failures
+
+---
+
+## 2025-12-13 – F022
+
+**Feature:** Employee ID Layout Component
+
+**Implementation:**
+
+- Created reusable ID card component module (`app/components/employee-id-card.tsx`) with:
+  - PDF components (`IDCardFrontPDF`, `IDCardBackPDF`) for PDF generation using
+    `@react-pdf/renderer`
+  - Preview components (`IDCardFrontPreview`, `IDCardBackPreview`) for browser
+    preview using regular React/HTML
+  - Shared type definitions (`EmployeePDFData`) and utility functions
+  - Branding-aware styling with configurable colors
+- Updated PDF generation service (`app/utils/pdf-id.server.tsx`) to use exported
+  PDF components instead of inline definitions
+- Updated employee ID view route (`/employee/id`) to display ID card preview using
+  preview components:
+  - Shows both front and back of ID card
+  - Uses signed URLs for photos and logos
+  - Generates QR code data URL for preview
+  - Displays cards with proper branding and styling
+- Components handle all required fields:
+  - Employee photo (or placeholder if missing)
+  - School logo (if configured)
+  - Employee name, job title, SIS employee ID
+  - Expiration date
+  - QR code on back for verification
+
+**Tests:**
+
+- ✅ Component renders ID front with all required fields: Both PDF and preview
+  components render all required employee information correctly
+- ✅ Component renders ID back with QR code: Both PDF and preview components
+  render QR code correctly on the back
+- ✅ Component handles missing photo gracefully: Components show "No Photo"
+  placeholder when photo is missing
+- ✅ Component applies school branding correctly: Branding colors are applied
+  correctly in both PDF and preview components
+- ✅ Component is responsive and printable: Components use proper wallet-size
+  dimensions (243x153 points/pixels) and are suitable for printing
+- ✅ Component validates required props: TypeScript enforces required props;
+  components render correctly when all props are provided
+- ✅ All 14 component unit tests pass (6 PDF tests + 8 preview tests)
+- ✅ All existing tests continue to pass (9 employee ID route tests)
+
+**Test File:**
+
+- Created `app/components/employee-id-card.test.tsx` with comprehensive test
+  coverage for both PDF and preview components
+- Tests cover rendering, missing data handling, branding, and prop validation
+
+**Files Created:**
+
+- `app/components/employee-id-card.tsx` - Reusable ID card component module
+- `app/components/employee-id-card.test.tsx` - Component tests
+
+**Files Modified:**
+
+- `app/utils/pdf-id.server.tsx` - Updated to use exported PDF components
+- `app/routes/employee/id.tsx` - Added ID card preview using preview components
 
 ---
 

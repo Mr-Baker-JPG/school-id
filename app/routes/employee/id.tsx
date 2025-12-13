@@ -5,12 +5,19 @@ import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Spacer } from '#app/components/spacer.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
+import {
+	IDCardFrontPreview,
+	IDCardBackPreview,
+} from '#app/components/employee-id-card.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import {
 	getDefaultExpirationDate,
 	fetchAndCacheFactsProfilePicture,
 } from '#app/utils/employee.server.ts'
+import { getBrandingConfig } from '#app/utils/branding.server.ts'
+import { generateEmployeeQRCodeDataURL } from '#app/utils/qr-code.server.ts'
+import { getSignedGetRequestInfo } from '#app/utils/storage.server.ts'
 import { cn, getEmployeePhotoSrc } from '#app/utils/misc.tsx'
 import { type Route } from './+types/id.ts'
 
@@ -83,6 +90,25 @@ export async function loader({ request }: Route.LoaderArgs) {
 		)
 	}
 
+	// Get branding configuration
+	const branding = getBrandingConfig()
+
+	// Get photo URL (signed URL if photo exists)
+	let photoUrl: string | null = null
+	if (employeeId.photoUrl) {
+		const { url } = getSignedGetRequestInfo(employeeId.photoUrl)
+		photoUrl = url
+	}
+
+	// Get logo URL (if configured)
+	const logoUrl = branding.logoUrl || null
+
+	// Generate QR code data URL for preview
+	const qrCodeDataURL = await generateEmployeeQRCodeDataURL(
+		employee.id,
+		request,
+	)
+
 	return {
 		employee: {
 			...employee,
@@ -91,16 +117,32 @@ export async function loader({ request }: Route.LoaderArgs) {
 				expirationDate: getDefaultExpirationDate(),
 			},
 		},
+		branding,
+		photoUrl,
+		logoUrl,
+		qrCodeDataURL,
 	}
 }
 
 export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
-	const { employee } = loaderData
-	const hasPhoto = !!employee.employeeId?.photoUrl
+	const { employee, branding, photoUrl, logoUrl, qrCodeDataURL } = loaderData
 	const expirationDate = employee.employeeId?.expirationDate
 		? new Date(employee.employeeId.expirationDate).toLocaleDateString()
 		: 'Not set'
-	const hasEmployeeId = !!employee.employeeId
+
+	// Prepare employee data for ID card component
+	const employeeCardData = {
+		id: employee.id,
+		fullName: employee.fullName,
+		jobTitle: employee.jobTitle,
+		email: employee.email,
+		status: employee.status,
+		sisEmployeeId: employee.sisEmployeeId,
+		photoUrl: employee.employeeId?.photoUrl || null,
+		expirationDate: employee.employeeId?.expirationDate
+			? new Date(employee.employeeId.expirationDate)
+			: getDefaultExpirationDate(),
+	}
 
 	return (
 		<div className="container mt-36 mb-48 flex flex-col items-center justify-center">
@@ -108,64 +150,23 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 			<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
 				<h1 className="text-h2 mb-6">My Employee ID</h1>
 
-				{/* Employee Photo */}
-				<div className="mb-6">
-					{hasPhoto && hasEmployeeId ? (
-						<Img
-							src={getEmployeePhotoSrc(employee.employeeId?.photoUrl)}
-							alt={employee.fullName}
-							className="size-48 rounded-lg object-cover"
-							width={384}
-							height={384}
+				{/* ID Card Preview */}
+				<div className="mb-8 flex flex-col items-center gap-4">
+					<div className="flex flex-col items-center gap-2">
+						<h2 className="text-body-sm text-muted-foreground">Front</h2>
+						<IDCardFrontPreview
+							employee={employeeCardData}
+							photoUrl={photoUrl}
+							logoUrl={logoUrl}
+							branding={branding}
 						/>
-					) : (
-						<div className="bg-muted-foreground/20 flex size-48 items-center justify-center rounded-lg">
-							<Icon name="avatar" className="text-muted-foreground size-24" />
-						</div>
-					)}
-				</div>
-
-				{/* Employee Information */}
-				<div className="flex w-full max-w-md flex-col gap-4">
-					<div className="flex flex-col gap-2">
-						<label className="text-body-xs text-muted-foreground">Name</label>
-						<p className="text-body-lg">{employee.fullName}</p>
 					</div>
-
-					<div className="flex flex-col gap-2">
-						<label className="text-body-xs text-muted-foreground">
-							Job Title
-						</label>
-						<p className="text-body-lg">{employee.jobTitle}</p>
-					</div>
-
-					<div className="flex flex-col gap-2">
-						<label className="text-body-xs text-muted-foreground">Email</label>
-						<p className="text-body-lg">{employee.email}</p>
-					</div>
-
-					<div className="flex flex-col gap-2">
-						<label className="text-body-xs text-muted-foreground">Status</label>
-						<span
-							className={cn(
-								'inline-flex w-fit items-center rounded-full px-3 py-1 text-sm font-medium',
-								{
-									'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200':
-										employee.status === 'active',
-									'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200':
-										employee.status === 'inactive',
-								},
-							)}
-						>
-							{employee.status}
-						</span>
-					</div>
-
-					<div className="flex flex-col gap-2">
-						<label className="text-body-xs text-muted-foreground">
-							Expiration Date
-						</label>
-						<p className="text-body-lg">{expirationDate}</p>
+					<div className="flex flex-col items-center gap-2">
+						<h2 className="text-body-sm text-muted-foreground">Back</h2>
+						<IDCardBackPreview
+							qrCodeDataURL={qrCodeDataURL}
+							branding={branding}
+						/>
 					</div>
 				</div>
 
@@ -175,7 +176,7 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 				<Button size="lg" asChild>
 					<a href="/employee/id/download">
 						<Icon name="download" className="scale-125">
-							Download ID Card
+							Download ID Card (PDF)
 						</Icon>
 					</a>
 				</Button>

@@ -19,7 +19,8 @@ export function createVerificationRateLimiter(options?: {
 		windowMs = 60 * 1000, // 1 minute default
 		maxRequests = 30, // 30 requests per minute default
 		isProduction = process.env.NODE_ENV === 'production',
-		isTest = process.env.NODE_ENV === 'test' || !!process.env.PLAYWRIGHT_TEST_BASE_URL,
+		isTest = process.env.NODE_ENV === 'test' ||
+			!!process.env.PLAYWRIGHT_TEST_BASE_URL,
 	} = options ?? {}
 
 	// In test environments, use a very high limit to effectively disable rate limiting
@@ -35,12 +36,12 @@ export function createVerificationRateLimiter(options?: {
 		? Number.parseInt(process.env.VERIFICATION_RATE_LIMIT_MAX_REQUESTS, 10)
 		: undefined
 
-	const configuredWindowMs = envWindowMs && !Number.isNaN(envWindowMs)
-		? envWindowMs
-		: windowMs
-	const configuredMaxRequests = envMaxRequests && !Number.isNaN(envMaxRequests)
-		? envMaxRequests
-		: effectiveMaxRequests
+	const configuredWindowMs =
+		envWindowMs && !Number.isNaN(envWindowMs) ? envWindowMs : windowMs
+	const configuredMaxRequests =
+		envMaxRequests && !Number.isNaN(envMaxRequests)
+			? envMaxRequests
+			: effectiveMaxRequests
 
 	return rateLimit({
 		windowMs: configuredWindowMs,
@@ -57,8 +58,7 @@ export function createVerificationRateLimiter(options?: {
 		handler: (req: Request, res: Response) => {
 			res.status(429).json({
 				error: 'Too Many Requests',
-				message:
-					'Rate limit exceeded. Please try again later.',
+				message: 'Rate limit exceeded. Please try again later.',
 				retryAfter: Math.ceil(configuredWindowMs / 1000), // seconds
 			})
 		},

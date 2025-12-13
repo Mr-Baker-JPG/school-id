@@ -1,31 +1,15 @@
-import {
-	Document,
-	Page,
-	Text,
-	View,
-	Image,
-	StyleSheet,
-	pdf,
-} from '@react-pdf/renderer'
-import { format } from 'date-fns'
+import { Document, pdf } from '@react-pdf/renderer'
 import { getBrandingConfig } from './branding.server.ts'
 import { generateEmployeeQRCodeBuffer } from './qr-code.server.ts'
 import { getSignedGetRequestInfo } from './storage.server.ts'
-import { getDomainUrl } from './misc.tsx'
+import {
+	IDCardFrontPDF,
+	IDCardBackPDF,
+	type EmployeePDFData,
+} from '#app/components/employee-id-card.tsx'
 
-/**
- * Employee data required for PDF generation
- */
-export interface EmployeePDFData {
-	id: string
-	fullName: string
-	jobTitle: string
-	email: string
-	status: string
-	sisEmployeeId: string
-	photoUrl?: string | null
-	expirationDate: Date
-}
+// Re-export EmployeePDFData from employee-id-card component for backward compatibility
+export type { EmployeePDFData } from '#app/components/employee-id-card.tsx'
 
 /**
  * Fetches an image from a URL and converts it to a base64 data URL
@@ -99,220 +83,6 @@ async function getSchoolLogoDataURL(logoUrl?: string): Promise<string | null> {
 	}
 }
 
-// Wallet-size ID card dimensions (in points, 1 point = 1/72 inch)
-// Standard ID card: 3.375" x 2.125" = 243 points x 153 points
-const ID_WIDTH = 243
-const ID_HEIGHT = 153
-
-/**
- * Creates PDF styles with branding colors
- * Note: React PDF StyleSheet.create doesn't support dynamic values,
- * so we create styles dynamically based on branding config
- */
-function createPDFStyles(branding: ReturnType<typeof getBrandingConfig>) {
-	return StyleSheet.create({
-		page: {
-			width: ID_WIDTH,
-			height: ID_HEIGHT,
-			padding: 0,
-		},
-		frontPage: {
-			width: ID_WIDTH,
-			height: ID_HEIGHT,
-			backgroundColor: branding.secondaryColor,
-			padding: 12,
-			display: 'flex',
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 12,
-		},
-		backPage: {
-			width: ID_WIDTH,
-			height: ID_HEIGHT,
-			backgroundColor: branding.secondaryColor,
-			padding: 12,
-			display: 'flex',
-			flexDirection: 'column',
-			alignItems: 'center',
-			justifyContent: 'center',
-			gap: 8,
-		},
-		logoContainer: {
-			width: 40,
-			height: 40,
-			display: 'flex',
-			alignItems: 'center',
-			justifyContent: 'center',
-			marginBottom: 4,
-		},
-		logo: {
-			width: 40,
-			height: 40,
-			objectFit: 'contain',
-		},
-		photoContainer: {
-			width: 80,
-			height: 100,
-			display: 'flex',
-			alignItems: 'center',
-			justifyContent: 'center',
-			backgroundColor: '#f0f0f0',
-			borderRadius: 4,
-			overflow: 'hidden',
-		},
-		photo: {
-			width: 80,
-			height: 100,
-			objectFit: 'cover',
-		},
-		photoPlaceholder: {
-			width: 80,
-			height: 100,
-			display: 'flex',
-			alignItems: 'center',
-			justifyContent: 'center',
-			backgroundColor: '#e0e0e0',
-			borderRadius: 4,
-		},
-		infoContainer: {
-			flex: 1,
-			display: 'flex',
-			flexDirection: 'column',
-			gap: 4,
-		},
-		schoolName: {
-			fontSize: 10,
-			fontWeight: 'bold',
-			color: branding.primaryColor,
-			marginBottom: 2,
-		},
-		name: {
-			fontSize: 14,
-			fontWeight: 'bold',
-			color: branding.primaryColor,
-			marginBottom: 2,
-		},
-		jobTitle: {
-			fontSize: 10,
-			color: branding.primaryColor,
-			opacity: 0.7,
-			marginBottom: 4,
-		},
-		employeeId: {
-			fontSize: 8,
-			color: branding.primaryColor,
-			opacity: 0.7,
-			marginBottom: 2,
-		},
-		expiration: {
-			fontSize: 8,
-			color: branding.primaryColor,
-			opacity: 0.7,
-			marginTop: 'auto',
-		},
-		qrCodeContainer: {
-			display: 'flex',
-			alignItems: 'center',
-			justifyContent: 'center',
-			width: 120,
-			height: 120,
-		},
-		qrCode: {
-			width: 120,
-			height: 120,
-		},
-		verificationText: {
-			fontSize: 8,
-			color: branding.primaryColor,
-			opacity: 0.7,
-			textAlign: 'center',
-			marginTop: 4,
-		},
-	})
-}
-
-/**
- * React PDF component for ID card front
- */
-function IDCardFront({
-	employee,
-	photoDataURL,
-	logoDataURL,
-	branding,
-}: {
-	employee: EmployeePDFData
-	photoDataURL: string | null
-	logoDataURL: string | null
-	branding: ReturnType<typeof getBrandingConfig>
-}) {
-	const styles = createPDFStyles(branding)
-	return (
-		<Page size={[ID_WIDTH, ID_HEIGHT]} style={styles.page}>
-			<View style={styles.frontPage}>
-				{/* Photo Section */}
-				<View style={styles.photoContainer}>
-					{photoDataURL ? (
-						<Image src={photoDataURL} style={styles.photo} />
-					) : (
-						<View style={styles.photoPlaceholder}>
-							<Text
-								style={{
-									fontSize: 8,
-									color: branding.primaryColor,
-									opacity: 0.5,
-								}}
-							>
-								No Photo
-							</Text>
-						</View>
-					)}
-				</View>
-
-				{/* Info Section */}
-				<View style={styles.infoContainer}>
-					{logoDataURL && (
-						<View style={styles.logoContainer}>
-							<Image src={logoDataURL} style={styles.logo} />
-						</View>
-					)}
-					<Text style={styles.schoolName}>{branding.schoolName}</Text>
-					<Text style={styles.name}>{employee.fullName}</Text>
-					<Text style={styles.jobTitle}>{employee.jobTitle}</Text>
-					<Text style={styles.employeeId}>ID: {employee.sisEmployeeId}</Text>
-					<Text style={styles.expiration}>
-						Expires: {format(employee.expirationDate, 'MM/dd/yyyy')}
-					</Text>
-				</View>
-			</View>
-		</Page>
-	)
-}
-
-/**
- * React PDF component for ID card back
- */
-function IDCardBack({
-	qrCodeDataURL,
-	branding,
-}: {
-	qrCodeDataURL: string
-	branding: ReturnType<typeof getBrandingConfig>
-}) {
-	const styles = createPDFStyles(branding)
-	return (
-		<Page size={[ID_WIDTH, ID_HEIGHT]} style={styles.page}>
-			<View style={styles.backPage}>
-				<View style={styles.qrCodeContainer}>
-					<Image src={qrCodeDataURL} style={styles.qrCode} />
-				</View>
-				<Text style={styles.verificationText}>
-					Scan to verify employee status
-				</Text>
-				<Text style={styles.schoolName}>{branding.schoolName}</Text>
-			</View>
-		</Page>
-	)
-}
 
 /**
  * Generates a PDF ID card for an employee
@@ -353,13 +123,13 @@ export async function generateEmployeeIDPDF(
 		// Create PDF document
 		const doc = (
 			<Document>
-				<IDCardFront
+				<IDCardFrontPDF
 					employee={employee}
 					photoDataURL={photoDataURL}
 					logoDataURL={logoDataURL}
 					branding={branding}
 				/>
-				<IDCardBack qrCodeDataURL={qrCodeDataURL} branding={branding} />
+				<IDCardBackPDF qrCodeDataURL={qrCodeDataURL} branding={branding} />
 			</Document>
 		)
 
