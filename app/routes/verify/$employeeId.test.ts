@@ -467,7 +467,10 @@ describe('verify/$employeeId route', () => {
 				context: {},
 			} as any)
 
-			const metaTags = meta({ data, params: { employeeId: employee.id } } as any)
+			const metaTags = meta({
+				data,
+				params: { employeeId: employee.id },
+			} as any)
 
 			const titleTag = metaTags.find((tag) => 'title' in tag)
 			expect(titleTag).toBeDefined()
@@ -505,7 +508,10 @@ describe('verify/$employeeId route', () => {
 				context: {},
 			} as any)
 
-			const metaTags = meta({ data, params: { employeeId: employee.id } } as any)
+			const metaTags = meta({
+				data,
+				params: { employeeId: employee.id },
+			} as any)
 
 			const descriptionTag = metaTags.find(
 				(tag) => 'name' in tag && tag.name === 'description',
@@ -546,7 +552,10 @@ describe('verify/$employeeId route', () => {
 				context: {},
 			} as any)
 
-			const metaTags = meta({ data, params: { employeeId: employee.id } } as any)
+			const metaTags = meta({
+				data,
+				params: { employeeId: employee.id },
+			} as any)
 
 			// Check Open Graph tags
 			const ogTitle = metaTags.find(
@@ -614,7 +623,10 @@ describe('verify/$employeeId route', () => {
 				context: {},
 			} as any)
 
-			const metaTags = meta({ data, params: { employeeId: employee.id } } as any)
+			const metaTags = meta({
+				data,
+				params: { employeeId: employee.id },
+			} as any)
 
 			const ogImage = metaTags.find(
 				(tag) => 'property' in tag && tag.property === 'og:image',
@@ -653,7 +665,10 @@ describe('verify/$employeeId route', () => {
 				context: {},
 			} as any)
 
-			const metaTags = meta({ data, params: { employeeId: employee.id } } as any)
+			const metaTags = meta({
+				data,
+				params: { employeeId: employee.id },
+			} as any)
 
 			const twitterCard = metaTags.find(
 				(tag) => 'name' in tag && tag.name === 'twitter:card',
@@ -700,7 +715,10 @@ describe('verify/$employeeId route', () => {
 				context: {},
 			} as any)
 
-			const metaTags = meta({ data, params: { employeeId: employee.id } } as any)
+			const metaTags = meta({
+				data,
+				params: { employeeId: employee.id },
+			} as any)
 
 			const titleTag = metaTags.find((tag) => 'title' in tag)
 			expect(titleTag).toBeDefined()
@@ -731,7 +749,9 @@ describe('verify/$employeeId route', () => {
 				expirationDate: futureDate,
 			})
 
-			const request1 = new Request('http://localhost/verify/' + validEmployee.id)
+			const request1 = new Request(
+				'http://localhost/verify/' + validEmployee.id,
+			)
 			const data1 = await loader({
 				params: { employeeId: validEmployee.id },
 				request: request1,

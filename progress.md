@@ -1155,7 +1155,8 @@ Stack template. This feature verification confirms that:
 
 **Implementation:**
 
-- Enhanced SEO metadata in verification route (`/verify/$employeeId`) meta function
+- Enhanced SEO metadata in verification route (`/verify/$employeeId`) meta
+  function
 - Added comprehensive Open Graph tags:
   - `og:title` - Employee name and status with school name
   - `og:description` - Employee verification details
@@ -1167,30 +1168,32 @@ Stack template. This feature verification confirms that:
   - `twitter:card` - Set to 'summary'
   - `twitter:title` - Employee name and status with school name
   - `twitter:description` - Employee verification details
-  - `twitter:image` - Employee photo (if available) or school logo (if available)
+  - `twitter:image` - Employee photo (if available) or school logo (if
+    available)
 - Updated loader to include `verificationUrl` in returned data for meta function
 - Meta function dynamically updates based on verification status (Valid/Invalid)
-- Image selection logic: prefers employee photo, falls back to school logo, omits if neither available
+- Image selection logic: prefers employee photo, falls back to school logo,
+  omits if neither available
 - Default metadata provided when data is missing (error states)
 
 **Tests:**
 
-- ✅ Verification page has appropriate title tag: Title includes employee name and
-  status correctly
-- ✅ Page includes meta description: Description includes employee name, job title,
-  and status
+- ✅ Verification page has appropriate title tag: Title includes employee name
+  and status correctly
+- ✅ Page includes meta description: Description includes employee name, job
+  title, and status
 - ✅ Open Graph tags are present and correct: All required OG tags (title,
   description, type, url, site_name) are present with correct values
 - ✅ Open Graph image tag includes employee photo when available: OG image tag
   includes employee photo URL when photo exists
-- ✅ Twitter Card tags are present and correct: All Twitter Card tags (card, title,
-  description) are present with correct values
+- ✅ Twitter Card tags are present and correct: All Twitter Card tags (card,
+  title, description) are present with correct values
 - ✅ Page title includes employee name and status: Title dynamically includes
   employee name and verification status
 - ✅ Metadata updates based on verification status: Metadata correctly reflects
   Valid/Invalid status based on employee status and expiration date
-- ✅ Returns default metadata when data is missing: Default metadata provided for
-  error states
+- ✅ Returns default metadata when data is missing: Default metadata provided
+  for error states
 - ✅ All 8 SEO metadata unit tests pass
 - ✅ All existing verification route tests continue to pass (18/18 total tests)
 - ✅ All existing tests continue to pass (except pre-existing failures in
@@ -1198,15 +1201,15 @@ Stack template. This feature verification confirms that:
 
 **Test File:**
 
-- Updated `app/routes/verify/$employeeId.test.ts` with comprehensive SEO metadata
-  test coverage
-- Tests verify title tags, meta descriptions, Open Graph tags, Twitter Card tags,
-  and dynamic status updates
+- Updated `app/routes/verify/$employeeId.test.ts` with comprehensive SEO
+  metadata test coverage
+- Tests verify title tags, meta descriptions, Open Graph tags, Twitter Card
+  tags, and dynamic status updates
 
 **Files Modified:**
 
-- `app/routes/verify/$employeeId.tsx` - Enhanced meta function with comprehensive
-  SEO metadata
+- `app/routes/verify/$employeeId.tsx` - Enhanced meta function with
+  comprehensive SEO metadata
 - `app/routes/verify/$employeeId.test.ts` - Added 8 new SEO metadata tests
 
 ---

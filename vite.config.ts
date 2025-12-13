@@ -31,6 +31,10 @@ export default defineConfig((config) => ({
 
 		sourcemap: true,
 	},
+	ssr: {
+		noExternal: [],
+		external: ['remix-auth'],
+	},
 	server: {
 		watch: {
 			ignored: ['**/playwright-report/**'],

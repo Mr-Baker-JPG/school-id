@@ -279,7 +279,7 @@ export const meta: Route.MetaFunction = ({ data }) => {
 	// Determine image URL for Open Graph (prefer employee photo, fallback to school logo)
 	const imageUrl = employee.photoUrl
 		? employee.photoUrl
-		: branding.logoUrl ?? undefined
+		: (branding.logoUrl ?? undefined)
 
 	const metaTags = [
 		{

@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs'
 import { redirect } from 'react-router'
 import { Authenticator } from 'remix-auth'
 import { safeRedirect } from 'remix-utils/safe-redirect'
-import { providers } from './connections.server.ts'
+import { providers, googleProviderInitPromise } from './connections.server.ts'
 import { prisma } from './db.server.ts'
 import { combineHeaders, downloadFile } from './misc.tsx'
 import { type ProviderUser } from './providers/provider.ts'
@@ -19,12 +19,29 @@ export const sessionKey = 'sessionId'
 
 export const authenticator = new Authenticator<ProviderUser>()
 
+// Register strategies synchronously for providers that are available immediately
 for (const [providerName, provider] of Object.entries(providers)) {
+	// Skip google here - it will be registered after async load completes
+	if (providerName === 'google') continue
+
 	const strategy = provider.getAuthStrategy()
 	if (strategy) {
 		authenticator.use(strategy, providerName)
 	}
 }
+
+// Register Google strategy after it loads asynchronously
+googleProviderInitPromise
+	.then((googleProvider) => {
+		const strategy = googleProvider.getAuthStrategy()
+		if (strategy) {
+			authenticator.use(strategy, 'google')
+		}
+	})
+	.catch(() => {
+		// Google provider failed to load, strategy will remain unregistered
+		// This is OK - authentication with Google will fail gracefully
+	})
 
 export async function getUserId(request: Request) {
 	const authSession = await authSessionStorage.getSession(

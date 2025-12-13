@@ -2,13 +2,14 @@ import { SetCookie } from '@mjackson/headers'
 import { createId as cuid } from '@paralleldrive/cuid2'
 import { redirect } from 'react-router'
 import { type Strategy } from 'remix-auth/strategy'
-import { GoogleStrategy } from 'remix-auth-google'
+import { GoogleStrategy } from '@coji/remix-auth-google'
 import { z } from 'zod'
 import { cache, cachified } from '../cache.server.ts'
 import { validateEmailDomain } from '../email-domain-validation.server.ts'
 import { type Timings } from '../timing.server.ts'
 import { MOCK_CODE_GOOGLE_HEADER, MOCK_CODE_GOOGLE } from './constants.ts'
 import { type AuthProvider, type ProviderUser } from './provider.ts'
+import { getAllowedEmailDomain } from '../email-domain-validation.server.ts'
 
 const GoogleUserSchema = z.object({ email: z.string() })
 const GoogleUserParseResult = z
@@ -28,11 +29,11 @@ const shouldMock =
 
 export class GoogleProvider implements AuthProvider {
 	getAuthStrategy(): Strategy<ProviderUser, any> | null {
-		if (
-			!process.env.GOOGLE_CLIENT_ID ||
-			!process.env.GOOGLE_CLIENT_SECRET ||
-			!process.env.GOOGLE_REDIRECT_URI
-		) {
+		const clientIdValue = process.env.GOOGLE_CLIENT_ID || ''
+		const clientSecretValue = process.env.GOOGLE_CLIENT_SECRET || ''
+		const redirectUriValue = process.env.GOOGLE_REDIRECT_URI || ''
+
+		if (!clientIdValue || !clientSecretValue || !redirectUriValue) {
 			console.log(
 				'Google OAuth strategy not available because environment variables are not set',
 			)
@@ -41,19 +42,16 @@ export class GoogleProvider implements AuthProvider {
 
 		return new GoogleStrategy(
 			{
-				clientID: process.env.GOOGLE_CLIENT_ID,
-				clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-				callbackURL: process.env.GOOGLE_REDIRECT_URI,
+				clientId: clientIdValue,
+				clientSecret: clientSecretValue,
+				redirectURI: redirectUriValue,
 			},
-			async ({
-				accessToken,
-				profile,
-			}: {
-				accessToken: string
-				profile: any
-			}) => {
-				// Google profile includes email, name, and picture
-				const email = profile.emails?.[0]?.value
+			async ({ tokens }) => {
+				// Get the user profile from Google
+				const profile = await GoogleStrategy.userProfile(tokens)
+
+				// Extract email and validate domain restriction
+				const email = profile.emails[0].value
 				if (!email) {
 					throw new Error('Email not found in Google profile')
 				}
@@ -66,15 +64,16 @@ export class GoogleProvider implements AuthProvider {
 					)
 				}
 
+				// Return ProviderUser object
 				return {
 					id: profile.id,
 					email: email.toLowerCase(),
 					name: profile.displayName,
-					username: profile.emails?.[0]?.value.split('@')[0],
-					imageUrl: profile.photos?.[0]?.value,
+					username: email.split('@')[0],
+					imageUrl: profile.photos[0]?.value,
 				}
 			},
-		) as unknown as Strategy<ProviderUser, any>
+		)
 	}
 
 	async resolveConnectionData(
