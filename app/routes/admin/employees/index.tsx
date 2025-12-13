@@ -92,9 +92,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	const employeesWithExpirationStatus = employees.map((employee) => {
 		let expirationStatus: ExpirationStatus | null = null
 		if (employee.employeeId?.expirationDate) {
-			expirationStatus = getExpirationStatus(
-				employee.employeeId.expirationDate,
-			)
+			expirationStatus = getExpirationStatus(employee.employeeId.expirationDate)
 		}
 
 		return {
@@ -263,20 +261,23 @@ export default function AdminEmployeesRoute({
 			</div>
 			<Spacer size="2xs" />
 			{(loaderData.expiringCount > 0 || loaderData.expiredCount > 0) && (
-				<div className="rounded-lg border bg-muted/50 p-4">
+				<div className="bg-muted/50 rounded-lg border p-4">
 					<h2 className="text-h4 mb-2">Expiration Warnings</h2>
 					<div className="flex flex-wrap gap-4">
 						{loaderData.expiringCount > 0 && (
 							<div className="flex items-center gap-2">
 								<span className="inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-sm font-medium text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-									{loaderData.expiringCount} ID{loaderData.expiringCount !== 1 ? 's' : ''} expiring within 30 days
+									{loaderData.expiringCount} ID
+									{loaderData.expiringCount !== 1 ? 's' : ''} expiring within 30
+									days
 								</span>
 							</div>
 						)}
 						{loaderData.expiredCount > 0 && (
 							<div className="flex items-center gap-2">
 								<span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-800 dark:bg-red-900 dark:text-red-200">
-									{loaderData.expiredCount} ID{loaderData.expiredCount !== 1 ? 's' : ''} expired
+									{loaderData.expiredCount} ID
+									{loaderData.expiredCount !== 1 ? 's' : ''} expired
 								</span>
 							</div>
 						)}

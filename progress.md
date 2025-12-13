@@ -1574,52 +1574,121 @@ error messages. Toast notifications provide immediate feedback for user actions.
 **Implementation:**
 
 - Created expiration status utility functions in `app/utils/employee.server.ts`:
-  - `getExpirationStatus()` - Determines if an ID is valid, expiring (within 30 days), or expired
-  - `getExpiringEmployees()` - Fetches employees with IDs expiring within warning period or already expired
+  - `getExpirationStatus()` - Determines if an ID is valid, expiring (within 30
+    days), or expired
+  - `getExpiringEmployees()` - Fetches employees with IDs expiring within
+    warning period or already expired
 - Updated admin employee list route (`/admin/employees`) to:
   - Calculate expiration status for each employee in the loader
   - Display expiration warnings in the employee table with color-coded badges
   - Show summary section with counts of expiring and expired IDs
-- Created email notification infrastructure (`app/utils/expiration-notifications.server.tsx`):
-  - `ExpirationNotificationEmail` - React Email template for expiration notifications
-  - `sendExpirationNotifications()` - Function to send expiration alerts to all admin users
-  - Email notifications are optional and can be triggered manually or via scheduled job
+- Created email notification infrastructure
+  (`app/utils/expiration-notifications.server.tsx`):
+  - `ExpirationNotificationEmail` - React Email template for expiration
+    notifications
+  - `sendExpirationNotifications()` - Function to send expiration alerts to all
+    admin users
+  - Email notifications are optional and can be triggered manually or via
+    scheduled job
 - Expiration warnings display:
   - Yellow badge for IDs expiring within 30 days (shows days until expiration)
   - Red badge for expired IDs (shows days since expiration)
   - Summary section at top of employee list showing total counts
 - Expiration calculation logic:
-  - Uses correct date comparison (normalizes to midnight for accurate day calculations)
+  - Uses correct date comparison (normalizes to midnight for accurate day
+    calculations)
   - Configurable warning period (default: 30 days)
   - Handles edge cases (today's date, exactly 30 days, etc.)
 
 **Tests:**
 
-- ✅ System identifies IDs expiring within 30 days: `getExpirationStatus()` correctly identifies expiring IDs
-- ✅ Expiring IDs are displayed in admin interface: Admin employee list shows expiration status for each employee
-- ✅ Warning messages are clear and actionable: Color-coded badges with clear messages (e.g., "Expires in 15 days", "Expired 10 days ago")
-- ✅ Expiration calculation uses correct date logic: Date calculations handle edge cases correctly (exactly 30 days, today, past dates)
-- ✅ Already expired IDs are identified separately: Expired IDs are distinguished from expiring IDs with different badge colors
-- ✅ Email notifications can be sent (optional): Email notification infrastructure is in place and can be triggered programmatically
+- ✅ System identifies IDs expiring within 30 days: `getExpirationStatus()`
+  correctly identifies expiring IDs
+- ✅ Expiring IDs are displayed in admin interface: Admin employee list shows
+  expiration status for each employee
+- ✅ Warning messages are clear and actionable: Color-coded badges with clear
+  messages (e.g., "Expires in 15 days", "Expired 10 days ago")
+- ✅ Expiration calculation uses correct date logic: Date calculations handle
+  edge cases correctly (exactly 30 days, today, past dates)
+- ✅ Already expired IDs are identified separately: Expired IDs are
+  distinguished from expiring IDs with different badge colors
+- ✅ Email notifications can be sent (optional): Email notification
+  infrastructure is in place and can be triggered programmatically
 - ✅ All 12 employee.server utility tests pass
-- ✅ All 13 admin employee list route tests pass (including 5 new expiration notification tests)
+- ✅ All 13 admin employee list route tests pass (including 5 new expiration
+  notification tests)
 - ✅ All existing tests continue to pass
 
 **Test Files:**
 
-- Updated `app/utils/employee.server.test.ts` - Added comprehensive tests for `getExpirationStatus()` and `getExpiringEmployees()`
-- Updated `app/routes/admin/employees/index.test.ts` - Added 5 new tests for expiration notification functionality
+- Updated `app/utils/employee.server.test.ts` - Added comprehensive tests for
+  `getExpirationStatus()` and `getExpiringEmployees()`
+- Updated `app/routes/admin/employees/index.test.ts` - Added 5 new tests for
+  expiration notification functionality
 
 **Files Created:**
 
-- `app/utils/expiration-notifications.server.tsx` - Email notification infrastructure
+- `app/utils/expiration-notifications.server.tsx` - Email notification
+  infrastructure
 
 **Files Modified:**
 
 - `app/utils/employee.server.ts` - Added expiration status utility functions
-- `app/routes/admin/employees/index.tsx` - Added expiration status calculation and UI warnings
+- `app/routes/admin/employees/index.tsx` - Added expiration status calculation
+  and UI warnings
 - `app/utils/employee.server.test.ts` - Added expiration status tests
-- `app/routes/admin/employees/index.test.ts` - Added expiration notification tests
+- `app/routes/admin/employees/index.test.ts` - Added expiration notification
+  tests
+
+---
+
+## 2025-12-13 – F027
+
+**Feature:** Landing Page with Embedded Login Form and Reimagined Navigation
+
+**Implementation:**
+
+- Replaced marketing landing page (`app/routes/_marketing/index.tsx`) with simple landing page that includes:
+  - Brief information about the Employee ID System
+  - Embedded Google OAuth login form using `ProviderConnectionForm`
+  - Clean, professional design suitable for internal tool use
+- Updated root layout (`app/root.tsx`) header navigation:
+  - Removed search bar completely
+  - Added "My ID" navigation link for all authenticated users (links to `/employee/id`)
+  - Added "Admin Dashboard" navigation link for authenticated admin users (links to `/admin/employees`)
+  - Navigation links use ghost button variant for subtle appearance
+  - User dropdown remains for account management
+- Updated root layout footer:
+  - Removed theme switcher
+  - Simplified footer to show only logo (centered)
+- Updated branding:
+  - Changed logo text from "epic notes" to "Employee ID System"
+  - Updated meta title and description to reflect Employee ID System
+- Fixed Layout function to use `useOptionalTheme()` with default fallback for error states
+
+**Tests:**
+
+- ✅ Unit: Landing page displays brief system information: Landing page shows heading, description, and internal use message
+- ✅ Unit: Landing page displays embedded login form: Google OAuth login button is present and functional
+- ✅ Unit: Landing page has correct meta title: Meta function returns "Employee ID System" title
+- ✅ All 3 landing page unit tests pass
+- ⚠️ E2E tests created: Navigation E2E tests created in `tests/e2e/landing-page-navigation.test.ts` (can be run with `npm run test:e2e`)
+- ✅ All existing tests continue to pass
+
+**Test Files:**
+
+- Created `app/routes/_marketing/index.test.tsx` with comprehensive test coverage for landing page
+- Created `tests/e2e/landing-page-navigation.test.ts` with E2E tests for navigation flows
+
+**Files Created:**
+
+- `app/routes/_marketing/index.test.tsx` - Landing page unit tests
+- `tests/e2e/landing-page-navigation.test.ts` - Navigation E2E tests
+
+**Files Modified:**
+
+- `app/routes/_marketing/index.tsx` - Replaced marketing page with simple landing page
+- `app/root.tsx` - Updated header navigation, footer, and branding
 
 ---
 

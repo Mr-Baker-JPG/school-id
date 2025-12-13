@@ -54,7 +54,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
 	invariantResponse(employee, 'Employee not found', { status: 404 })
 
-	return { employee }
+	// Compute default expiration date in loader for use in component
+	const defaultExpirationDate = getDefaultExpirationDate()
+
+	return { employee, defaultExpirationDate }
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -133,7 +136,7 @@ export default function EmployeeExpirationRoute({
 				? new Date(loaderData.employee.employeeId.expirationDate)
 						.toISOString()
 						.split('T')[0]
-				: new Date(getDefaultExpirationDate()).toISOString().split('T')[0],
+				: new Date(loaderData.defaultExpirationDate).toISOString().split('T')[0],
 		},
 	})
 

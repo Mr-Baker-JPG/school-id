@@ -8,6 +8,7 @@ import {
 	getUserImages,
 } from '#tests/db-utils.ts'
 import { insertGitHubUser } from '#tests/mocks/github.ts'
+import { insertGoogleUser } from '#tests/mocks/google.ts'
 
 async function seed() {
 	console.log('🌱 Seeding...')
@@ -245,6 +246,31 @@ async function seed() {
 	}
 
 	console.timeEnd(`🐨 Created admin user "kody"`)
+
+	console.time(`👤 Created admin user "Craig Baker"`)
+
+	const googleUser = await insertGoogleUser(
+		'MOCK_CODE_GOOGLE_CRAIG',
+		'cbaker@jpgacademy.org',
+	)
+
+	const craig = await prisma.user.create({
+		select: { id: true },
+		data: {
+			email: 'cbaker@jpgacademy.org',
+			username: 'cbaker',
+			name: 'Craig Baker',
+			connections: {
+				create: {
+					providerName: 'google',
+					providerId: String(googleUser.profile.id),
+				},
+			},
+			roles: { connect: [{ name: 'admin' }, { name: 'user' }] },
+		},
+	})
+
+	console.timeEnd(`👤 Created admin user "Craig Baker"`)
 
 	console.timeEnd(`🌱 Database has been seeded`)
 }

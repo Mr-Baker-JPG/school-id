@@ -377,5 +377,23 @@
 		],
 		"implemented": true,
 		"tests_passed": true
+	},
+	{
+		"id": "F027",
+		"title": "Landing Page with Embedded Login Form and Reimagined Navigation",
+		"description": "Replace the current marketing landing page with a simple landing page that includes brief information about the Employee ID System and an embedded login form (Google OAuth). Reimagine the header and footer navigation: remove the search bar and theme switcher, add navigation links for authenticated users (My ID, Admin Dashboard if admin), and update branding to reflect the Employee ID System.",
+		"tests": [
+			"Unit: Landing page displays brief system information and embedded login form",
+			"Unit: Header navigation shows \"My ID\" link for authenticated employees",
+			"Unit: Header navigation shows \"Admin Dashboard\" link for authenticated admin users",
+			"Unit: Header navigation hides search bar",
+			"Unit: Footer does not display theme switcher",
+			"E2E: Unauthenticated user can view landing page with login form",
+			"E2E: Authenticated employee can navigate to \"My ID\" from header",
+			"E2E: Authenticated admin can navigate to \"Admin Dashboard\" from header",
+			"Manual: Verify landing page design is clean and professional for internal tool use"
+		],
+		"implemented": true,
+		"tests_passed": true
 	}
 ]
