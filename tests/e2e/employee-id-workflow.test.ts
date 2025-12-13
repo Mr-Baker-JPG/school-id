@@ -342,7 +342,9 @@ test('E2E: Public verification works from verification URL', async ({
 
 	// Test 4: Non-existent employee
 	await navigate(`/verify/non-existent-id-12345`)
-	await expect(page.getByRole('heading', { name: /employee not found/i })).toBeVisible()
+	await expect(
+		page.getByRole('heading', { name: /employee not found/i }),
+	).toBeVisible()
 
 	// Cleanup
 	await prisma.employeeID.deleteMany({

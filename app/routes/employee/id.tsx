@@ -111,7 +111,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 	// Ensure we always have an expiration date for the component
 	const defaultExpirationDate = getDefaultExpirationDate()
-	
+
 	return {
 		employee: {
 			...employee,
@@ -129,7 +129,14 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
-	const { employee, branding, photoUrl, logoUrl, qrCodeDataURL, defaultExpirationDate } = loaderData
+	const {
+		employee,
+		branding,
+		photoUrl,
+		logoUrl,
+		qrCodeDataURL,
+		defaultExpirationDate,
+	} = loaderData
 	const expirationDate = employee.employeeId?.expirationDate
 		? new Date(employee.employeeId.expirationDate).toLocaleDateString()
 		: 'Not set'

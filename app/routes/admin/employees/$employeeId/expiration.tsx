@@ -136,7 +136,9 @@ export default function EmployeeExpirationRoute({
 				? new Date(loaderData.employee.employeeId.expirationDate)
 						.toISOString()
 						.split('T')[0]
-				: new Date(loaderData.defaultExpirationDate).toISOString().split('T')[0],
+				: new Date(loaderData.defaultExpirationDate)
+						.toISOString()
+						.split('T')[0],
 		},
 	})
 

@@ -395,6 +395,7 @@ export async function fetchProfilePicture(
 		)
 		return null
 	}
+	console.log('response', response.body)
 
 	// Handle 404 (no profile picture) - return null gracefully
 	if (response.status === 404 || response.status === 204) {

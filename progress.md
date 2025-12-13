@@ -1710,50 +1710,72 @@ error messages. Toast notifications provide immediate feedback for user actions.
 
 **Implementation:**
 
-- Created comprehensive E2E integration tests in `tests/e2e/employee-id-workflow.test.ts`
+- Created comprehensive E2E integration tests in
+  `tests/e2e/employee-id-workflow.test.ts`
 - Tests cover all required scenarios:
-  - Employee can complete full ID workflow (SIS sync → login → view ID → download PDF → verify via QR code)
-  - Admin can manage employee ID end-to-end (list employees → upload photo → update expiration → download PDF)
-  - Public verification works from QR code scan (valid/invalid status, expired IDs, non-existent employees)
+  - Employee can complete full ID workflow (SIS sync → login → view ID →
+    download PDF → verify via QR code)
+  - Admin can manage employee ID end-to-end (list employees → upload photo →
+    update expiration → download PDF)
+  - Public verification works from QR code scan (valid/invalid status, expired
+    IDs, non-existent employees)
   - Expiration logic works in real scenarios (expiring soon, today, expired)
-  - Error scenarios are handled gracefully (unauthorized access, non-admin access, unauthenticated access)
+  - Error scenarios are handled gracefully (unauthorized access, non-admin
+    access, unauthenticated access)
 - Fixed build errors:
-  - Fixed server-only code usage in `app/routes/employee/id.tsx` (moved `getDefaultExpirationDate()` call to loader)
-  - Fixed server-only code usage in `app/routes/admin/employees/$employeeId/expiration.tsx` (moved `getDefaultExpirationDate()` call to loader)
+  - Fixed server-only code usage in `app/routes/employee/id.tsx` (moved
+    `getDefaultExpirationDate()` call to loader)
+  - Fixed server-only code usage in
+    `app/routes/admin/employees/$employeeId/expiration.tsx` (moved
+    `getDefaultExpirationDate()` call to loader)
 - Fixed test selector issues:
   - Updated "expired" text selectors to be more specific (`/ID has expired/i`)
   - Fixed admin access check to look for 403 error message instead of URL check
-  - Fixed "not found" selector to use role-based selector to avoid strict mode violations
+  - Fixed "not found" selector to use role-based selector to avoid strict mode
+    violations
   - Made download link selectors more flexible
 
 **Tests:**
 
-- ✅ E2E test: Public verification works from QR code scan: Test passes, covers valid/inactive/expired/non-existent scenarios
-- ✅ E2E test: Expiration logic works in real scenarios: Test passes, covers expiring soon/today/expired scenarios
-- ✅ E2E test: Error scenarios are handled gracefully: Test passes, covers unauthorized/non-admin/unauthenticated scenarios
-- ⚠️ E2E test: Employee can complete full ID workflow: Test exists and is comprehensive, but has test setup/timing issues (needs debugging)
-- ⚠️ E2E test: Admin can manage employee ID end-to-end: Test exists and is comprehensive, but has test setup/timing issues (needs debugging)
-- ✅ Tests cover error scenarios as well as happy paths: Comprehensive error scenario coverage implemented
+- ✅ E2E test: Public verification works from QR code scan: Test passes, covers
+  valid/inactive/expired/non-existent scenarios
+- ✅ E2E test: Expiration logic works in real scenarios: Test passes, covers
+  expiring soon/today/expired scenarios
+- ✅ E2E test: Error scenarios are handled gracefully: Test passes, covers
+  unauthorized/non-admin/unauthenticated scenarios
+- ⚠️ E2E test: Employee can complete full ID workflow: Test exists and is
+  comprehensive, but has test setup/timing issues (needs debugging)
+- ⚠️ E2E test: Admin can manage employee ID end-to-end: Test exists and is
+  comprehensive, but has test setup/timing issues (needs debugging)
+- ✅ Tests cover error scenarios as well as happy paths: Comprehensive error
+  scenario coverage implemented
 
 **Test Results:**
 
 - 3 out of 5 tests pass consistently
-- 2 tests have timing/setup issues that need debugging (likely related to test environment or sync timing)
+- 2 tests have timing/setup issues that need debugging (likely related to test
+  environment or sync timing)
 - All required test scenarios are covered
 
 **Files Created:**
 
-- `tests/e2e/employee-id-workflow.test.ts` - Comprehensive E2E integration tests (already existed, enhanced with fixes)
+- `tests/e2e/employee-id-workflow.test.ts` - Comprehensive E2E integration tests
+  (already existed, enhanced with fixes)
 
 **Files Modified:**
 
-- `app/routes/employee/id.tsx` - Fixed server-only code usage (moved default expiration date computation to loader)
-- `app/routes/admin/employees/$employeeId/expiration.tsx` - Fixed server-only code usage (moved default expiration date computation to loader)
+- `app/routes/employee/id.tsx` - Fixed server-only code usage (moved default
+  expiration date computation to loader)
+- `app/routes/admin/employees/$employeeId/expiration.tsx` - Fixed server-only
+  code usage (moved default expiration date computation to loader)
 - `tests/e2e/employee-id-workflow.test.ts` - Fixed test selectors and assertions
 
 **Note:**
 
-The E2E tests are comprehensive and cover all required scenarios for F025. Most tests pass consistently. The remaining test failures appear to be related to test environment setup or timing issues rather than missing functionality. The tests are properly structured and can be debugged in future iterations.
+The E2E tests are comprehensive and cover all required scenarios for F025. Most
+tests pass consistently. The remaining test failures appear to be related to
+test environment setup or timing issues rather than missing functionality. The
+tests are properly structured and can be debugged in future iterations.
 
 ---
 
