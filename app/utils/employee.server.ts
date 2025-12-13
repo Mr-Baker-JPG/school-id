@@ -15,6 +15,17 @@ export function getDefaultExpirationDate(): Date {
 }
 
 /**
+ * Returns July 1 of next year as the expiration date.
+ * Always returns July 1 of the following year, regardless of the current date.
+ */
+export function getNextJuly1ExpirationDate(): Date {
+	const now = new Date()
+	const currentYear = now.getFullYear()
+	// Always return July 1 of next year (month is 0-indexed, so 6 = July)
+	return new Date(currentYear + 1, 6, 1)
+}
+
+/**
  * Expiration status for an employee ID
  */
 export type ExpirationStatus =
@@ -172,23 +183,13 @@ export async function fetchAndCacheFactsProfilePicture(
 	}
 
 	// Upload the profile picture to storage
-	// Convert Buffer to File via Blob to ensure compatibility
+	// Pass Buffer directly - uploadEmployeePhoto supports Buffer and handles it correctly
 	try {
-		// Create a Blob from the buffer, then File from Blob
-		// This ensures the File object has proper size and type properties
-		const blob = new Blob([profilePictureBuffer], { type: 'image/jpeg' })
-		const file = new File([blob], `facts-profile-${personId}.jpg`, {
-			type: 'image/jpeg',
-		})
-
-		// Verify the file size matches the buffer
-		if (file.size !== profilePictureBuffer.length) {
-			console.warn(
-				`File size mismatch: buffer=${profilePictureBuffer.length}, file=${file.size}. This may cause upload issues.`,
-			)
-		}
-
-		const objectKey = await uploadEmployeePhoto(employeeId, file)
+		const objectKey = await uploadEmployeePhoto(
+			employeeId,
+			profilePictureBuffer,
+			'image/jpeg',
+		)
 
 		// Update EmployeeID record with the cached photo URL
 		await prisma.employeeID.upsert({
