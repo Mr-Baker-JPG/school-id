@@ -350,3 +350,181 @@ test('Unauthenticated users cannot access this route', async () => {
 		} as any),
 	).rejects.toThrow()
 })
+
+test('System identifies IDs expiring within 30 days', async () => {
+	const admin = await createAdminUser()
+	const now = new Date()
+	const expiringDate = new Date(now)
+	expiringDate.setDate(expiringDate.getDate() + 15) // 15 days from now
+
+	const employee = await createEmployee({
+		fullName: 'Expiring Employee',
+		status: 'active',
+		expirationDate: expiringDate,
+	})
+
+	const request = await createRequestWithSession(admin.id, '/admin/employees')
+
+	const result = await loader({
+		request,
+		params: {},
+		context: {},
+	} as any)
+
+	const foundEmployee = result.employees.find((e) => e.id === employee.id)
+	expect(foundEmployee).toBeDefined()
+	expect(foundEmployee?.expirationStatus?.type).toBe('expiring')
+	if (foundEmployee?.expirationStatus?.type === 'expiring') {
+		expect(foundEmployee.expirationStatus.daysUntilExpiration).toBe(15)
+	}
+	expect(result.expiringCount).toBe(1)
+	expect(result.expiredCount).toBe(0)
+
+	// Cleanup
+	await prisma.employee.delete({ where: { id: employee.id } })
+	await prisma.user.delete({ where: { id: admin.id } })
+})
+
+test('System identifies expired IDs', async () => {
+	const admin = await createAdminUser()
+	const now = new Date()
+	const expiredDate = new Date(now)
+	expiredDate.setDate(expiredDate.getDate() - 10) // 10 days ago
+
+	const employee = await createEmployee({
+		fullName: 'Expired Employee',
+		status: 'active',
+		expirationDate: expiredDate,
+	})
+
+	const request = await createRequestWithSession(admin.id, '/admin/employees')
+
+	const result = await loader({
+		request,
+		params: {},
+		context: {},
+	} as any)
+
+	const foundEmployee = result.employees.find((e) => e.id === employee.id)
+	expect(foundEmployee).toBeDefined()
+	expect(foundEmployee?.expirationStatus?.type).toBe('expired')
+	if (foundEmployee?.expirationStatus?.type === 'expired') {
+		expect(foundEmployee.expirationStatus.daysSinceExpiration).toBe(10)
+	}
+	expect(result.expiringCount).toBe(0)
+	expect(result.expiredCount).toBe(1)
+
+	// Cleanup
+	await prisma.employee.delete({ where: { id: employee.id } })
+	await prisma.user.delete({ where: { id: admin.id } })
+})
+
+test('Expiring IDs are displayed in admin interface', async () => {
+	const admin = await createAdminUser()
+	const now = new Date()
+	const expiringDate = new Date(now)
+	expiringDate.setDate(expiringDate.getDate() + 20) // 20 days from now
+
+	const employee = await createEmployee({
+		fullName: 'Expiring Employee',
+		status: 'active',
+		expirationDate: expiringDate,
+	})
+
+	const request = await createRequestWithSession(admin.id, '/admin/employees')
+
+	const result = await loader({
+		request,
+		params: {},
+		context: {},
+	} as any)
+
+	const foundEmployee = result.employees.find((e) => e.id === employee.id)
+	expect(foundEmployee).toBeDefined()
+	expect(foundEmployee?.expirationStatus?.type).toBe('expiring')
+	expect(result.expiringCount).toBe(1)
+
+	// Cleanup
+	await prisma.employee.delete({ where: { id: employee.id } })
+	await prisma.user.delete({ where: { id: admin.id } })
+})
+
+test('Already expired IDs are identified separately', async () => {
+	const admin = await createAdminUser()
+	const now = new Date()
+	const expiredDate = new Date(now)
+	expiredDate.setDate(expiredDate.getDate() - 5) // 5 days ago
+
+	const employee = await createEmployee({
+		fullName: 'Expired Employee',
+		status: 'active',
+		expirationDate: expiredDate,
+	})
+
+	const request = await createRequestWithSession(admin.id, '/admin/employees')
+
+	const result = await loader({
+		request,
+		params: {},
+		context: {},
+	} as any)
+
+	const foundEmployee = result.employees.find((e) => e.id === employee.id)
+	expect(foundEmployee).toBeDefined()
+	expect(foundEmployee?.expirationStatus?.type).toBe('expired')
+	expect(result.expiredCount).toBe(1)
+	expect(result.expiringCount).toBe(0)
+
+	// Cleanup
+	await prisma.employee.delete({ where: { id: employee.id } })
+	await prisma.user.delete({ where: { id: admin.id } })
+})
+
+test('Expiration calculation uses correct date logic', async () => {
+	const admin = await createAdminUser()
+	const now = new Date()
+	now.setHours(12, 0, 0, 0) // Set to noon for consistent testing
+
+	// Test exactly 30 days
+	const exactly30Days = new Date(now)
+	exactly30Days.setDate(exactly30Days.getDate() + 30)
+	exactly30Days.setHours(0, 0, 0, 0)
+
+	const employee30 = await createEmployee({
+		fullName: 'Employee 30 Days',
+		status: 'active',
+		expirationDate: exactly30Days,
+	})
+
+	// Test 31 days (should be valid, not expiring)
+	const exactly31Days = new Date(now)
+	exactly31Days.setDate(exactly31Days.getDate() + 31)
+	exactly31Days.setHours(0, 0, 0, 0)
+
+	const employee31 = await createEmployee({
+		fullName: 'Employee 31 Days',
+		status: 'active',
+		expirationDate: exactly31Days,
+	})
+
+	const request = await createRequestWithSession(admin.id, '/admin/employees')
+
+	const result = await loader({
+		request,
+		params: {},
+		context: {},
+	} as any)
+
+	const found30 = result.employees.find((e) => e.id === employee30.id)
+	const found31 = result.employees.find((e) => e.id === employee31.id)
+
+	expect(found30?.expirationStatus?.type).toBe('expiring')
+	expect(found31?.expirationStatus?.type).toBe('valid')
+	expect(result.expiringCount).toBe(1)
+
+	// Cleanup
+	await prisma.employee.deleteMany({
+		where: { id: { in: [employee30.id, employee31.id] } },
+	})
+	await prisma.user.delete({ where: { id: admin.id } })
+})

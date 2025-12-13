@@ -343,8 +343,8 @@
 			"Already expired IDs are identified separately",
 			"Email notifications can be sent (optional)"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F025",

@@ -14,7 +14,11 @@ import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { syncEmployeesFromFacts } from '#app/utils/employee-sync.server.ts'
-import { fetchAndCacheFactsProfilePicture } from '#app/utils/employee.server.ts'
+import {
+	fetchAndCacheFactsProfilePicture,
+	getExpirationStatus,
+	type ExpirationStatus,
+} from '#app/utils/employee.server.ts'
 import {
 	cn,
 	useDebounce,
@@ -84,10 +88,35 @@ export async function loader({ request }: Route.LoaderArgs) {
 		},
 	})
 
+	// Calculate expiration status for each employee
+	const employeesWithExpirationStatus = employees.map((employee) => {
+		let expirationStatus: ExpirationStatus | null = null
+		if (employee.employeeId?.expirationDate) {
+			expirationStatus = getExpirationStatus(
+				employee.employeeId.expirationDate,
+			)
+		}
+
+		return {
+			...employee,
+			expirationStatus,
+		}
+	})
+
+	// Calculate summary statistics
+	const expiringCount = employeesWithExpirationStatus.filter(
+		(e) => e.expirationStatus?.type === 'expiring',
+	).length
+	const expiredCount = employeesWithExpirationStatus.filter(
+		(e) => e.expirationStatus?.type === 'expired',
+	).length
+
 	return {
-		employees,
+		employees: employeesWithExpirationStatus,
 		search: search ?? '',
 		status: status ?? 'all',
+		expiringCount,
+		expiredCount,
 	}
 }
 
@@ -233,6 +262,28 @@ export default function AdminEmployeesRoute({
 				</Form>
 			</div>
 			<Spacer size="2xs" />
+			{(loaderData.expiringCount > 0 || loaderData.expiredCount > 0) && (
+				<div className="rounded-lg border bg-muted/50 p-4">
+					<h2 className="text-h4 mb-2">Expiration Warnings</h2>
+					<div className="flex flex-wrap gap-4">
+						{loaderData.expiringCount > 0 && (
+							<div className="flex items-center gap-2">
+								<span className="inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-sm font-medium text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+									{loaderData.expiringCount} ID{loaderData.expiringCount !== 1 ? 's' : ''} expiring within 30 days
+								</span>
+							</div>
+						)}
+						{loaderData.expiredCount > 0 && (
+							<div className="flex items-center gap-2">
+								<span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-800 dark:bg-red-900 dark:text-red-200">
+									{loaderData.expiredCount} ID{loaderData.expiredCount !== 1 ? 's' : ''} expired
+								</span>
+							</div>
+						)}
+					</div>
+				</div>
+			)}
+			<Spacer size="2xs" />
 			<Form
 				method="get"
 				className="flex flex-col gap-4"
@@ -315,16 +366,38 @@ export default function AdminEmployeesRoute({
 											</span>
 										</td>
 										<td className="p-2">
-											<Link
-												to={`/admin/employees/${employee.id}/expiration`}
-												className="text-foreground hover:underline"
-											>
-												{employee.employeeId?.expirationDate
-													? new Date(
-															employee.employeeId.expirationDate,
-														).toLocaleDateString()
-													: 'Not set'}
-											</Link>
+											<div className="flex flex-col gap-1">
+												<Link
+													to={`/admin/employees/${employee.id}/expiration`}
+													className="text-foreground hover:underline"
+												>
+													{employee.employeeId?.expirationDate
+														? new Date(
+																employee.employeeId.expirationDate,
+															).toLocaleDateString()
+														: 'Not set'}
+												</Link>
+												{employee.expirationStatus &&
+													employee.expirationStatus.type !== 'valid' && (
+														<span
+															className={cn(
+																'inline-flex w-fit items-center rounded-full px-2 py-1 text-xs font-medium',
+																{
+																	'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200':
+																		employee.expirationStatus.type ===
+																		'expiring',
+																	'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200':
+																		employee.expirationStatus.type ===
+																		'expired',
+																},
+															)}
+														>
+															{employee.expirationStatus.type === 'expiring'
+																? `Expires in ${employee.expirationStatus.daysUntilExpiration} day${employee.expirationStatus.daysUntilExpiration !== 1 ? 's' : ''}`
+																: `Expired ${employee.expirationStatus.daysSinceExpiration} day${employee.expirationStatus.daysSinceExpiration !== 1 ? 's' : ''} ago`}
+														</span>
+													)}
+											</div>
 										</td>
 										<td className="p-2">
 											<Link

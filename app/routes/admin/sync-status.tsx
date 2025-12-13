@@ -106,9 +106,7 @@ export async function action({ request }: Route.ActionArgs) {
 	return redirect('/admin/sync-status')
 }
 
-export default function SyncStatusRoute({
-	loaderData,
-}: Route.ComponentProps) {
+export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 	const { lastSync, statistics, recentErrors, employeesWithSyncIssues } =
 		loaderData
 	const syncPending = useIsPending({ formAction: '/admin/sync-status' })
@@ -145,7 +143,7 @@ export default function SyncStatusRoute({
 			<Spacer size="2xs" />
 
 			{/* Last Sync Status */}
-			<div className="rounded-lg border border-border bg-card p-6">
+			<div className="border-border bg-card rounded-lg border p-6">
 				<h2 className="text-h2 mb-4">Last Sync</h2>
 				{lastSync ? (
 					<div className="space-y-2">
@@ -176,7 +174,9 @@ export default function SyncStatusRoute({
 								<span className="text-muted-foreground">Errors:</span>{' '}
 								<span
 									className={
-										lastSync.errors > 0 ? 'font-medium text-destructive' : 'font-medium'
+										lastSync.errors > 0
+											? 'text-destructive font-medium'
+											: 'font-medium'
 									}
 								>
 									{lastSync.errors}
@@ -184,7 +184,7 @@ export default function SyncStatusRoute({
 							</div>
 						</div>
 						{lastSync.errorMessage && (
-							<div className="mt-2 rounded bg-destructive/10 p-2 text-sm text-destructive">
+							<div className="bg-destructive/10 text-destructive mt-2 rounded p-2 text-sm">
 								{lastSync.errorMessage}
 							</div>
 						)}
@@ -197,24 +197,24 @@ export default function SyncStatusRoute({
 			<Spacer size="xs" />
 
 			{/* Statistics */}
-			<div className="rounded-lg border border-border bg-card p-6">
+			<div className="border-border bg-card rounded-lg border p-6">
 				<h2 className="text-h2 mb-4">Sync Statistics</h2>
 				<div className="grid grid-cols-3 gap-4">
 					<div>
 						<div className="text-2xl font-bold">{statistics.total}</div>
-						<div className="text-sm text-muted-foreground">Total Employees</div>
+						<div className="text-muted-foreground text-sm">Total Employees</div>
 					</div>
 					<div>
-						<div className="text-2xl font-bold text-success">
+						<div className="text-success text-2xl font-bold">
 							{statistics.active}
 						</div>
-						<div className="text-sm text-muted-foreground">Active</div>
+						<div className="text-muted-foreground text-sm">Active</div>
 					</div>
 					<div>
-						<div className="text-2xl font-bold text-muted-foreground">
+						<div className="text-muted-foreground text-2xl font-bold">
 							{statistics.inactive}
 						</div>
-						<div className="text-sm text-muted-foreground">Inactive</div>
+						<div className="text-muted-foreground text-sm">Inactive</div>
 					</div>
 				</div>
 			</div>
@@ -224,13 +224,13 @@ export default function SyncStatusRoute({
 			{/* Recent Errors */}
 			{recentErrors.length > 0 && (
 				<>
-					<div className="rounded-lg border border-border bg-card p-6">
+					<div className="border-border bg-card rounded-lg border p-6">
 						<h2 className="text-h2 mb-4">Recent Sync Errors</h2>
 						<div className="space-y-3">
 							{recentErrors.map((error) => (
 								<div
 									key={error.id}
-									className="rounded border border-destructive/20 bg-destructive/5 p-3"
+									className="border-destructive/20 bg-destructive/5 rounded border p-3"
 								>
 									<div className="flex items-center justify-between">
 										<div className="flex items-center gap-2">
@@ -239,12 +239,12 @@ export default function SyncStatusRoute({
 												{new Date(error.createdAt).toLocaleString()}
 											</span>
 										</div>
-										<span className="text-sm text-muted-foreground">
+										<span className="text-muted-foreground text-sm">
 											{error.errors} error{error.errors !== 1 ? 's' : ''}
 										</span>
 									</div>
 									{error.errorMessage && (
-										<div className="mt-2 text-sm text-destructive">
+										<div className="text-destructive mt-2 text-sm">
 											{error.errorMessage}
 										</div>
 									)}
@@ -258,18 +258,18 @@ export default function SyncStatusRoute({
 
 			{/* Employees with Sync Issues */}
 			{employeesWithSyncIssues.length > 0 && (
-				<div className="rounded-lg border border-border bg-card p-6">
+				<div className="border-border bg-card rounded-lg border p-6">
 					<h2 className="text-h2 mb-4">
 						Employees Pending Sync ({employeesWithSyncIssues.length})
 					</h2>
-					<p className="mb-4 text-sm text-muted-foreground">
+					<p className="text-muted-foreground mb-4 text-sm">
 						Employees that haven't been updated in the last 7 days
 					</p>
 					<div className="space-y-2">
 						{employeesWithSyncIssues.map((employee) => (
 							<div
 								key={employee.id}
-								className="flex items-center justify-between rounded border border-border p-2"
+								className="border-border flex items-center justify-between rounded border p-2"
 							>
 								<div>
 									<Link
@@ -278,7 +278,7 @@ export default function SyncStatusRoute({
 									>
 										{employee.fullName}
 									</Link>
-									<div className="text-sm text-muted-foreground">
+									<div className="text-muted-foreground text-sm">
 										{employee.email} • Last updated:{' '}
 										{new Date(employee.updatedAt).toLocaleDateString()}
 									</div>

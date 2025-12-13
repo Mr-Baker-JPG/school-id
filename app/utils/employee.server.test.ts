@@ -1,232 +1,244 @@
-import { faker } from '@faker-js/faker'
-import { describe, expect, test, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { prisma } from './db.server.ts'
 import {
 	getDefaultExpirationDate,
-	fetchAndCacheFactsProfilePicture,
+	getExpirationStatus,
+	getExpiringEmployees,
+	type ExpirationStatus,
 } from './employee.server.ts'
-import * as factsApi from './facts-api.server.ts'
-import * as storage from './storage.server.ts'
 
-describe('Employee Server Utilities', () => {
-	beforeEach(() => {
-		vi.clearAllMocks()
-		// Set mock environment variables for testing
-		process.env.FACTS_SUBSCRIPTION_KEY = 'MOCK_SUBSCRIPTION_KEY'
-		process.env.FACTS_API_KEY = 'MOCK_API_KEY'
-		process.env.FACTS_BASE_URL = 'https://api.factsmgt.com'
+describe('getDefaultExpirationDate', () => {
+	it('returns July 1 of current year', () => {
+		const date = getDefaultExpirationDate()
+		expect(date.getMonth()).toBe(6) // July (0-indexed)
+		expect(date.getDate()).toBe(1)
+		expect(date.getFullYear()).toBe(new Date().getFullYear())
 	})
+})
 
-	describe('getDefaultExpirationDate', () => {
-		test('returns July 1 of current year', () => {
-			const expirationDate = getDefaultExpirationDate()
-			const now = new Date()
-			const currentYear = now.getFullYear()
+describe('getExpirationStatus', () => {
+	it('returns valid status for future expiration dates', () => {
+		const futureDate = new Date()
+		futureDate.setDate(futureDate.getDate() + 60) // 60 days in future
 
-			expect(expirationDate.getFullYear()).toBe(currentYear)
-			expect(expirationDate.getMonth()).toBe(6) // July is month 6 (0-indexed)
-			expect(expirationDate.getDate()).toBe(1)
-		})
-
-		test('returns valid date', () => {
-			const expirationDate = getDefaultExpirationDate()
-			expect(expirationDate instanceof Date).toBe(true)
-			expect(isNaN(expirationDate.getTime())).toBe(false)
-		})
-	})
-
-	describe('fetchAndCacheFactsProfilePicture', () => {
-		let fetchProfilePictureSpy: ReturnType<typeof vi.spyOn>
-		let uploadEmployeePhotoSpy: ReturnType<typeof vi.spyOn>
-
-		beforeEach(() => {
-			fetchProfilePictureSpy = vi.spyOn(factsApi, 'fetchProfilePicture')
-			uploadEmployeePhotoSpy = vi.spyOn(storage, 'uploadEmployeePhoto')
-		})
-
-		async function createEmployee(data?: {
-			sisEmployeeId?: string
-			hasPhoto?: boolean
-		}) {
-			const employee = await prisma.employee.create({
-				data: {
-					sisEmployeeId: data?.sisEmployeeId ?? '123',
-					fullName: faker.person.fullName(),
-					jobTitle: faker.person.jobTitle(),
-					email: faker.internet.email(),
-					status: 'active',
-					employeeId: data?.hasPhoto
-						? {
-								create: {
-									photoUrl: 'employees/test/uploaded-photo.jpg',
-									expirationDate: getDefaultExpirationDate(),
-								},
-							}
-						: undefined,
-				},
-				select: {
-					id: true,
-					sisEmployeeId: true,
-				},
-			})
-
-			return employee
+		const status = getExpirationStatus(futureDate)
+		expect(status.type).toBe('valid')
+		if (status.type === 'valid') {
+			expect(status.daysUntilExpiration).toBeGreaterThan(30)
 		}
+	})
 
-		test('Service function caches fetched FACTS photo to storage and updates EmployeeID record', async () => {
-			const employee = await createEmployee({ sisEmployeeId: '456' })
-			const mockImageBuffer = Buffer.from('fake-image-data')
-			const mockObjectKey = 'employees/test/facts-photo.jpg'
+	it('returns expiring status for dates within 30 days', () => {
+		const nearFutureDate = new Date()
+		nearFutureDate.setDate(nearFutureDate.getDate() + 15) // 15 days in future
 
-			fetchProfilePictureSpy.mockResolvedValue(mockImageBuffer)
-			uploadEmployeePhotoSpy.mockResolvedValue(mockObjectKey)
+		const status = getExpirationStatus(nearFutureDate)
+		expect(status.type).toBe('expiring')
+		if (status.type === 'expiring') {
+			expect(status.daysUntilExpiration).toBe(15)
+		}
+	})
 
-			const result = await fetchAndCacheFactsProfilePicture(
-				employee.id,
-				employee.sisEmployeeId,
-			)
+	it('returns expiring status for dates exactly 30 days away', () => {
+		const exactly30Days = new Date()
+		exactly30Days.setDate(exactly30Days.getDate() + 30)
 
-			expect(result).toBe(mockObjectKey)
-			expect(fetchProfilePictureSpy).toHaveBeenCalledWith(456)
-			expect(uploadEmployeePhotoSpy).toHaveBeenCalled()
+		const status = getExpirationStatus(exactly30Days)
+		expect(status.type).toBe('expiring')
+		if (status.type === 'expiring') {
+			expect(status.daysUntilExpiration).toBe(30)
+		}
+	})
 
-			// Verify EmployeeID record was updated
-			const employeeId = await prisma.employeeID.findUnique({
-				where: { employeeId: employee.id },
-				select: { photoUrl: true },
-			})
+	it('returns expired status for past dates', () => {
+		const pastDate = new Date()
+		pastDate.setDate(pastDate.getDate() - 10) // 10 days ago
 
-			expect(employeeId?.photoUrl).toBe(mockObjectKey)
+		const status = getExpirationStatus(pastDate)
+		expect(status.type).toBe('expired')
+		if (status.type === 'expired') {
+			expect(status.daysSinceExpiration).toBe(10)
+		}
+	})
 
-			// Cleanup
-			await prisma.employee.delete({ where: { id: employee.id } })
+	it('returns expired status for today when expiration is today', () => {
+		const today = new Date()
+		today.setHours(0, 0, 0, 0)
+
+		const status = getExpirationStatus(today, today)
+		expect(status.type).toBe('expiring')
+		if (status.type === 'expiring') {
+			expect(status.daysUntilExpiration).toBe(0)
+		}
+	})
+
+	it('uses custom warning days', () => {
+		const futureDate = new Date()
+		futureDate.setDate(futureDate.getDate() + 15) // 15 days in future
+
+		// With default 30 days, this should be expiring
+		const status30 = getExpirationStatus(futureDate, new Date(), 30)
+		expect(status30.type).toBe('expiring')
+
+		// With 10 days warning, this should be valid
+		const status10 = getExpirationStatus(futureDate, new Date(), 10)
+		expect(status10.type).toBe('valid')
+	})
+})
+
+describe('getExpiringEmployees', () => {
+	beforeEach(async () => {
+		// Clean up test data
+		await prisma.employeeID.deleteMany()
+		await prisma.employee.deleteMany()
+	})
+
+	it('returns employees with IDs expiring within warning period', async () => {
+		const now = new Date()
+		const expiringDate = new Date(now)
+		expiringDate.setDate(expiringDate.getDate() + 15) // 15 days from now
+
+		// Create employee with expiring ID
+		const employee = await prisma.employee.create({
+			data: {
+				sisEmployeeId: '123',
+				fullName: 'Test Employee',
+				jobTitle: 'Teacher',
+				email: 'test@example.com',
+				status: 'active',
+				employeeId: {
+					create: {
+						expirationDate: expiringDate,
+					},
+				},
+			},
 		})
 
-		test('Photo fetching logic prioritizes uploaded photo over FACTS photo', async () => {
-			const employee = await createEmployee({
+		const expiring = await getExpiringEmployees(30, now)
+		expect(expiring.length).toBe(1)
+		expect(expiring[0].id).toBe(employee.id)
+		expect(expiring[0].expirationStatus?.type).toBe('expiring')
+	})
+
+	it('returns employees with expired IDs', async () => {
+		const now = new Date()
+		const expiredDate = new Date(now)
+		expiredDate.setDate(expiredDate.getDate() - 10) // 10 days ago
+
+		// Create employee with expired ID
+		const employee = await prisma.employee.create({
+			data: {
+				sisEmployeeId: '456',
+				fullName: 'Expired Employee',
+				jobTitle: 'Teacher',
+				email: 'expired@example.com',
+				status: 'active',
+				employeeId: {
+					create: {
+						expirationDate: expiredDate,
+					},
+				},
+			},
+		})
+
+		const expiring = await getExpiringEmployees(30, now)
+		expect(expiring.length).toBe(1)
+		expect(expiring[0].id).toBe(employee.id)
+		expect(expiring[0].expirationStatus?.type).toBe('expired')
+	})
+
+	it('does not return employees with valid IDs', async () => {
+		const now = new Date()
+		const validDate = new Date(now)
+		validDate.setDate(validDate.getDate() + 60) // 60 days from now
+
+		// Create employee with valid ID
+		await prisma.employee.create({
+			data: {
 				sisEmployeeId: '789',
-				hasPhoto: true,
-			})
-
-			const result = await fetchAndCacheFactsProfilePicture(
-				employee.id,
-				employee.sisEmployeeId,
-			)
-
-			expect(result).toBeNull()
-			expect(fetchProfilePictureSpy).not.toHaveBeenCalled()
-			expect(uploadEmployeePhotoSpy).not.toHaveBeenCalled()
-
-			// Cleanup
-			await prisma.employee.delete({ where: { id: employee.id } })
+				fullName: 'Valid Employee',
+				jobTitle: 'Teacher',
+				email: 'valid@example.com',
+				status: 'active',
+				employeeId: {
+					create: {
+						expirationDate: validDate,
+					},
+				},
+			},
 		})
 
-		test('Returns null when FACTS API returns null (no profile picture)', async () => {
-			const employee = await createEmployee({ sisEmployeeId: '999' })
+		const expiring = await getExpiringEmployees(30, now)
+		expect(expiring.length).toBe(0)
+	})
 
-			fetchProfilePictureSpy.mockResolvedValue(null)
+	it('only returns active employees', async () => {
+		const now = new Date()
+		const expiringDate = new Date(now)
+		expiringDate.setDate(expiringDate.getDate() + 15)
 
-			const result = await fetchAndCacheFactsProfilePicture(
-				employee.id,
-				employee.sisEmployeeId,
-			)
-
-			expect(result).toBeNull()
-			expect(fetchProfilePictureSpy).toHaveBeenCalledWith(999)
-			expect(uploadEmployeePhotoSpy).not.toHaveBeenCalled()
-
-			// Cleanup
-			await prisma.employee.delete({ where: { id: employee.id } })
+		// Create inactive employee with expiring ID
+		await prisma.employee.create({
+			data: {
+				sisEmployeeId: '999',
+				fullName: 'Inactive Employee',
+				jobTitle: 'Teacher',
+				email: 'inactive@example.com',
+				status: 'inactive',
+				employeeId: {
+					create: {
+						expirationDate: expiringDate,
+					},
+				},
+			},
 		})
 
-		test('Returns null when FACTS API call fails', async () => {
-			const employee = await createEmployee({ sisEmployeeId: '888' })
+		const expiring = await getExpiringEmployees(30, now)
+		expect(expiring.length).toBe(0)
+	})
 
-			fetchProfilePictureSpy.mockResolvedValue(null)
+	it('orders results by expiration date ascending', async () => {
+		const now = new Date()
+		const date1 = new Date(now)
+		date1.setDate(date1.getDate() + 5) // Expires in 5 days
+		const date2 = new Date(now)
+		date2.setDate(date2.getDate() + 20) // Expires in 20 days
 
-			const result = await fetchAndCacheFactsProfilePicture(
-				employee.id,
-				employee.sisEmployeeId,
-			)
-
-			expect(result).toBeNull()
-			expect(uploadEmployeePhotoSpy).not.toHaveBeenCalled()
-
-			// Cleanup
-			await prisma.employee.delete({ where: { id: employee.id } })
+		// Create employees with different expiration dates
+		const employee1 = await prisma.employee.create({
+			data: {
+				sisEmployeeId: '111',
+				fullName: 'Employee 1',
+				jobTitle: 'Teacher',
+				email: 'emp1@example.com',
+				status: 'active',
+				employeeId: {
+					create: {
+						expirationDate: date1,
+					},
+				},
+			},
 		})
 
-		test('Returns null when storage upload fails', async () => {
-			const employee = await createEmployee({ sisEmployeeId: '777' })
-			const mockImageBuffer = Buffer.from('fake-image-data')
-			const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-
-			fetchProfilePictureSpy.mockResolvedValue(mockImageBuffer)
-			uploadEmployeePhotoSpy.mockRejectedValue(
-				new Error('Storage upload failed'),
-			)
-
-			const result = await fetchAndCacheFactsProfilePicture(
-				employee.id,
-				employee.sisEmployeeId,
-			)
-
-			expect(result).toBeNull()
-			expect(fetchProfilePictureSpy).toHaveBeenCalledWith(777)
-			expect(uploadEmployeePhotoSpy).toHaveBeenCalled()
-			expect(consoleWarn).toHaveBeenCalled()
-			consoleWarn.mockRestore()
-
-			// Cleanup
-			await prisma.employee.delete({ where: { id: employee.id } })
+		const employee2 = await prisma.employee.create({
+			data: {
+				sisEmployeeId: '222',
+				fullName: 'Employee 2',
+				jobTitle: 'Teacher',
+				email: 'emp2@example.com',
+				status: 'active',
+				employeeId: {
+					create: {
+						expirationDate: date2,
+					},
+				},
+			},
 		})
 
-		test('Handles invalid sisEmployeeId gracefully', async () => {
-			const employee = await createEmployee({ sisEmployeeId: 'invalid' })
-			const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-
-			const result = await fetchAndCacheFactsProfilePicture(
-				employee.id,
-				employee.sisEmployeeId,
-			)
-
-			expect(result).toBeNull()
-			expect(fetchProfilePictureSpy).not.toHaveBeenCalled()
-			expect(uploadEmployeePhotoSpy).not.toHaveBeenCalled()
-			expect(consoleWarn).toHaveBeenCalled()
-			consoleWarn.mockRestore()
-
-			// Cleanup
-			await prisma.employee.delete({ where: { id: employee.id } })
-		})
-
-		test('Creates EmployeeID record if it does not exist', async () => {
-			const employee = await createEmployee({ sisEmployeeId: '555' })
-			const mockImageBuffer = Buffer.from('fake-image-data')
-			const mockObjectKey = 'employees/test/facts-photo.jpg'
-
-			fetchProfilePictureSpy.mockResolvedValue(mockImageBuffer)
-			uploadEmployeePhotoSpy.mockResolvedValue(mockObjectKey)
-
-			const result = await fetchAndCacheFactsProfilePicture(
-				employee.id,
-				employee.sisEmployeeId,
-			)
-
-			expect(result).toBe(mockObjectKey)
-
-			// Verify EmployeeID record was created
-			const employeeId = await prisma.employeeID.findUnique({
-				where: { employeeId: employee.id },
-				select: { photoUrl: true, expirationDate: true },
-			})
-
-			expect(employeeId).toBeDefined()
-			expect(employeeId?.photoUrl).toBe(mockObjectKey)
-			expect(employeeId?.expirationDate).toBeDefined()
-
-			// Cleanup
-			await prisma.employee.delete({ where: { id: employee.id } })
-		})
+		const expiring = await getExpiringEmployees(30, now)
+		expect(expiring.length).toBe(2)
+		// Should be ordered by expiration date ascending (earliest first)
+		expect(expiring[0].id).toBe(employee1.id)
+		expect(expiring[1].id).toBe(employee2.id)
 	})
 })

@@ -219,11 +219,11 @@ model EmployeeID {
 }
 
 model SyncHistory {
-  id          String   @id @default(cuid())
-  success     Boolean
-  created     Int      @default(0)
-  updated     Int      @default(0)
-  errors      Int      @default(0)
+  id           String  @id @default(cuid())
+  success      Boolean
+  created      Int     @default(0)
+  updated      Int     @default(0)
+  errors       Int     @default(0)
   errorMessage String?
 
   createdAt DateTime @default(now())

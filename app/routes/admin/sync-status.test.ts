@@ -159,10 +159,7 @@ test('Dashboard displays last sync timestamp', async () => {
 		createdAt: syncTime,
 	})
 
-	const request = await createRequestWithSession(
-		admin.id,
-		'/admin/sync-status',
-	)
+	const request = await createRequestWithSession(admin.id, '/admin/sync-status')
 
 	const result = await loader({
 		request,
@@ -202,10 +199,7 @@ test('Dashboard shows sync errors if any occurred', async () => {
 		createdAt: new Date('2024-01-15T11:00:00Z'),
 	})
 
-	const request = await createRequestWithSession(
-		admin.id,
-		'/admin/sync-status',
-	)
+	const request = await createRequestWithSession(admin.id, '/admin/sync-status')
 
 	const result = await loader({
 		request,
@@ -260,10 +254,7 @@ test('Dashboard lists employees with sync issues', async () => {
 		updatedAt: threeDaysAgo,
 	})
 
-	const request = await createRequestWithSession(
-		admin.id,
-		'/admin/sync-status',
-	)
+	const request = await createRequestWithSession(admin.id, '/admin/sync-status')
 
 	const result = await loader({
 		request,
@@ -280,13 +271,15 @@ test('Dashboard lists employees with sync issues', async () => {
 	expect(employeeIds).not.toContain(recentEmployee.id)
 
 	// Should be sorted by updatedAt asc (oldest first)
-	expect(result.employeesWithSyncIssues[0].updatedAt.getTime()).toBeLessThanOrEqual(
-		result.employeesWithSyncIssues[1].updatedAt.getTime(),
-	)
+	expect(
+		result.employeesWithSyncIssues[0].updatedAt.getTime(),
+	).toBeLessThanOrEqual(result.employeesWithSyncIssues[1].updatedAt.getTime())
 
 	// Cleanup
 	await prisma.employee.deleteMany({
-		where: { id: { in: [oldEmployee1.id, oldEmployee2.id, recentEmployee.id] } },
+		where: {
+			id: { in: [oldEmployee1.id, oldEmployee2.id, recentEmployee.id] },
+		},
 	})
 	await prisma.user.delete({ where: { id: admin.id } })
 })
@@ -306,10 +299,7 @@ test('Dashboard shows sync statistics (total, active, inactive)', async () => {
 		status: 'inactive',
 	})
 
-	const request = await createRequestWithSession(
-		admin.id,
-		'/admin/sync-status',
-	)
+	const request = await createRequestWithSession(admin.id, '/admin/sync-status')
 
 	const result = await loader({
 		request,
@@ -364,10 +354,7 @@ test('Unauthenticated users cannot access this route', async () => {
 test('Dashboard shows no sync history when none exists', async () => {
 	const admin = await createAdminUser()
 
-	const request = await createRequestWithSession(
-		admin.id,
-		'/admin/sync-status',
-	)
+	const request = await createRequestWithSession(admin.id, '/admin/sync-status')
 
 	const result = await loader({
 		request,
@@ -400,10 +387,7 @@ test('Dashboard limits employees with sync issues to 50', async () => {
 		employees.push(employee)
 	}
 
-	const request = await createRequestWithSession(
-		admin.id,
-		'/admin/sync-status',
-	)
+	const request = await createRequestWithSession(admin.id, '/admin/sync-status')
 
 	const result = await loader({
 		request,

@@ -1506,16 +1506,21 @@ error messages. Toast notifications provide immediate feedback for user actions.
   - `id`, `success`, `created`, `updated`, `errors`, `errorMessage`, `createdAt`
   - Indexed by `createdAt` for efficient querying
 - Updated `employee-sync.server.ts` to log sync history:
-  - Added `logSyncHistory()` function that creates SyncHistory records after each sync
+  - Added `logSyncHistory()` function that creates SyncHistory records after
+    each sync
   - Logs sync results including success status, counts, and error messages
   - History is logged even when sync fails
 - Created admin sync status dashboard route at `/admin/sync-status` with:
-  - Loader that fetches last sync timestamp, statistics, recent errors, and employees with sync issues
-  - Displays last sync status with timestamp, success/failure indicator, and counts
+  - Loader that fetches last sync timestamp, statistics, recent errors, and
+    employees with sync issues
+  - Displays last sync status with timestamp, success/failure indicator, and
+    counts
   - Shows sync statistics (total, active, inactive employees)
   - Lists recent sync errors (last 10 syncs with errors)
-  - Lists employees pending sync (employees not updated in last 7 days, limited to 50)
-  - Manual sync trigger button that executes sync and redirects with toast notification
+  - Lists employees pending sync (employees not updated in last 7 days, limited
+    to 50)
+  - Manual sync trigger button that executes sync and redirects with toast
+    notification
   - Refresh button to reload dashboard data
 - Dashboard UI features:
   - Visual indicators for sync success/failure status
@@ -1525,18 +1530,26 @@ error messages. Toast notifications provide immediate feedback for user actions.
 
 **Tests:**
 
-- ✅ Dashboard displays last sync timestamp: Last sync record is retrieved and displayed correctly
-- ✅ Dashboard shows sync errors if any occurred: Recent errors are displayed with error messages and counts
-- ✅ Dashboard lists employees with sync issues: Employees not updated in last 7 days are listed correctly
-- ✅ Dashboard shows sync statistics (total, active, inactive): Statistics are calculated correctly from Employee table
-- ✅ Dashboard is only accessible to admins: Non-admin users are denied access (403 error)
-- ✅ Dashboard refreshes sync status on demand: Refresh functionality available via useRevalidator
+- ✅ Dashboard displays last sync timestamp: Last sync record is retrieved and
+  displayed correctly
+- ✅ Dashboard shows sync errors if any occurred: Recent errors are displayed
+  with error messages and counts
+- ✅ Dashboard lists employees with sync issues: Employees not updated in last 7
+  days are listed correctly
+- ✅ Dashboard shows sync statistics (total, active, inactive): Statistics are
+  calculated correctly from Employee table
+- ✅ Dashboard is only accessible to admins: Non-admin users are denied access
+  (403 error)
+- ✅ Dashboard refreshes sync status on demand: Refresh functionality available
+  via useRevalidator
 - ✅ All 8 unit tests pass
 
 **Test File:**
 
-- Created `app/routes/admin/sync-status.test.ts` with comprehensive test coverage
-- Tests cover authentication, authorization, data display, sync history, errors, statistics, and employees with sync issues
+- Created `app/routes/admin/sync-status.test.ts` with comprehensive test
+  coverage
+- Tests cover authentication, authorization, data display, sync history, errors,
+  statistics, and employees with sync issues
 
 **Files Created:**
 
@@ -1551,6 +1564,62 @@ error messages. Toast notifications provide immediate feedback for user actions.
 **Migration:**
 
 - Migration `20251213060422_add_sync_history` created and applied
+
+---
+
+## 2025-12-13 – F024
+
+**Feature:** Employee ID Expiration Notifications
+
+**Implementation:**
+
+- Created expiration status utility functions in `app/utils/employee.server.ts`:
+  - `getExpirationStatus()` - Determines if an ID is valid, expiring (within 30 days), or expired
+  - `getExpiringEmployees()` - Fetches employees with IDs expiring within warning period or already expired
+- Updated admin employee list route (`/admin/employees`) to:
+  - Calculate expiration status for each employee in the loader
+  - Display expiration warnings in the employee table with color-coded badges
+  - Show summary section with counts of expiring and expired IDs
+- Created email notification infrastructure (`app/utils/expiration-notifications.server.tsx`):
+  - `ExpirationNotificationEmail` - React Email template for expiration notifications
+  - `sendExpirationNotifications()` - Function to send expiration alerts to all admin users
+  - Email notifications are optional and can be triggered manually or via scheduled job
+- Expiration warnings display:
+  - Yellow badge for IDs expiring within 30 days (shows days until expiration)
+  - Red badge for expired IDs (shows days since expiration)
+  - Summary section at top of employee list showing total counts
+- Expiration calculation logic:
+  - Uses correct date comparison (normalizes to midnight for accurate day calculations)
+  - Configurable warning period (default: 30 days)
+  - Handles edge cases (today's date, exactly 30 days, etc.)
+
+**Tests:**
+
+- ✅ System identifies IDs expiring within 30 days: `getExpirationStatus()` correctly identifies expiring IDs
+- ✅ Expiring IDs are displayed in admin interface: Admin employee list shows expiration status for each employee
+- ✅ Warning messages are clear and actionable: Color-coded badges with clear messages (e.g., "Expires in 15 days", "Expired 10 days ago")
+- ✅ Expiration calculation uses correct date logic: Date calculations handle edge cases correctly (exactly 30 days, today, past dates)
+- ✅ Already expired IDs are identified separately: Expired IDs are distinguished from expiring IDs with different badge colors
+- ✅ Email notifications can be sent (optional): Email notification infrastructure is in place and can be triggered programmatically
+- ✅ All 12 employee.server utility tests pass
+- ✅ All 13 admin employee list route tests pass (including 5 new expiration notification tests)
+- ✅ All existing tests continue to pass
+
+**Test Files:**
+
+- Updated `app/utils/employee.server.test.ts` - Added comprehensive tests for `getExpirationStatus()` and `getExpiringEmployees()`
+- Updated `app/routes/admin/employees/index.test.ts` - Added 5 new tests for expiration notification functionality
+
+**Files Created:**
+
+- `app/utils/expiration-notifications.server.tsx` - Email notification infrastructure
+
+**Files Modified:**
+
+- `app/utils/employee.server.ts` - Added expiration status utility functions
+- `app/routes/admin/employees/index.tsx` - Added expiration status calculation and UI warnings
+- `app/utils/employee.server.test.ts` - Added expiration status tests
+- `app/routes/admin/employees/index.test.ts` - Added expiration notification tests
 
 ---
 

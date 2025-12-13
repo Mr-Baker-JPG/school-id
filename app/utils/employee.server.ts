@@ -15,6 +15,119 @@ export function getDefaultExpirationDate(): Date {
 }
 
 /**
+ * Expiration status for an employee ID
+ */
+export type ExpirationStatus =
+	| { type: 'valid'; daysUntilExpiration: number }
+	| { type: 'expiring'; daysUntilExpiration: number }
+	| { type: 'expired'; daysSinceExpiration: number }
+
+/**
+ * Determines the expiration status of an employee ID.
+ * @param expirationDate - The expiration date of the ID
+ * @param currentDate - The current date (defaults to now)
+ * @param warningDays - Number of days before expiration to show warning (default: 30)
+ * @returns ExpirationStatus indicating if ID is valid, expiring, or expired
+ */
+export function getExpirationStatus(
+	expirationDate: Date,
+	currentDate: Date = new Date(),
+	warningDays: number = 30,
+): ExpirationStatus {
+	const expiration = new Date(expirationDate)
+	expiration.setHours(0, 0, 0, 0)
+	const current = new Date(currentDate)
+	current.setHours(0, 0, 0, 0)
+
+	const diffTime = expiration.getTime() - current.getTime()
+	const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+	if (diffDays < 0) {
+		// Expired
+		return {
+			type: 'expired',
+			daysSinceExpiration: Math.abs(diffDays),
+		}
+	} else if (diffDays <= warningDays) {
+		// Expiring within warning period
+		return {
+			type: 'expiring',
+			daysUntilExpiration: diffDays,
+		}
+	} else {
+		// Valid (not expiring soon)
+		return {
+			type: 'valid',
+			daysUntilExpiration: diffDays,
+		}
+	}
+}
+
+/**
+ * Fetches employees with IDs expiring within the specified number of days or already expired.
+ * @param warningDays - Number of days before expiration to include (default: 30)
+ * @param currentDate - The current date (defaults to now)
+ * @returns Array of employees with expiring or expired IDs
+ */
+export async function getExpiringEmployees(
+	warningDays: number = 30,
+	currentDate: Date = new Date(),
+) {
+	const current = new Date(currentDate)
+	current.setHours(0, 0, 0, 0)
+	const warningThreshold = new Date(current)
+	warningThreshold.setDate(warningThreshold.getDate() + warningDays)
+	warningThreshold.setHours(23, 59, 59, 999)
+
+	// First, fetch EmployeeID records that are expiring or expired
+	const expiringEmployeeIds = await prisma.employeeID.findMany({
+		where: {
+			expirationDate: {
+				lte: warningThreshold, // Expiring within warning days or already expired
+			},
+		},
+		select: {
+			employeeId: true,
+			expirationDate: true,
+			employee: {
+				select: {
+					id: true,
+					fullName: true,
+					email: true,
+					jobTitle: true,
+					status: true,
+				},
+			},
+		},
+		orderBy: {
+			expirationDate: 'asc',
+		},
+	})
+
+	// Filter to only active employees and calculate expiration status
+	return expiringEmployeeIds
+		.filter((eid) => eid.employee.status === 'active')
+		.map((eid) => {
+			const expirationStatus = getExpirationStatus(
+				eid.expirationDate,
+				currentDate,
+				warningDays,
+			)
+
+			return {
+				id: eid.employee.id,
+				fullName: eid.employee.fullName,
+				email: eid.employee.email,
+				jobTitle: eid.employee.jobTitle,
+				employeeId: {
+					expirationDate: eid.expirationDate,
+				},
+				expirationStatus,
+			}
+		})
+}
+
+/**
  * Fetches and caches a profile picture from FACTS API for an employee.
  * If the employee already has an uploaded photo, this function does nothing.
  * If the FACTS API call fails, returns null without throwing.
