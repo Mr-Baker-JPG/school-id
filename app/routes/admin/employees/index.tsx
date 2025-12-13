@@ -134,11 +134,18 @@ export async function action({ request }: Route.ActionArgs) {
 		}`
 
 		if (result.success) {
+			const parts: string[] = []
+			if (result.created > 0) parts.push(`${result.created} created`)
+			if (result.updated > 0) parts.push(`${result.updated} updated`)
+			if (result.photosUpdated > 0)
+				parts.push(`${result.photosUpdated} photos updated`)
+			if (result.errors > 0) parts.push(`${result.errors} errors`)
+			if (result.photosErrors > 0)
+				parts.push(`${result.photosErrors} photo errors`)
+
 			const message =
-				result.created > 0 || result.updated > 0
-					? `Sync completed: ${result.created} created, ${result.updated} updated${
-							result.errors > 0 ? `, ${result.errors} errors` : ''
-						}`
+				parts.length > 0
+					? `Sync completed: ${parts.join(', ')}`
 					: 'Sync completed: No changes needed'
 
 			return redirectWithToast(redirectUrl, {
