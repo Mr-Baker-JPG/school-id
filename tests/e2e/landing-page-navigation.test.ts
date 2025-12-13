@@ -87,7 +87,9 @@ test('Unauthenticated user can view landing page with login form', async ({
 	await page.goto('/')
 
 	// Check for landing page content
-	await expect(page.getByRole('heading', { name: /Employee ID System/i })).toBeVisible()
+	await expect(
+		page.getByRole('heading', { name: /Employee ID System/i }),
+	).toBeVisible()
 	await expect(
 		page.getByText(/Access your official employee ID card/i),
 	).toBeVisible()

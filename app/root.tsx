@@ -20,10 +20,7 @@ import { Button } from './components/ui/button.tsx'
 import { href as iconsHref } from './components/ui/icon.tsx'
 import { EpicToaster } from './components/ui/sonner.tsx'
 import { UserDropdown } from './components/user-dropdown.tsx'
-import {
-	useOptionalTheme,
-	useTheme,
-} from './routes/resources/theme-switch.tsx'
+import { useOptionalTheme, useTheme } from './routes/resources/theme-switch.tsx'
 import tailwindStyleSheetUrl from './styles/tailwind.css?url'
 import { getUserId, logout } from './utils/auth.server.ts'
 import { ClientHintCheck, getHints } from './utils/client-hints.tsx'
@@ -62,7 +59,10 @@ export const links: Route.LinksFunction = () => {
 export const meta: Route.MetaFunction = ({ data }) => {
 	return [
 		{ title: data ? 'Employee ID System' : 'Error | Employee ID System' },
-		{ name: 'description', content: 'View and download your official employee ID card' },
+		{
+			name: 'description',
+			content: 'View and download your official employee ID card',
+		},
 	]
 }
 
@@ -212,11 +212,11 @@ function App() {
 									)}
 									<UserDropdown />
 								</>
-							) : (
-								<Button asChild variant="default" size="lg">
-									<Link to="/login">Log In</Link>
-								</Button>
-							)}
+							) : null
+							// <Button asChild variant="default" size="lg">
+							// 	<Link to="/login">Log In</Link>
+							// </Button>
+							}
 						</div>
 					</nav>
 				</header>

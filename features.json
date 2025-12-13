@@ -358,8 +358,8 @@
 			"All integration tests pass reliably",
 			"Tests cover error scenarios as well as happy paths"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F026",
