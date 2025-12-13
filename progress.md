@@ -1214,6 +1214,74 @@ Stack template. This feature verification confirms that:
 
 ---
 
+## 2025-12-12 – F026
+
+**Feature:** FACTS Profile Picture Integration with Caching
+
+**Implementation:**
+
+- Added `fetchProfilePicture()` function to `app/utils/facts-api.server.ts` that:
+  - Fetches profile pictures from FACTS API endpoint `/People/{personId}/ProfilePicture`
+  - Handles base64-encoded image strings returned as JSON
+  - Returns Buffer or null for graceful error handling
+  - Handles 404, 204, 500, network errors, and rate limiting (429)
+- Created `fetchAndCacheFactsProfilePicture()` utility function in
+  `app/utils/employee.server.ts` that:
+  - Checks if employee already has uploaded photo (prioritizes uploaded photos)
+  - Fetches profile picture from FACTS API using `sisEmployeeId` as `personId`
+  - Uploads fetched photo to storage using `uploadEmployeePhoto()`
+  - Updates EmployeeID record with cached photo URL
+  - Creates EmployeeID record if it doesn't exist
+  - Handles all errors gracefully (returns null without throwing)
+- Updated employee ID loaders to fetch and cache FACTS photos:
+  - `/employee/id` route loader
+  - `/admin/employees/$employeeId` route loader
+  - `/verify/$employeeId` route loader
+- All loaders check for uploaded photos first, then fetch from FACTS if needed
+- Photos are cached in storage and stored in EmployeeID.photoUrl field
+- "No Photo" placeholder is shown when FACTS API returns 404 or error
+
+**Tests:**
+
+- ✅ Unit: Service function fetches profile picture from FACTS API using correct
+  personId: `fetchProfilePicture()` correctly fetches and decodes base64 images
+- ✅ Unit: Service function handles FACTS API errors (404, 500, network) gracefully
+  and returns null: All error scenarios return null without throwing
+- ✅ Unit: Service function caches fetched FACTS photo to storage and updates
+  EmployeeID record: Photo is uploaded to storage and EmployeeID.photoUrl is
+  updated
+- ✅ Unit: Photo fetching logic prioritizes uploaded photo over FACTS photo:
+  Function returns null immediately if uploaded photo exists
+- ✅ All 6 Profile Picture unit tests pass
+- ✅ All 9 employee.server unit tests pass (including caching logic)
+- ⚠️ E2E tests: Can be added as follow-up if needed (core functionality verified
+  via unit tests)
+
+**Test Files:**
+
+- Updated `app/utils/facts-api.server.test.ts` with 6 Profile Picture tests
+- Updated `app/utils/employee.server.test.ts` with 7 caching function tests
+- Added ProfilePicture endpoint mock handler to `tests/mocks/facts.ts`
+
+**Files Created:**
+
+- None (added functions to existing files)
+
+**Files Modified:**
+
+- `app/utils/facts-api.server.ts` - Added `fetchProfilePicture()` function
+- `app/utils/employee.server.ts` - Added `fetchAndCacheFactsProfilePicture()`
+  function
+- `app/routes/employee/id.tsx` - Updated loader to fetch FACTS photos
+- `app/routes/admin/employees/$employeeId.tsx` - Updated loader to fetch FACTS
+  photos
+- `app/routes/verify/$employeeId.tsx` - Updated loader to fetch FACTS photos
+- `app/utils/facts-api.server.test.ts` - Added Profile Picture tests
+- `app/utils/employee.server.test.ts` - Added caching function tests
+- `tests/mocks/facts.ts` - Added ProfilePicture endpoint mock handler
+
+---
+
 ## Notes
 
 - All features start with `implemented=false` and `tests_passed=false`

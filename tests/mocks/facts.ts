@@ -102,7 +102,9 @@ export const handlers: Array<HttpHandler> = [
 
 		// Validate authentication headers
 		const subscriptionKey = request.headers.get('Ocp-Apim-Subscription-Key')
-		const apiKey = request.headers.get('Ocp-Apim-Api-Key')
+		const apiKey =
+			request.headers.get('Facts-Api-Key') ||
+			request.headers.get('Ocp-Apim-Api-Key')
 
 		if (!subscriptionKey && !apiKey) {
 			return json(
@@ -182,6 +184,67 @@ export const handlers: Array<HttpHandler> = [
 			}
 
 			return json(staff)
+		},
+	),
+
+	// GET /People/{personId}/ProfilePicture - Get profile picture
+	http.get(
+		'https://api.factsmgt.com/People/:personId/ProfilePicture',
+		async ({ request, params }) => {
+			if (passthroughFacts) return passthrough()
+
+			const personId = parseInt(params.personId as string, 10)
+
+			// Validate authentication headers
+			const subscriptionKey = request.headers.get('Ocp-Apim-Subscription-Key')
+			const apiKey = request.headers.get('Facts-Api-Key')
+
+			if (!subscriptionKey && !apiKey) {
+				return json(
+					{
+						type: 'https://tools.ietf.org/html/rfc7231#section-6.5.1',
+						title: 'Unauthorized',
+						status: 401,
+						detail: 'Authentication required',
+					},
+					{ status: 401 },
+				)
+			}
+
+			// For testing, return a mock image buffer for personId > 0
+			// Return 404 for personId 999, 204 for personId 888, 500 for personId 777
+			if (personId === 999) {
+				return new HttpResponse(null, { status: 404 })
+			}
+			if (personId === 888) {
+				return new HttpResponse(null, { status: 204 })
+			}
+			if (personId === 777) {
+				return json(
+					{
+						type: 'https://tools.ietf.org/html/rfc7231#section-6.6.1',
+						title: 'Internal Server Error',
+						status: 500,
+						detail: 'Internal server error',
+					},
+					{ status: 500 },
+				)
+			}
+			if (personId === 666) {
+				// Network error simulation
+				return HttpResponse.error()
+			}
+
+			// Return mock image data for valid personIds
+			// FACTS API returns base64-encoded string in JSON format
+			const mockImageData = Buffer.from('fake-image-data')
+			const base64String = mockImageData.toString('base64')
+			return json(base64String, {
+				status: 200,
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			})
 		},
 	),
 ]

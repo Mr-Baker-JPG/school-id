@@ -1,8 +1,9 @@
-import { describe, expect, test, beforeEach } from 'vitest'
+import { describe, expect, test, beforeEach, vi } from 'vitest'
 import { server } from '#tests/mocks/index.ts'
 import {
 	fetchAllStaff,
 	fetchStaffById,
+	fetchProfilePicture,
 	FactsApiError,
 	type FactsEmployeeData,
 } from './facts-api.server.ts'
@@ -38,6 +39,8 @@ describe('FACTS SIS Employee Sync Service', () => {
 		})
 
 		test('Service successfully authenticates with FACTS API using API key', async () => {
+			// Store original subscription key
+			const originalSubscriptionKey = process.env.FACTS_SUBSCRIPTION_KEY
 			// Remove subscription key, use only API key
 			delete process.env.FACTS_SUBSCRIPTION_KEY
 			process.env.FACTS_API_KEY = 'MOCK_API_KEY'
@@ -53,6 +56,11 @@ describe('FACTS SIS Employee Sync Service', () => {
 
 			expect(result).not.toBeNull()
 			expect(result?.email).toBe('jane.smith@school.edu')
+
+			// Restore original subscription key
+			if (originalSubscriptionKey) {
+				process.env.FACTS_SUBSCRIPTION_KEY = originalSubscriptionKey
+			}
 		})
 
 		test('Service throws error when no authentication credentials are provided', async () => {
@@ -522,6 +530,125 @@ describe('FACTS SIS Employee Sync Service', () => {
 			expect(employee?.fullName.trim()).toBe(employee?.fullName)
 			expect(employee?.email.trim()).toBe(employee?.email)
 			expect(employee?.jobTitle.trim()).toBe(employee?.jobTitle)
+		})
+	})
+
+	describe('Fetch Profile Picture', () => {
+		test('Service function fetches profile picture from FACTS API using correct personId', async () => {
+			const personId = 123
+			const mockImageData = Buffer.from('fake-image-data')
+			const base64String = mockImageData.toString('base64')
+
+			server.use(
+				http.get(
+					`https://api.factsmgt.com/People/${personId}/ProfilePicture`,
+					() => {
+						return new HttpResponse(JSON.stringify(base64String), {
+							status: 200,
+							headers: {
+								'Content-Type': 'application/json',
+							},
+						})
+					},
+				),
+			)
+
+			const result = await fetchProfilePicture(personId)
+
+			expect(result).not.toBeNull()
+			expect(result).toBeInstanceOf(Buffer)
+			expect(result?.toString()).toBe('fake-image-data')
+		})
+
+		test('Service function handles FACTS API errors (404) gracefully and returns null', async () => {
+			const personId = 999
+
+			server.use(
+				http.get(
+					`https://api.factsmgt.com/People/${personId}/ProfilePicture`,
+					() => {
+						return new HttpResponse(null, { status: 404 })
+					},
+				),
+			)
+
+			const result = await fetchProfilePicture(personId)
+
+			expect(result).toBeNull()
+		})
+
+		test('Service function handles FACTS API errors (204) gracefully and returns null', async () => {
+			const personId = 888
+
+			server.use(
+				http.get(
+					`https://api.factsmgt.com/People/${personId}/ProfilePicture`,
+					() => {
+						return new HttpResponse(null, { status: 204 })
+					},
+				),
+			)
+
+			const result = await fetchProfilePicture(personId)
+
+			expect(result).toBeNull()
+		})
+
+		test('Service function handles FACTS API errors (500) gracefully and returns null', async () => {
+			const personId = 777
+			const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+			server.use(
+				http.get(
+					`https://api.factsmgt.com/People/${personId}/ProfilePicture`,
+					() => {
+						return new HttpResponse(
+							JSON.stringify({ detail: 'Internal server error' }),
+							{
+								status: 500,
+								headers: { 'Content-Type': 'application/json' },
+							},
+						)
+					},
+				),
+			)
+
+			const result = await fetchProfilePicture(personId)
+
+			expect(result).toBeNull()
+			expect(consoleWarn).toHaveBeenCalled()
+			consoleWarn.mockRestore()
+		})
+
+		test('Service function handles network errors gracefully and returns null', async () => {
+			const personId = 666
+			const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+			// The mock handler for personId 666 already returns HttpResponse.error()
+			// which simulates a network error
+			const result = await fetchProfilePicture(personId)
+
+			expect(result).toBeNull()
+			expect(consoleWarn).toHaveBeenCalled()
+			consoleWarn.mockRestore()
+		})
+
+		test('Service function handles rate limiting (429) by throwing FactsApiError', async () => {
+			const personId = 555
+
+			server.use(
+				http.get(
+					`https://api.factsmgt.com/People/${personId}/ProfilePicture`,
+					() => {
+						return new HttpResponse(null, { status: 429 })
+					},
+				),
+			)
+
+			await expect(fetchProfilePicture(personId)).rejects.toThrow(FactsApiError)
+			await expect(fetchProfilePicture(personId)).rejects.toThrow(
+				'rate limit exceeded',
+			)
 		})
 	})
 })

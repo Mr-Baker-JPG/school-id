@@ -7,7 +7,10 @@ import { Spacer } from '#app/components/spacer.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { prisma } from '#app/utils/db.server.ts'
-import { getDefaultExpirationDate } from '#app/utils/employee.server.ts'
+import {
+	getDefaultExpirationDate,
+	fetchAndCacheFactsProfilePicture,
+} from '#app/utils/employee.server.ts'
 import { getEmployeePhotoSrc, cn } from '#app/utils/misc.tsx'
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { type Route } from './+types/$employeeId.ts'
@@ -64,10 +67,35 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		})
 	}
 
+	// If no uploaded photo exists, try to fetch and cache from FACTS
+	if (!employeeIdRecord.photoUrl) {
+		const cachedPhotoUrl = await fetchAndCacheFactsProfilePicture(
+			employee.id,
+			employee.sisEmployeeId,
+		)
+		// If we successfully cached a FACTS photo, update the employeeIdRecord
+		if (cachedPhotoUrl) {
+			employeeIdRecord = await prisma.employeeID.findUnique({
+				where: { employeeId: employee.id },
+				select: {
+					photoUrl: true,
+					expirationDate: true,
+					createdAt: true,
+					updatedAt: true,
+				},
+			})
+		}
+	}
+
 	return {
 		employee: {
 			...employee,
-			employeeId: employeeIdRecord,
+			employeeId: employeeIdRecord || {
+				photoUrl: null,
+				expirationDate: getDefaultExpirationDate(),
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			},
 		},
 	}
 }

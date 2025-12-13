@@ -360,5 +360,22 @@
 		],
 		"implemented": false,
 		"tests_passed": false
+	},
+	{
+		"id": "F026",
+		"title": "FACTS Profile Picture Integration with Caching",
+		"description": "When displaying employee photos, if no uploaded photo exists, fetch the profile picture from the FACTS API endpoint /People/{personId}/ProfilePicture (using sisEmployeeId as personId). Cache the fetched photo in local storage and update the EmployeeID.photoUrl field. If the FACTS API call fails, show a \"No Photo\" placeholder. Uploaded photos always take precedence over FACTS photos.",
+		"tests": [
+			"Unit: Service function fetches profile picture from FACTS API using correct personId",
+			"Unit: Service function handles FACTS API errors (404, 500, network) gracefully and returns null",
+			"Unit: Service function caches fetched FACTS photo to storage and updates EmployeeID record",
+			"Unit: Photo fetching logic prioritizes uploaded photo over FACTS photo",
+			"E2E: Employee ID displays FACTS photo when no uploaded photo exists",
+			"E2E: Employee ID displays uploaded photo when both uploaded and FACTS photos exist",
+			"E2E: Employee ID shows \"No Photo\" placeholder when FACTS API returns 404 or error",
+			"Manual: Verify FACTS photos are cached and don't require repeated API calls"
+		],
+		"implemented": false,
+		"tests_passed": false
 	}
 ]

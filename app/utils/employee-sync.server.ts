@@ -33,7 +33,12 @@ export async function syncEmployeesFromFacts(): Promise<SyncResult> {
 
 	try {
 		// Fetch all staff from FACTS API
-		const factsEmployees = await fetchAllStaff()
+		const factsEmployees = await fetchAllStaff({
+			includes: 'demographics',
+			filters: 'active==true',
+			// sorts: 'lastName asc',
+			bypassCache: true,
+		})
 
 		// Process each employee
 		for (const factsEmployee of factsEmployees) {

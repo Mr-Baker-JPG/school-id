@@ -6,6 +6,7 @@ import { Spacer } from '#app/components/spacer.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { getBrandingConfig } from '#app/utils/branding.server.ts'
 import { getVerificationStatus } from '#app/utils/verification.server.ts'
+import { fetchAndCacheFactsProfilePicture } from '#app/utils/employee.server.ts'
 import { cn, getDomainUrl } from '#app/utils/misc.tsx'
 import { type Route } from './+types/$employeeId.ts'
 
@@ -25,6 +26,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 		where: { id: employeeId },
 		select: {
 			id: true,
+			sisEmployeeId: true,
 			fullName: true,
 			jobTitle: true,
 			status: true,
@@ -40,6 +42,18 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 	// If employee not found, return 404
 	if (!employee) {
 		throw new Response('Employee not found', { status: 404 })
+	}
+
+	// If no uploaded photo exists, try to fetch and cache from FACTS
+	let photoUrl = employee.employeeId?.photoUrl ?? null
+	if (!photoUrl) {
+		const cachedPhotoUrl = await fetchAndCacheFactsProfilePicture(
+			employee.id,
+			employee.sisEmployeeId,
+		)
+		if (cachedPhotoUrl) {
+			photoUrl = cachedPhotoUrl
+		}
 	}
 
 	// Get verification status
@@ -65,7 +79,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 			jobTitle: employee.jobTitle,
 			status: employee.status,
 			expirationDate: expirationDate ? expirationDate.toISOString() : null,
-			photoUrl: employee.employeeId?.photoUrl ?? null,
+			photoUrl,
 		},
 		verificationStatus,
 		branding,
