@@ -11,7 +11,7 @@ import {
 	getDefaultExpirationDate,
 	fetchAndCacheFactsProfilePicture,
 } from '#app/utils/employee.server.ts'
-import { cn } from '#app/utils/misc.tsx'
+import { cn, getEmployeePhotoSrc } from '#app/utils/misc.tsx'
 import { type Route } from './+types/id.ts'
 
 export const handle: SEOHandle = {
@@ -68,21 +68,19 @@ export async function loader({ request }: Route.LoaderArgs) {
 	}
 
 	// If no uploaded photo exists, try to fetch and cache from FACTS
-	if (!employeeId.photoUrl) {
-		const cachedPhotoUrl = await fetchAndCacheFactsProfilePicture(
-			employee.id,
-			employee.sisEmployeeId,
+	// Note: This is done asynchronously to avoid blocking the loader response
+	// The photo will be available on the next page load if successfully cached
+	if (!employeeId.photoUrl && employee.sisEmployeeId) {
+		// Don't await - let it run in the background to avoid loader timeout
+		// The photo will be cached for the next page load
+		fetchAndCacheFactsProfilePicture(employee.id, employee.sisEmployeeId).catch(
+			(error) => {
+				console.warn(
+					`Background FACTS photo fetch failed for employee ${employee.id}:`,
+					error,
+				)
+			},
 		)
-		// If we successfully cached a FACTS photo, update the employeeId record
-		if (cachedPhotoUrl) {
-			employeeId = await prisma.employeeID.findUnique({
-				where: { employeeId: employee.id },
-				select: {
-					photoUrl: true,
-					expirationDate: true,
-				},
-			})
-		}
 	}
 
 	return {
@@ -114,7 +112,7 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 				<div className="mb-6">
 					{hasPhoto && hasEmployeeId ? (
 						<Img
-							src={employee.employeeId?.photoUrl!}
+							src={getEmployeePhotoSrc(employee.employeeId?.photoUrl)}
 							alt={employee.fullName}
 							className="size-48 rounded-lg object-cover"
 							width={384}

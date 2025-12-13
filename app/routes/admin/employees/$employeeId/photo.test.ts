@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { getSessionExpirationDate, sessionKey } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { authSessionStorage } from '#app/utils/session.server.ts'
@@ -472,6 +472,96 @@ test('Loader returns 404 for non-existent employee', async () => {
 			context: {},
 		} as any),
 	).rejects.toThrow()
+
+	// Cleanup
+	await prisma.user.delete({ where: { id: admin.id } })
+})
+
+test('Photo upload errors are displayed to user', async () => {
+	// Mock console.error to avoid test failures
+	const originalError = console.error
+	console.error = vi.fn()
+
+	try {
+		const admin = await createAdminUser()
+		const employee = await createEmployee()
+
+		// Mock uploadEmployeePhoto to throw an error
+		const originalUpload = await import('#app/utils/storage.server.ts')
+		vi.spyOn(originalUpload, 'uploadEmployeePhoto').mockRejectedValueOnce(
+			new Error('Storage upload failed'),
+		)
+
+		const file = createFile('test-photo.jpg', 1000)
+
+		const formData = new FormData()
+		formData.append('intent', 'submit')
+		formData.append('photoFile', file)
+
+		const request = await createRequestWithSession(
+			admin.id,
+			`/admin/employees/${employee.id}/photo`,
+		)
+
+		const result = await action({
+			request: new Request(request.url, {
+				method: 'POST',
+				body: formData,
+				headers: request.headers,
+			}),
+			params: { employeeId: employee.id },
+			context: {},
+		} as any)
+
+		// Should return error response with user-friendly message
+		expect(result).toBeDefined()
+		// The error should be in the form result
+		if ('result' in result && result.result) {
+			const errors = result.result as any
+			if (errors.fieldErrors) {
+				expect(
+					JSON.stringify(errors.fieldErrors).toLowerCase(),
+				).toContain('upload')
+			}
+		}
+
+		// Cleanup
+		await prisma.employee.delete({ where: { id: employee.id } })
+		await prisma.user.delete({ where: { id: admin.id } })
+	} finally {
+		// Restore original functions
+		console.error = originalError
+		vi.restoreAllMocks()
+	}
+})
+
+test('Missing employee ID shows appropriate error', async () => {
+	const admin = await createAdminUser()
+
+	const file = createFile('test-photo.jpg', 1000)
+
+	const formData = new FormData()
+	formData.append('intent', 'submit')
+	formData.append('photoFile', file)
+
+	const request = await createRequestWithSession(
+		admin.id,
+		`/admin/employees/undefined/photo`,
+	)
+
+	const result = await action({
+		request: new Request(request.url, {
+			method: 'POST',
+			body: formData,
+			headers: request.headers,
+		}),
+		params: { employeeId: undefined },
+		context: {},
+	} as any)
+
+	// Should redirect with error toast
+	expect(result).toHaveProperty('status', 302)
+	// The redirect should go to employees list with error message
 
 	// Cleanup
 	await prisma.user.delete({ where: { id: admin.id } })

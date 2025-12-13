@@ -277,3 +277,78 @@ test('Creates EmployeeID record if missing', async () => {
 	})
 	expect(employeeAfter?.employeeId).not.toBeNull()
 })
+
+test('Missing employee data shows appropriate error message', async () => {
+	// Mock console.error to avoid test failures
+	const originalError = console.error
+	console.error = vi.fn()
+
+	try {
+		const { user } = await createUserWithEmployee({
+			fullName: 'Test Employee',
+			jobTitle: 'Test Job',
+			status: 'active',
+		})
+
+		// Manually update employee to have null jobTitle (bypassing Prisma validation)
+		// This simulates a data integrity issue
+		await prisma.$executeRaw`
+			UPDATE "Employee" SET "jobTitle" = NULL WHERE "id" = ${user.id}
+		`
+
+		const request = await createRequestWithSession(
+			user.id,
+			'/employee/id/download',
+		)
+
+		// Should throw error with appropriate message
+		await expect(loader({ request, params: {}, context: {} })).rejects.toThrow(
+			'Missing required employee data',
+		)
+
+		// Verify error was logged
+		expect(console.error).toHaveBeenCalled()
+	} finally {
+		// Restore original functions
+		console.error = originalError
+	}
+})
+
+test('PDF generation errors are handled gracefully', async () => {
+	// Mock console.error to avoid test failures
+	const originalError = console.error
+	console.error = vi.fn()
+
+	try {
+		const { user } = await createUserWithEmployee({
+			fullName: 'Test Employee',
+			jobTitle: 'Test Job',
+			status: 'active',
+			hasPhoto: true,
+			expirationDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+		})
+
+		// Mock generateEmployeeIDPDF to throw an error
+		const originalGenerate = await import('#app/utils/pdf-id.server.tsx')
+		vi.spyOn(originalGenerate, 'generateEmployeeIDPDF').mockRejectedValueOnce(
+			new Error('PDF generation failed'),
+		)
+
+		const request = await createRequestWithSession(
+			user.id,
+			'/employee/id/download',
+		)
+
+		// Should throw error with user-friendly message
+		await expect(loader({ request, params: {}, context: {} })).rejects.toThrow(
+			'Failed to generate ID card',
+		)
+
+		// Verify error was logged
+		expect(console.error).toHaveBeenCalled()
+	} finally {
+		// Restore original functions
+		console.error = originalError
+		vi.restoreAllMocks()
+	}
+})

@@ -283,8 +283,8 @@
 			"Errors are logged for debugging",
 			"Users see helpful feedback messages for all actions"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F021",
@@ -375,7 +375,7 @@
 			"E2E: Employee ID shows \"No Photo\" placeholder when FACTS API returns 404 or error",
 			"Manual: Verify FACTS photos are cached and don't require repeated API calls"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	}
 ]

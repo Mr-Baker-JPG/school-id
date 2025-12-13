@@ -1,3 +1,4 @@
+import { captureException } from '@sentry/react-router'
 import { invariantResponse } from '@epic-web/invariant'
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
 import { Img } from 'openimg/react'
@@ -7,7 +8,7 @@ import { prisma } from '#app/utils/db.server.ts'
 import { getBrandingConfig } from '#app/utils/branding.server.ts'
 import { getVerificationStatus } from '#app/utils/verification.server.ts'
 import { fetchAndCacheFactsProfilePicture } from '#app/utils/employee.server.ts'
-import { cn, getDomainUrl } from '#app/utils/misc.tsx'
+import { cn, getDomainUrl, getEmployeePhotoSrc } from '#app/utils/misc.tsx'
 import { type Route } from './+types/$employeeId.ts'
 
 export const handle: SEOHandle = {
@@ -18,42 +19,74 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 	const { employeeId } = params
 
 	if (!employeeId) {
+		const error = new Error('Employee ID is required')
+		console.error('[Verification] Missing employee ID parameter')
+		captureException(error, {
+			tags: {
+				route: 'verify/$employeeId',
+				errorType: 'missing_employee_id',
+			},
+		})
 		throw new Response('Employee ID is required', { status: 400 })
 	}
 
 	// Fetch employee with their ID record
-	const employee = await prisma.employee.findUnique({
-		where: { id: employeeId },
-		select: {
-			id: true,
-			sisEmployeeId: true,
-			fullName: true,
-			jobTitle: true,
-			status: true,
-			employeeId: {
-				select: {
-					expirationDate: true,
-					photoUrl: true,
+	let employee
+	try {
+		employee = await prisma.employee.findUnique({
+			where: { id: employeeId },
+			select: {
+				id: true,
+				sisEmployeeId: true,
+				fullName: true,
+				jobTitle: true,
+				status: true,
+				employeeId: {
+					select: {
+						expirationDate: true,
+						photoUrl: true,
+					},
 				},
 			},
-		},
-	})
+		})
+	} catch (error) {
+		console.error('[Verification] Database error:', error)
+		captureException(error, {
+			tags: {
+				route: 'verify/$employeeId',
+				errorType: 'database_error',
+				employeeId,
+			},
+		})
+		throw new Response(
+			'An error occurred while fetching employee information. Please try again later.',
+			{ status: 500 },
+		)
+	}
 
 	// If employee not found, return 404
 	if (!employee) {
+		const error = new Error('Employee not found')
+		console.warn('[Verification] Employee not found:', employeeId)
+		// Don't capture 404s as exceptions (they're expected for invalid IDs)
 		throw new Response('Employee not found', { status: 404 })
 	}
 
 	// If no uploaded photo exists, try to fetch and cache from FACTS
+	// Note: This is done asynchronously to avoid blocking the loader response
+	// The photo will be available on the next page load if successfully cached
 	let photoUrl = employee.employeeId?.photoUrl ?? null
-	if (!photoUrl) {
-		const cachedPhotoUrl = await fetchAndCacheFactsProfilePicture(
-			employee.id,
-			employee.sisEmployeeId,
+	if (!photoUrl && employee.sisEmployeeId) {
+		// Don't await - let it run in the background to avoid loader timeout
+		// The photo will be cached for the next page load
+		fetchAndCacheFactsProfilePicture(employee.id, employee.sisEmployeeId).catch(
+			(error) => {
+				console.warn(
+					`Background FACTS photo fetch failed for employee ${employee.id}:`,
+					error,
+				)
+			},
 		)
-		if (cachedPhotoUrl) {
-			photoUrl = cachedPhotoUrl
-		}
 	}
 
 	// Get verification status
@@ -138,7 +171,7 @@ export default function VerifyRoute({ loaderData }: Route.ComponentProps) {
 				<div className="mb-6">
 					{employee.photoUrl ? (
 						<Img
-							src={employee.photoUrl}
+							src={getEmployeePhotoSrc(employee.photoUrl)}
 							alt={employee.fullName}
 							className="size-48 rounded-lg object-cover"
 							width={384}
@@ -363,23 +396,47 @@ export function ErrorBoundary() {
 						<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
 							<h1 className="text-h2 mb-4">Invalid Request</h1>
 							<p className="text-body-lg text-muted-foreground">
-								{error?.data?.message || 'Invalid employee ID provided.'}
+								{error?.data?.message ||
+									error?.data ||
+									'Invalid employee ID provided. Please check the verification link and try again.'}
 							</p>
 						</div>
 					</div>
 				),
-				404: () => (
+				404: ({ error }) => (
 					<div className="container mt-36 mb-48 flex flex-col items-center justify-center">
 						<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
 							<h1 className="text-h2 mb-4">Employee Not Found</h1>
 							<p className="text-body-lg text-muted-foreground">
-								The employee ID you are looking for does not exist or has been
-								removed.
+								{error?.data ||
+									'The employee ID you are looking for does not exist or has been removed. Please verify the ID and try again.'}
+							</p>
+						</div>
+					</div>
+				),
+				500: ({ error }) => (
+					<div className="container mt-36 mb-48 flex flex-col items-center justify-center">
+						<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
+							<h1 className="text-h2 mb-4">Verification Error</h1>
+							<p className="text-body-lg text-muted-foreground">
+								{error?.data ||
+									'An error occurred while verifying the employee ID. Please try again later.'}
 							</p>
 						</div>
 					</div>
 				),
 			}}
+			unexpectedErrorHandler={(error) => (
+				<div className="container mt-36 mb-48 flex flex-col items-center justify-center">
+					<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
+						<h1 className="text-h2 mb-4">Unexpected Error</h1>
+						<p className="text-body-lg text-muted-foreground">
+							An unexpected error occurred while verifying the employee ID. Please
+							try again later.
+						</p>
+					</div>
+				</div>
+			)}
 		/>
 	)
 }

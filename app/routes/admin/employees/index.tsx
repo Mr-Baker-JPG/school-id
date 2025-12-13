@@ -1,5 +1,12 @@
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
-import { redirect, Form, Link, useSearchParams, useSubmit } from 'react-router'
+import {
+	redirect,
+	Form,
+	Link,
+	useSearchParams,
+	useSubmit,
+	useNavigation,
+} from 'react-router'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Field } from '#app/components/forms.tsx'
 import { Spacer } from '#app/components/spacer.tsx'
@@ -7,6 +14,7 @@ import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { syncEmployeesFromFacts } from '#app/utils/employee-sync.server.ts'
+import { fetchAndCacheFactsProfilePicture } from '#app/utils/employee.server.ts'
 import {
 	cn,
 	useDebounce,
@@ -120,6 +128,66 @@ export async function action({ request }: Route.ActionArgs) {
 		}
 	}
 
+	if (intent === 'recheck-facts-photo') {
+		const employeeId = formData.get('employeeId')
+
+		if (!employeeId || typeof employeeId !== 'string') {
+			const searchParams = new URL(request.url).searchParams
+			const redirectUrl = `/admin/employees${
+				searchParams.toString() ? `?${searchParams.toString()}` : ''
+			}`
+			return redirectWithToast(redirectUrl, {
+				type: 'error',
+				title: 'Error',
+				description: 'Employee ID is required',
+			})
+		}
+
+		// Fetch employee to get sisEmployeeId
+		const employee = await prisma.employee.findUnique({
+			where: { id: employeeId },
+			select: { sisEmployeeId: true, fullName: true },
+		})
+
+		if (!employee) {
+			const searchParams = new URL(request.url).searchParams
+			const redirectUrl = `/admin/employees${
+				searchParams.toString() ? `?${searchParams.toString()}` : ''
+			}`
+			return redirectWithToast(redirectUrl, {
+				type: 'error',
+				title: 'Error',
+				description: 'Employee not found',
+			})
+		}
+
+		// Force re-fetch from FACTS
+		const cachedPhotoUrl = await fetchAndCacheFactsProfilePicture(
+			employeeId,
+			employee.sisEmployeeId,
+			true, // force re-fetch
+		)
+
+		const searchParams = new URL(request.url).searchParams
+		const redirectUrl = `/admin/employees${
+			searchParams.toString() ? `?${searchParams.toString()}` : ''
+		}`
+
+		if (cachedPhotoUrl) {
+			return redirectWithToast(redirectUrl, {
+				type: 'success',
+				title: 'Photo Updated',
+				description: `Successfully refreshed FACTS profile picture for ${employee.fullName}`,
+			})
+		} else {
+			return redirectWithToast(redirectUrl, {
+				type: 'message',
+				title: 'No Photo Available',
+				description: `No FACTS profile picture found for ${employee.fullName}, or employee has an uploaded photo that takes precedence`,
+			})
+		}
+	}
+
 	const searchParams = new URL(request.url).searchParams
 	const redirectUrl = `/admin/employees${
 		searchParams.toString() ? `?${searchParams.toString()}` : ''
@@ -141,6 +209,7 @@ export default function AdminEmployeesRoute({
 	})
 
 	const syncPending = useIsPending({ formAction: '/admin/employees' })
+	const navigation = useNavigation()
 
 	const handleFormChange = useDebounce(async (form: HTMLFormElement) => {
 		await submit(form)
@@ -214,6 +283,7 @@ export default function AdminEmployeesRoute({
 									<th className="p-2 text-left">Status</th>
 									<th className="p-2 text-left">Expiration Date</th>
 									<th className="p-2 text-left">Photo</th>
+									<th className="p-2 text-left">Actions</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -271,6 +341,41 @@ export default function AdminEmployeesRoute({
 													</span>
 												)}
 											</Link>
+										</td>
+										<td className="p-2">
+											<Form method="post" className="inline">
+												<input
+													type="hidden"
+													name="intent"
+													value="recheck-facts-photo"
+												/>
+												<input
+													type="hidden"
+													name="employeeId"
+													value={employee.id}
+												/>
+												<StatusButton
+													type="submit"
+													variant="outline"
+													size="sm"
+													status={
+														navigation.state === 'submitting' &&
+														navigation.formData?.get('employeeId') ===
+															employee.id
+															? 'pending'
+															: 'idle'
+													}
+													disabled={
+														navigation.state === 'submitting' &&
+														navigation.formData?.get('employeeId') ===
+															employee.id
+													}
+												>
+													<Icon name="update" className="scale-75">
+														Recheck
+													</Icon>
+												</StatusButton>
+											</Form>
 										</td>
 									</tr>
 								))}

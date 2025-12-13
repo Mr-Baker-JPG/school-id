@@ -1,3 +1,4 @@
+import { captureException } from '@sentry/react-router'
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import { invariantResponse } from '@epic-web/invariant'
@@ -10,6 +11,7 @@ import { ErrorList } from '#app/components/forms.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
+import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import {
 	getEmployeePhotoSrc,
@@ -19,6 +21,7 @@ import {
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { getDefaultExpirationDate } from '#app/utils/employee.server.ts'
 import { uploadEmployeePhoto } from '#app/utils/storage.server.ts'
+import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { type Route } from './+types/photo.ts'
 
 export const handle: SEOHandle = {
@@ -72,65 +75,191 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
-	await requireUserWithRole(request, 'admin')
-	const { employeeId } = params
+	try {
+		await requireUserWithRole(request, 'admin')
+		const { employeeId } = params
 
-	invariantResponse(employeeId, 'Employee ID is required', { status: 400 })
+		if (!employeeId) {
+			const error = new Error('Employee ID is required')
+			console.error('[Photo Upload] Missing employee ID parameter')
+			captureException(error, {
+				tags: {
+					route: 'admin/employees/$employeeId/photo',
+					errorType: 'missing_employee_id',
+				},
+			})
+			return redirectWithToast(`/admin/employees`, {
+				type: 'error',
+				title: 'Error',
+				description: 'Employee ID is required',
+			})
+		}
 
-	// Verify employee exists
-	const employee = await prisma.employee.findUnique({
-		where: { id: employeeId },
-		select: { id: true },
-	})
+		// Verify employee exists
+		const employee = await prisma.employee.findUnique({
+			where: { id: employeeId },
+			select: { id: true, fullName: true },
+		})
 
-	invariantResponse(employee, 'Employee not found', { status: 404 })
+		if (!employee) {
+			const error = new Error('Employee not found')
+			console.error('[Photo Upload] Employee not found:', employeeId)
+			captureException(error, {
+				tags: {
+					route: 'admin/employees/$employeeId/photo',
+					errorType: 'employee_not_found',
+					employeeId,
+				},
+			})
+			return redirectWithToast(`/admin/employees`, {
+				type: 'error',
+				title: 'Employee Not Found',
+				description: 'The employee you are trying to update does not exist.',
+			})
+		}
 
-	const formData = await parseFormData(request, { maxFileSize: MAX_SIZE })
-	const submission = await parseWithZod(formData, {
-		schema: PhotoFormSchema.transform(async (data) => {
-			if (data.intent === 'delete') return { intent: 'delete' }
-			if (data.photoFile.size <= 0) return z.NEVER
-			return {
-				intent: data.intent,
-				objectKey: await uploadEmployeePhoto(employeeId, data.photoFile),
+		const formData = await parseFormData(request, { maxFileSize: MAX_SIZE })
+		const submission = await parseWithZod(formData, {
+			schema: PhotoFormSchema.transform(async (data) => {
+				if (data.intent === 'delete') return { intent: 'delete' }
+				if (data.photoFile.size <= 0) return z.NEVER
+				try {
+					const objectKey = await uploadEmployeePhoto(employeeId, data.photoFile)
+					return {
+						intent: data.intent,
+						objectKey,
+					}
+				} catch (uploadError) {
+					const error =
+						uploadError instanceof Error
+							? uploadError
+							: new Error('Failed to upload photo')
+					console.error('[Photo Upload] Upload failed:', error.message, {
+						employeeId,
+						fileName: data.photoFile.name,
+						fileSize: data.photoFile.size,
+					})
+					captureException(error, {
+						tags: {
+							route: 'admin/employees/$employeeId/photo',
+							errorType: 'photo_upload_failed',
+							employeeId,
+						},
+						extra: {
+							fileName: data.photoFile.name,
+							fileSize: data.photoFile.size,
+							fileType: data.photoFile.type,
+						},
+					})
+					throw new z.ZodError([
+						{
+							code: 'custom',
+							path: ['photoFile'],
+							message:
+								'Failed to upload photo. Please check the file format and size, then try again.',
+						},
+					])
+				}
+			}),
+			async: true,
+		})
+
+		if (submission.status !== 'success') {
+			return data(
+				{ result: submission.reply() },
+				{ status: submission.status === 'error' ? 400 : 200 },
+			)
+		}
+
+		const { objectKey, intent } = submission.value
+
+		if (intent === 'delete') {
+			try {
+				// Update EmployeeID to remove photoUrl
+				await prisma.employeeID.updateMany({
+					where: { employeeId },
+					data: { photoUrl: null },
+				})
+				return redirectWithToast(`/admin/employees/${employeeId}/photo`, {
+					type: 'success',
+					title: 'Photo Deleted',
+					description: `Photo for ${employee.fullName} has been deleted successfully.`,
+				})
+			} catch (error) {
+				console.error('[Photo Upload] Delete failed:', error)
+				captureException(error, {
+					tags: {
+						route: 'admin/employees/$employeeId/photo',
+						errorType: 'photo_delete_failed',
+						employeeId,
+					},
+				})
+				return redirectWithToast(`/admin/employees/${employeeId}/photo`, {
+					type: 'error',
+					title: 'Error',
+					description:
+						'Failed to delete photo. Please try again or contact support.',
+				})
 			}
-		}),
-		async: true,
-	})
+		}
 
-	if (submission.status !== 'success') {
-		return data(
-			{ result: submission.reply() },
-			{ status: submission.status === 'error' ? 400 : 200 },
+		// Ensure EmployeeID record exists, then update photoUrl
+		try {
+			await prisma.employeeID.upsert({
+				where: { employeeId },
+				create: {
+					employeeId,
+					photoUrl: objectKey,
+					// Set default expiration date to July 1 of current school year
+					expirationDate: getDefaultExpirationDate(),
+				},
+				update: {
+					photoUrl: objectKey,
+				},
+			})
+			return redirectWithToast(`/admin/employees/${employeeId}/photo`, {
+				type: 'success',
+				title: 'Photo Uploaded',
+				description: `Photo for ${employee.fullName} has been uploaded successfully.`,
+			})
+		} catch (error) {
+			console.error('[Photo Upload] Database update failed:', error)
+			captureException(error, {
+				tags: {
+					route: 'admin/employees/$employeeId/photo',
+					errorType: 'photo_database_update_failed',
+					employeeId,
+				},
+			})
+			return redirectWithToast(`/admin/employees/${employeeId}/photo`, {
+				type: 'error',
+				title: 'Error',
+				description:
+					'Photo was uploaded but failed to save. Please try uploading again.',
+			})
+		}
+	} catch (error) {
+		// Handle unexpected errors
+		console.error('[Photo Upload] Unexpected error:', error)
+		captureException(error, {
+			tags: {
+				route: 'admin/employees/$employeeId/photo',
+				errorType: 'unexpected_error',
+			},
+		})
+		const employeeId = params.employeeId
+		return redirectWithToast(
+			employeeId
+				? `/admin/employees/${employeeId}/photo`
+				: '/admin/employees',
+			{
+				type: 'error',
+				title: 'Unexpected Error',
+				description:
+					'An unexpected error occurred. Please try again or contact support.',
+			},
 		)
 	}
-
-	const { objectKey, intent } = submission.value
-
-	if (intent === 'delete') {
-		// Update EmployeeID to remove photoUrl
-		await prisma.employeeID.updateMany({
-			where: { employeeId },
-			data: { photoUrl: null },
-		})
-		return redirect(`/admin/employees/${employeeId}/photo`)
-	}
-
-	// Ensure EmployeeID record exists, then update photoUrl
-	await prisma.employeeID.upsert({
-		where: { employeeId },
-		create: {
-			employeeId,
-			photoUrl: objectKey,
-			// Set default expiration date to July 1 of current school year
-			expirationDate: getDefaultExpirationDate(),
-		},
-		update: {
-			photoUrl: objectKey,
-		},
-	})
-
-	return redirect(`/admin/employees/${employeeId}/photo`)
 }
 
 export default function EmployeePhotoRoute({
@@ -277,9 +406,62 @@ export default function EmployeePhotoRoute({
 
 export function ErrorBoundary() {
 	return (
-		<div className="container">
-			<h1 className="text-h1">Error</h1>
-			<p>An error occurred while uploading the photo.</p>
-		</div>
+		<GeneralErrorBoundary
+			statusHandlers={{
+				400: ({ error }) => (
+					<div className="container mt-36 mb-48 flex flex-col items-center justify-center">
+						<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
+							<h1 className="text-h2 mb-4">Invalid Request</h1>
+							<p className="text-body-lg text-muted-foreground">
+								{error?.data || 'Invalid request. Please check the file and try again.'}
+							</p>
+						</div>
+					</div>
+				),
+				403: ({ error }) => (
+					<div className="container mt-36 mb-48 flex flex-col items-center justify-center">
+						<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
+							<h1 className="text-h2 mb-4">Access Denied</h1>
+							<p className="text-body-lg text-muted-foreground">
+								{error?.data || 'You do not have permission to upload photos.'}
+							</p>
+						</div>
+					</div>
+				),
+				404: ({ error }) => (
+					<div className="container mt-36 mb-48 flex flex-col items-center justify-center">
+						<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
+							<h1 className="text-h2 mb-4">Employee Not Found</h1>
+							<p className="text-body-lg text-muted-foreground">
+								{error?.data ||
+									'The employee you are trying to update does not exist.'}
+							</p>
+						</div>
+					</div>
+				),
+				500: ({ error }) => (
+					<div className="container mt-36 mb-48 flex flex-col items-center justify-center">
+						<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
+							<h1 className="text-h2 mb-4">Upload Error</h1>
+							<p className="text-body-lg text-muted-foreground">
+								{error?.data ||
+									'An error occurred while uploading the photo. Please try again or contact support.'}
+							</p>
+						</div>
+					</div>
+				),
+			}}
+			unexpectedErrorHandler={(error) => (
+				<div className="container mt-36 mb-48 flex flex-col items-center justify-center">
+					<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
+						<h1 className="text-h2 mb-4">Unexpected Error</h1>
+						<p className="text-body-lg text-muted-foreground">
+							An unexpected error occurred while uploading the photo. Please try
+							again or contact support.
+						</p>
+					</div>
+				</div>
+			)}
+		/>
 	)
 }

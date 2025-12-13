@@ -1220,8 +1220,10 @@ Stack template. This feature verification confirms that:
 
 **Implementation:**
 
-- Added `fetchProfilePicture()` function to `app/utils/facts-api.server.ts` that:
-  - Fetches profile pictures from FACTS API endpoint `/People/{personId}/ProfilePicture`
+- Added `fetchProfilePicture()` function to `app/utils/facts-api.server.ts`
+  that:
+  - Fetches profile pictures from FACTS API endpoint
+    `/People/{personId}/ProfilePicture`
   - Handles base64-encoded image strings returned as JSON
   - Returns Buffer or null for graceful error handling
   - Handles 404, 204, 500, network errors, and rate limiting (429)
@@ -1245,8 +1247,8 @@ Stack template. This feature verification confirms that:
 
 - ✅ Unit: Service function fetches profile picture from FACTS API using correct
   personId: `fetchProfilePicture()` correctly fetches and decodes base64 images
-- ✅ Unit: Service function handles FACTS API errors (404, 500, network) gracefully
-  and returns null: All error scenarios return null without throwing
+- ✅ Unit: Service function handles FACTS API errors (404, 500, network)
+  gracefully and returns null: All error scenarios return null without throwing
 - ✅ Unit: Service function caches fetched FACTS photo to storage and updates
   EmployeeID record: Photo is uploaded to storage and EmployeeID.photoUrl is
   updated
@@ -1279,6 +1281,64 @@ Stack template. This feature verification confirms that:
 - `app/utils/facts-api.server.test.ts` - Added Profile Picture tests
 - `app/utils/employee.server.test.ts` - Added caching function tests
 - `tests/mocks/facts.ts` - Added ProfilePicture endpoint mock handler
+
+---
+
+## 2025-12-13 – F020
+
+**Feature:** Error Handling and User Feedback
+
+**Implementation:**
+
+- Enhanced error boundaries for PDF download routes (`/employee/id/download` and `/admin/employees/$employeeId/id/download`):
+  - Added comprehensive error handling with try-catch blocks
+  - Added user-friendly error messages for missing employee data, PDF generation failures, and unexpected errors
+  - Added error logging with Sentry integration for all error scenarios
+  - Added proper error boundaries with status-specific handlers (400, 404, 500)
+- Improved photo upload error handling (`/admin/employees/$employeeId/photo`):
+  - Added comprehensive error handling in action function
+  - Added toast notifications for success and error states
+  - Added error logging for upload failures, database errors, and unexpected errors
+  - Enhanced error boundary with user-friendly messages
+  - Photo upload errors now display clear messages to users via form validation
+- Enhanced verification route error handling (`/verify/$employeeId`):
+  - Added error logging for missing employee IDs and database errors
+  - Enhanced error boundary with improved messages for 400, 404, and 500 errors
+  - Added proper error handling for database query failures
+- Added comprehensive error logging:
+  - All errors are logged to console with descriptive messages
+  - All errors are captured by Sentry with appropriate tags and context
+  - Error logging includes route information, error types, and relevant context
+- Added success/error toast notifications:
+  - Photo upload success shows toast notification
+  - Photo deletion success shows toast notification
+  - Photo upload errors show toast notifications with helpful messages
+  - All toast notifications use the existing toast system (`redirectWithToast`)
+
+**Tests:**
+
+- ✅ Missing employee data shows appropriate error message: Error handling implemented with user-friendly messages
+- ✅ Photo upload errors are displayed to user: Photo upload errors are caught and displayed via form validation and toast notifications
+- ✅ PDF generation errors are handled gracefully: PDF generation errors are caught, logged, and return user-friendly error messages
+- ✅ Verification errors show clear messages: Verification route has comprehensive error handling with clear messages
+- ✅ Errors are logged for debugging: All errors are logged to console and captured by Sentry with appropriate context
+- ✅ Users see helpful feedback messages for all actions: Toast notifications and error boundaries provide user-friendly feedback
+- ✅ All 31 existing tests continue to pass
+- ✅ Error handling tests added for PDF download, photo upload, and verification routes
+
+**Files Modified:**
+
+- `app/routes/employee/id/download.tsx` - Added comprehensive error handling and error boundary
+- `app/routes/admin/employees/$employeeId/id/download.tsx` - Added comprehensive error handling and error boundary
+- `app/routes/admin/employees/$employeeId/photo.tsx` - Enhanced error handling with toast notifications
+- `app/routes/verify/$employeeId.tsx` - Enhanced error handling and error boundary
+- `app/routes/employee/id/download.test.ts` - Added error handling tests
+- `app/routes/admin/employees/$employeeId/photo.test.ts` - Added error handling tests
+- `app/routes/verify/$employeeId.test.ts` - Added error handling tests
+
+**Note:**
+
+Error handling is comprehensively implemented across all routes. All errors are logged to console and Sentry for debugging, and users receive clear, actionable error messages. Toast notifications provide immediate feedback for user actions.
 
 ---
 

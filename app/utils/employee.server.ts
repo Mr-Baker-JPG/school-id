@@ -21,11 +21,13 @@ export function getDefaultExpirationDate(): Date {
  *
  * @param employeeId - The local employee ID (database ID)
  * @param sisEmployeeId - The SIS employee ID (used as personId in FACTS API)
+ * @param force - If true, force re-fetch even if photo exists (but only if no uploaded photo)
  * @returns The objectKey (photoUrl) if successfully cached, null otherwise
  */
 export async function fetchAndCacheFactsProfilePicture(
 	employeeId: string,
 	sisEmployeeId: string,
+	force: boolean = false,
 ): Promise<string | null> {
 	// Check if employee already has an uploaded photo
 	const employeeIdRecord = await prisma.employeeID.findUnique({
@@ -33,9 +35,9 @@ export async function fetchAndCacheFactsProfilePicture(
 		select: { photoUrl: true },
 	})
 
-	// If employee already has a photo, don't fetch from FACTS
+	// If employee already has a photo and we're not forcing, don't fetch from FACTS
 	// Uploaded photos always take precedence
-	if (employeeIdRecord?.photoUrl) {
+	if (employeeIdRecord?.photoUrl && !force) {
 		return null
 	}
 
@@ -57,17 +59,21 @@ export async function fetchAndCacheFactsProfilePicture(
 	}
 
 	// Upload the profile picture to storage
-	// Convert Buffer to File for uploadEmployeePhoto
+	// Convert Buffer to File via Blob to ensure compatibility
 	try {
-		// Create a File from the buffer
-		// File constructor is available in Node.js 18+
-		const file = new File(
-			[profilePictureBuffer],
-			`facts-profile-${personId}.jpg`,
-			{
-				type: 'image/jpeg',
-			},
-		)
+		// Create a Blob from the buffer, then File from Blob
+		// This ensures the File object has proper size and type properties
+		const blob = new Blob([profilePictureBuffer], { type: 'image/jpeg' })
+		const file = new File([blob], `facts-profile-${personId}.jpg`, {
+			type: 'image/jpeg',
+		})
+
+		// Verify the file size matches the buffer
+		if (file.size !== profilePictureBuffer.length) {
+			console.warn(
+				`File size mismatch: buffer=${profilePictureBuffer.length}, file=${file.size}. This may cause upload issues.`,
+			)
+		}
 
 		const objectKey = await uploadEmployeePhoto(employeeId, file)
 

@@ -422,29 +422,76 @@ export async function fetchProfilePicture(
 	// Get the image data - FACTS API returns base64-encoded string in JSON
 	try {
 		const contentType = response.headers.get('content-type') || ''
-		
+
 		// Check if response is JSON (base64 string) or binary
 		if (contentType.includes('application/json')) {
 			// Parse JSON response - FACTS API returns base64-encoded string directly
 			const jsonData = await response.json()
-			// The API returns a string (base64-encoded image), not an object
-			const base64String = typeof jsonData === 'string' ? jsonData : String(jsonData)
-			
+
+			// The API returns an object with "value" property containing base64 string
+			// According to API spec: ProfileImage { value: string }
+			let base64String: string
+			if (typeof jsonData === 'string') {
+				// Direct string response (unlikely but handle it)
+				base64String = jsonData
+			} else if (jsonData && typeof jsonData === 'object') {
+				// API spec shows it's an object with "value" property - check this first
+				base64String = (jsonData as any).value || ''
+
+				// Log for debugging
+				console.log(`JSON object keys: ${Object.keys(jsonData).join(', ')}`)
+				console.log(
+					`Value property type: ${typeof (jsonData as any).value}, length: ${(jsonData as any).value?.length || 0}`,
+				)
+
+				// Fallback to other common property names if "value" doesn't exist or is empty
+				if (!base64String) {
+					base64String =
+						(jsonData as any).data ||
+						(jsonData as any).image ||
+						(jsonData as any).base64 ||
+						''
+				}
+			} else {
+				base64String = String(jsonData)
+			}
+
+			// Log for debugging
+			console.log(
+				`JSON data type: ${typeof jsonData}, base64String length: ${base64String?.length || 0}`,
+			)
+
 			if (!base64String || base64String.trim() === '') {
+				console.warn(`Empty base64 string for personId ${personId}`)
 				return null
 			}
-			
+
 			// Remove data URL prefix if present (e.g., "data:image/jpeg;base64,")
-			const base64Data = base64String.includes(',') 
-				? base64String.split(',')[1] 
+			const base64Data = base64String.includes(',')
+				? base64String.split(',')[1]
 				: base64String.trim()
-			
+
+			if (!base64Data || base64Data.length < 100) {
+				console.warn(
+					`Base64 data too short for personId ${personId}: ${base64Data?.length || 0} chars`,
+				)
+				console.warn(`First 200 chars: ${base64Data?.substring(0, 200) || ''}`)
+				return null
+			}
+
 			// Decode base64 to buffer
 			try {
-				return Buffer.from(base64Data, 'base64')
+				const buffer = Buffer.from(base64Data, 'base64')
+				console.log(
+					`Successfully decoded base64 image for personId ${personId}: ${buffer.length} bytes (base64 length: ${base64Data.length})`,
+				)
+				return buffer
 			} catch (error) {
 				console.warn(
 					`Failed to decode base64 image for personId ${personId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+				)
+				console.warn(
+					`Base64 string length: ${base64Data.length}, first 100 chars: ${base64Data.substring(0, 100)}`,
 				)
 				return null
 			}

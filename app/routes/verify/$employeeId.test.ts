@@ -824,4 +824,53 @@ describe('verify/$employeeId route', () => {
 			expect(descriptionTag?.content).toBe('Verify employee ID status')
 		})
 	})
+
+	describe('Error Handling', () => {
+		test('Invalid employee IDs show appropriate error message', async () => {
+			const fakeEmployeeId = faker.string.alphanumeric(20)
+			const request = new Request('http://localhost/verify/' + fakeEmployeeId)
+
+			await expect(
+				loader({
+					params: { employeeId: fakeEmployeeId },
+					request,
+					context: {},
+				} as any),
+			).rejects.toThrow('Employee not found')
+		})
+
+		test('Missing employee ID parameter shows appropriate error', async () => {
+			const request = new Request('http://localhost/verify/')
+
+			await expect(
+				loader({
+					params: { employeeId: undefined },
+					request,
+					context: {},
+				} as any),
+			).rejects.toThrow('Employee ID is required')
+		})
+
+		test('Verification errors show clear messages', async () => {
+			// Test with invalid employee ID
+			const fakeEmployeeId = faker.string.alphanumeric(20)
+			const request = new Request('http://localhost/verify/' + fakeEmployeeId)
+
+			try {
+				await loader({
+					params: { employeeId: fakeEmployeeId },
+					request,
+					context: {},
+				} as any)
+				expect.fail('Should have thrown an error')
+			} catch (error: any) {
+				expect(error).toBeInstanceOf(Response)
+				if (error instanceof Response) {
+					expect(error.status).toBe(404)
+					const text = await error.text()
+					expect(text).toContain('Employee not found')
+				}
+			}
+		})
+	})
 })

@@ -16,6 +16,13 @@ const STORAGE_ENDPOINT = process.env.AWS_ENDPOINT_URL_S3
 const STORAGE_BUCKET = process.env.BUCKET_NAME
 const STORAGE_ACCESS_KEY = process.env.AWS_ACCESS_KEY_ID
 
+// Log the handler pattern for debugging
+if (process.env.NODE_ENV !== 'test') {
+	console.log(
+		`🔶 MSW Tigris handler pattern: ${STORAGE_ENDPOINT}/${STORAGE_BUCKET}/:key*`,
+	)
+}
+
 function validateAuth(headers: Headers) {
 	const authHeader = headers.get('Authorization')
 	const amzDate = headers.get('X-Amz-Date')
@@ -40,10 +47,16 @@ function assertKey(key: any): asserts key is Array<string> {
 }
 
 export const handlers = [
+	// Use the exact URL pattern - MSW should match this
 	http.put(
 		`${STORAGE_ENDPOINT}/${STORAGE_BUCKET}/:key*`,
 		async ({ request, params }) => {
+			console.log(
+				`🔶 MSW Tigris PUT handler matched: ${request.url}, key: ${JSON.stringify(params.key)}`,
+			)
+
 			if (!validateAuth(request.headers)) {
+				console.warn(`🔶 MSW Tigris: Auth validation failed for ${request.url}`)
 				return new HttpResponse('Unauthorized', { status: 401 })
 			}
 			const { key } = params
@@ -57,17 +70,42 @@ export const handlers = [
 			const fileBuffer = Buffer.from(await request.arrayBuffer())
 			await fs.writeFile(filePath, fileBuffer)
 
+			console.log(
+				`🔶 MSW Tigris: Successfully saved file to ${filePath} (${fileBuffer.length} bytes)`,
+			)
 			return new HttpResponse(null, { status: 201 })
 		},
 	),
 
 	http.get(
 		`${STORAGE_ENDPOINT}/${STORAGE_BUCKET}/:key*`,
-		async ({ params }) => {
+		async ({ request, params }) => {
+			console.log(
+				`🔶 MSW Tigris GET handler matched: ${request.url}, key: ${JSON.stringify(params.key)}`,
+			)
 			const { key } = params
 			assertKey(key)
 
 			const filePath = path.join(MOCK_STORAGE_DIR, ...key)
+
+			// For employee photos, always return a valid minimal JPEG
+			// This ensures browsers can display the image even if cached files are invalid
+			if (key[0] === 'employees' && key[2] === 'photos') {
+				const minimalJpegBase64 =
+					'/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q=='
+				const file = Buffer.from(minimalJpegBase64, 'base64')
+				const contentType =
+					getMimeType(key.at(-1) || '') || 'application/octet-stream'
+				return new HttpResponse(file, {
+					headers: {
+						'Content-Type': contentType,
+						'Content-Length': file.length.toString(),
+						'Cache-Control': 'public, max-age=31536000, immutable',
+					},
+				})
+			}
+
+			// For other files, use the normal logic
 			try {
 				// Check tests/fixtures/images directory first
 				const testFixturesPath = path.join(FIXTURES_IMAGES_DIR, ...key)

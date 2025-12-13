@@ -236,15 +236,30 @@ export const handlers: Array<HttpHandler> = [
 			}
 
 			// Return mock image data for valid personIds
-			// FACTS API returns base64-encoded string in JSON format
-			const mockImageData = Buffer.from('fake-image-data')
+			// FACTS API returns base64-encoded string in a JSON object with "value" property
+			// Create a minimal valid JPEG image (1x1 pixel, gray)
+			// This is a complete, valid JPEG that browsers can actually display
+			// Base64 of a minimal valid JPEG (1x1 gray pixel)
+			const minimalJpegBase64 =
+				'/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q=='
+			const minimalJpegBuffer = Buffer.from(minimalJpegBase64, 'base64')
+
+			// For testing, use the minimal valid JPEG directly
+			// This is a real, displayable JPEG that browsers can render
+			// In production, real FACTS API will return actual profile pictures
+			const mockImageData = minimalJpegBuffer
 			const base64String = mockImageData.toString('base64')
-			return json(base64String, {
-				status: 200,
-				headers: {
-					'Content-Type': 'application/json',
+
+			// FACTS API returns an object with "value" property containing the base64 string
+			return json(
+				{ value: base64String },
+				{
+					status: 200,
+					headers: {
+						'Content-Type': 'application/json',
+					},
 				},
-			})
+			)
 		},
 	),
 ]
