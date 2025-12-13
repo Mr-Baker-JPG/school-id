@@ -22,7 +22,8 @@ describe('getBrandingConfig', () => {
 
 		const config = getBrandingConfig()
 
-		expect(config.schoolName).toBe('School')
+		// Should use SCHOOL_NAME from brand.ts as fallback
+		expect(config.schoolName).toBe('John Paul the Great Academy')
 		expect(config.logoUrl).toBeUndefined()
 		expect(config.primaryColor).toBe('#1a1a1a')
 		expect(config.secondaryColor).toBe('#ffffff')
@@ -43,6 +44,16 @@ describe('getBrandingConfig', () => {
 		const config = getBrandingConfig()
 
 		expect(config.schoolName).toBe('Brand Name')
+	})
+
+	it('falls back to brand.ts SCHOOL_NAME when environment variables are not set', () => {
+		delete process.env.SCHOOL_NAME
+		delete process.env.SCHOOL_BRAND_NAME
+
+		const config = getBrandingConfig()
+
+		// Should use SCHOOL_NAME from brand.ts
+		expect(config.schoolName).toBe('John Paul the Great Academy')
 	})
 
 	it('prefers SCHOOL_NAME over SCHOOL_BRAND_NAME', () => {

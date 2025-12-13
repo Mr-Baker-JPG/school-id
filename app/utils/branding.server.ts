@@ -3,6 +3,8 @@
  * Used for PDF ID generation and verification pages
  */
 
+import { SCHOOL_NAME } from '#app/ui/brand.ts'
+
 export interface BrandingConfig {
 	/**
 	 * School name to display on IDs
@@ -24,12 +26,15 @@ export interface BrandingConfig {
 
 /**
  * Gets the school branding configuration from environment variables
- * Falls back to sensible defaults if not configured
+ * Falls back to brand.ts configuration, then to sensible defaults if not configured
  */
 export function getBrandingConfig(): BrandingConfig {
 	return {
 		schoolName:
-			process.env.SCHOOL_NAME || process.env.SCHOOL_BRAND_NAME || 'School',
+			process.env.SCHOOL_NAME ||
+			process.env.SCHOOL_BRAND_NAME ||
+			SCHOOL_NAME ||
+			'School',
 		logoUrl: process.env.SCHOOL_LOGO_URL,
 		primaryColor: process.env.SCHOOL_PRIMARY_COLOR || '#1a1a1a',
 		secondaryColor: process.env.SCHOOL_SECONDARY_COLOR || '#ffffff',

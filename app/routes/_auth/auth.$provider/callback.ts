@@ -3,6 +3,7 @@ import {
 	authenticator,
 	getSessionExpirationDate,
 	getUserId,
+	getRedirectPathForUser,
 	signupWithConnection,
 } from '#app/utils/auth.server.ts'
 import {
@@ -61,7 +62,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	if (!authResult.success) {
 		console.error(authResult.error)
 		throw await redirectWithToast(
-			'/login',
+			'/',
 			{
 				title: 'Auth Failed',
 				description: `There was an error authenticating with ${label}.`,
@@ -86,9 +87,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	const userId = await getUserId(request)
 
 	if (existingConnection && userId) {
+		const redirectPath = await getRedirectPathForUser(userId)
 		if (existingConnection.userId === userId) {
 			return redirectWithToast(
-				'/settings/profile/connections',
+				redirectPath,
 				{
 					title: 'Already Connected',
 					description: `Your "${profile.username}" ${label} account is already connected.`,
@@ -97,7 +99,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 			)
 		} else {
 			return redirectWithToast(
-				'/settings/profile/connections',
+				redirectPath,
 				{
 					title: 'Already Connected',
 					description: `The "${profile.username}" ${label} account is already connected to another account.`,
@@ -116,8 +118,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 				userId,
 			},
 		})
+		const redirectPath = await getRedirectPathForUser(userId)
 		return redirectWithToast(
-			'/settings/profile/connections',
+			redirectPath,
 			{
 				title: 'Connected',
 				type: 'success',
@@ -129,7 +132,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
 	// Connection exists already? Make a new session
 	if (existingConnection) {
-		return makeSession({ request, userId: existingConnection.userId })
+		const redirectPath = await getRedirectPathForUser(existingConnection.userId)
+		return makeSession({
+			request,
+			userId: existingConnection.userId,
+			redirectTo: redirectPath,
+		})
 	}
 
 	// if the email matches a user in the db, then link the account and
@@ -146,8 +154,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 				userId: user.id,
 			},
 		})
+		const redirectPath = await getRedirectPathForUser(user.id)
 		return makeSession(
-			{ request, userId: user.id },
+			{ request, userId: user.id, redirectTo: redirectPath },
 			{
 				headers: await createToastHeaders({
 					title: 'Connected',
@@ -202,8 +211,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 				expirationDate: sessionData.expirationDate,
 			}
 
+			const redirectPath = redirectTo ?? (await getRedirectPathForUser(user.id))
+
 			return handleNewSession(
-				{ request, session, redirectTo: redirectTo ?? '/', remember: true },
+				{ request, session, redirectTo: redirectPath, remember: true },
 				{
 					headers: combineHeaders(
 						await createToastHeaders({

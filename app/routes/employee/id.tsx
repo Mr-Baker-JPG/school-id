@@ -2,22 +2,25 @@ import { invariantResponse } from '@epic-web/invariant'
 import { Img } from 'openimg/react'
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
-import { Spacer } from '#app/components/spacer.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import {
 	IDCardFrontPreview,
 	IDCardBackPreview,
 } from '#app/components/employee-id-card.tsx'
+import { PageTitle } from '#app/ui/components/PageTitle.tsx'
+import { CardSection } from '#app/ui/components/CardSection.tsx'
+import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
+import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import {
 	getDefaultExpirationDate,
 	fetchAndCacheFactsProfilePicture,
+	getExpirationStatus,
 } from '#app/utils/employee.server.ts'
 import { getBrandingConfig } from '#app/utils/branding.server.ts'
 import { generateEmployeeQRCodeDataURL } from '#app/utils/qr-code.server.ts'
-import { getSignedGetRequestInfo } from '#app/utils/storage.server.ts'
 import { cn, getEmployeePhotoSrc } from '#app/utils/misc.tsx'
 import { type Route } from './+types/id.ts'
 
@@ -93,12 +96,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 	// Get branding configuration
 	const branding = getBrandingConfig()
 
-	// Get photo URL (signed URL if photo exists)
-	let photoUrl: string | null = null
-	if (employeeId.photoUrl) {
-		const { url } = getSignedGetRequestInfo(employeeId.photoUrl)
-		photoUrl = url
-	}
+	// Get photo URL (objectKey from database)
+	let photoUrl: string | null = employeeId?.photoUrl ?? null
 
 	// Get logo URL (if configured)
 	const logoUrl = branding.logoUrl || null
@@ -111,6 +110,11 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 	// Ensure we always have an expiration date for the component
 	const defaultExpirationDate = getDefaultExpirationDate()
+
+	// Calculate expiration status in the loader (server-side)
+	const expirationStatus = employeeId?.expirationDate
+		? getExpirationStatus(employeeId.expirationDate)
+		: null
 
 	return {
 		employee: {
@@ -125,6 +129,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		logoUrl,
 		qrCodeDataURL,
 		defaultExpirationDate,
+		expirationStatus,
 	}
 }
 
@@ -136,6 +141,7 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 		logoUrl,
 		qrCodeDataURL,
 		defaultExpirationDate,
+		expirationStatus,
 	} = loaderData
 	const expirationDate = employee.employeeId?.expirationDate
 		? new Date(employee.employeeId.expirationDate).toLocaleDateString()
@@ -155,42 +161,107 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 			: new Date(defaultExpirationDate),
 	}
 
-	return (
-		<div className="container mt-36 mb-48 flex flex-col items-center justify-center">
-			<Spacer size="4xs" />
-			<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
-				<h1 className="text-h2 mb-6">My Employee ID</h1>
+	const downloadButton = (
+		<Button size="lg" asChild>
+			<a href="/employee/id/download">
+				<Icon name="download">Download ID Card (PDF)</Icon>
+			</a>
+		</Button>
+	)
 
-				{/* ID Card Preview */}
-				<div className="mb-8 flex flex-col items-center gap-4">
-					<div className="flex flex-col items-center gap-2">
-						<h2 className="text-body-sm text-muted-foreground">Front</h2>
-						<IDCardFrontPreview
-							employee={employeeCardData}
-							photoUrl={photoUrl}
-							logoUrl={logoUrl}
-							branding={branding}
-						/>
+	const addToWalletButton = (
+		<Button size="lg" variant="outline" asChild>
+			<a href="/employee/id/wallet">
+				<Icon name="plus">Add to Wallet</Icon>
+			</a>
+		</Button>
+	)
+
+	return (
+		<div className="pb-20 md:pb-8">
+			<PageTitle
+				title="My Employee ID"
+				rightSlot={
+					<div className="hidden md:flex md:gap-2">
+						{addToWalletButton}
+						{downloadButton}
 					</div>
-					<div className="flex flex-col items-center gap-2">
-						<h2 className="text-body-sm text-muted-foreground">Back</h2>
-						<IDCardBackPreview
-							qrCodeDataURL={qrCodeDataURL}
-							branding={branding}
-						/>
-					</div>
+				}
+			/>
+
+			<div className="mt-8 grid gap-6 md:grid-cols-2">
+				{/* Left Column: ID Card Previews */}
+				<div className="space-y-6">
+					<CardSection title="Front">
+						<div className="flex justify-center">
+							<IDCardFrontPreview
+								employee={employeeCardData}
+								photoUrl={photoUrl ? getEmployeePhotoSrc(photoUrl) : null}
+								logoUrl={logoUrl}
+								branding={branding}
+							/>
+						</div>
+					</CardSection>
+					<CardSection title="Back">
+						<div className="flex justify-center">
+							<IDCardBackPreview
+								qrCodeDataURL={qrCodeDataURL}
+								branding={branding}
+							/>
+						</div>
+					</CardSection>
 				</div>
 
-				<Spacer size="md" />
+				{/* Right Column: Status and Info */}
+				<div className="space-y-6">
+					<CardSection title="Status">
+						<div className="flex flex-col gap-4">
+							{expirationStatus && (
+								<div>
+									<StatusBadge
+										variant={
+											expirationStatus.type === 'valid'
+												? 'valid'
+												: expirationStatus.type === 'expiring'
+													? 'expiring'
+													: 'expired'
+										}
+									>
+										{expirationStatus.type === 'valid'
+											? 'Valid'
+											: expirationStatus.type === 'expiring'
+												? `Expiring in ${expirationStatus.daysUntilExpiration} days`
+												: 'Expired'}
+									</StatusBadge>
+								</div>
+							)}
+						</div>
+					</CardSection>
 
-				{/* Download Button */}
-				<Button size="lg" asChild>
-					<a href="/employee/id/download">
-						<Icon name="download" className="scale-125">
-							Download ID Card (PDF)
-						</Icon>
-					</a>
-				</Button>
+					<CardSection title="Your Info">
+						<KeyValueList
+							items={[
+								{ key: 'Name', value: employee.fullName },
+								{ key: 'Job Title', value: employee.jobTitle },
+								{ key: 'Email', value: employee.email },
+								{ key: 'Status', value: employee.status },
+								{
+									key: 'Expiration Date',
+									value: expirationDate,
+									mono: true,
+								},
+							]}
+						/>
+					</CardSection>
+				</div>
+			</div>
+
+			{/* Mobile Sticky Download Buttons */}
+			<div className="bg-background/95 fixed inset-x-0 bottom-0 border-t p-3 backdrop-blur md:hidden">
+				<div className="flex gap-2">
+					{addToWalletButton}
+					{downloadButton}
+				</div>
 			</div>
 		</div>
 	)

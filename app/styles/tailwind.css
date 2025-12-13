@@ -240,4 +240,8 @@
 	::file-selector-button {
 		border-color: hsl(var(--border));
 	}
+
+	body {
+		scrollbar-gutter: stable;
+	}
 }

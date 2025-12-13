@@ -15,6 +15,25 @@ export function getDefaultExpirationDate(): Date {
 }
 
 /**
+ * Returns the current academic year in "YYYY-YYYY" format.
+ * School year runs from July 1 to June 30:
+ * - If current month is July-December: "YYYY-(YYYY+1)"
+ * - If current month is January-June: "(YYYY-1)-YYYY"
+ */
+export function getCurrentAcademicYear(): string {
+	const now = new Date()
+	const currentYear = now.getFullYear()
+	const month = now.getMonth() // 0-indexed: 0=Jan, 6=Jul, 11=Dec
+	
+	// If July-December (month 6-11), use current year - next year
+	if (month >= 6) {
+		return `${currentYear}-${currentYear + 1}`
+	}
+	// If January-June (month 0-5), use last year - current year
+	return `${currentYear - 1}-${currentYear}`
+}
+
+/**
  * Returns July 1 of next year as the expiration date.
  * Always returns July 1 of the following year, regardless of the current date.
  */

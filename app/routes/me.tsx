@@ -7,11 +7,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
 	const user = await prisma.user.findUnique({ where: { id: userId } })
 	if (!user) {
-		const requestUrl = new URL(request.url)
-		const loginParams = new URLSearchParams([
-			['redirectTo', `${requestUrl.pathname}${requestUrl.search}`],
-		])
-		const redirectTo = `/login?${loginParams}`
+		const redirectTo = `/`
 		await logout({ request, redirectTo })
 		return redirect(redirectTo)
 	}

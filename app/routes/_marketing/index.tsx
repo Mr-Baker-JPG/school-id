@@ -1,41 +1,87 @@
+import { redirect } from 'react-router'
 import {
 	ProviderConnectionForm,
 	GOOGLE_PROVIDER_NAME,
 } from '#app/utils/connections.tsx'
-import { Spacer } from '#app/components/spacer.tsx'
+import { Button } from '#app/components/ui/button.tsx'
+import { CardSection } from '#app/ui/components/CardSection.tsx'
+import { APP_NAME } from '#app/ui/brand.ts'
 import { type Route } from './+types/index.ts'
+import { getUserId, getRedirectPathForUser } from '#app/utils/auth.server.ts'
 
 export const meta: Route.MetaFunction = () => [
-	{ title: 'Employee ID System' },
+	{ title: APP_NAME },
 	{
 		name: 'description',
 		content: 'View and download your official employee ID card',
 	},
 ]
 
+export async function loader({ request }: Route.LoaderArgs) {
+	// If user is logged in, redirect them to their appropriate page
+	const userId = await getUserId(request)
+	if (userId) {
+		const redirectPath = await getRedirectPathForUser(userId)
+		throw redirect(redirectPath)
+	}
+	// If not logged in, show the marketing page
+	return {}
+}
+
 export default function Index() {
 	return (
-		<main className="flex min-h-full flex-col items-center justify-center px-4 py-16">
-			<div className="mx-auto w-full max-w-md">
-				<div className="flex flex-col gap-6 text-center">
-					<h1 className="text-h1">Employee ID System</h1>
-					<p className="text-body-md text-muted-foreground">
+		<>
+			{/* Hero Section */}
+			<section className="bg-muted/40 rounded-xl p-8 text-center">
+				<div className="mx-auto max-w-2xl">
+					<h1 className="text-h1 mb-4">{APP_NAME}</h1>
+					<p className="text-body-lg text-muted-foreground mb-2">
 						Access your official employee ID card. View, download, and verify
 						your employment status.
 					</p>
-					<p className="text-body-sm text-muted-foreground">
+					<p className="text-body-md text-muted-foreground mb-6">
 						This system is for internal use by school employees. External
 						parties can verify employee status using the QR code on ID cards.
 					</p>
+					<div className="flex justify-center">
+						<ProviderConnectionForm
+							type="Login"
+							providerName={GOOGLE_PROVIDER_NAME}
+						/>
+					</div>
 				</div>
-				<Spacer size="md" />
-				<div className="mx-auto w-full max-w-md">
-					<ProviderConnectionForm
-						type="Login"
-						providerName={GOOGLE_PROVIDER_NAME}
-					/>
-				</div>
-			</div>
-		</main>
+			</section>
+
+			{/* Features Section */}
+			<section className="mt-12 grid gap-6 md:grid-cols-3">
+				<CardSection
+					title="Digital ID Cards"
+					description="Access your official employee ID card anytime, anywhere"
+				>
+					<p className="text-body-sm text-muted-foreground">
+						View and download your employee ID card in PDF format for easy
+						access and printing.
+					</p>
+				</CardSection>
+				<CardSection
+					title="QR Code Verification"
+					description="Secure verification for external parties"
+				>
+					<p className="text-body-sm text-muted-foreground">
+						Each ID card includes a QR code that links to a public verification
+						page confirming your active employment status.
+					</p>
+				</CardSection>
+				<CardSection
+					title="Automatic Sync"
+					description="Always up-to-date with FACTS SIS"
+				>
+					<p className="text-body-sm text-muted-foreground">
+						Employee data is automatically synchronized with the school's FACTS
+						Student Information System.
+					</p>
+				</CardSection>
+			</section>
+		</>
 	)
 }

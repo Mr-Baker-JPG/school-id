@@ -74,13 +74,26 @@ export async function requireUserId(
 			redirectTo === null
 				? null
 				: (redirectTo ?? `${requestUrl.pathname}${requestUrl.search}`)
-		const loginParams = redirectTo ? new URLSearchParams({ redirectTo }) : null
-		const loginRedirect = ['/login', loginParams?.toString()]
-			.filter(Boolean)
-			.join('?')
+		const loginRedirect = ['/'].filter(Boolean).join('?')
 		throw redirect(loginRedirect)
 	}
 	return userId
+}
+
+export async function requireAdmin(request: Request) {
+	const userId = await getUserId(request)
+	if (!userId) {
+		throw redirect('/')
+	}
+	const isAdmin = await prisma.user.findFirst({
+		where: { id: userId },
+		select: { roles: true },
+	})
+	console.log('isAdmin', isAdmin)
+	if (!isAdmin?.roles.some((role) => role.name == 'admin')) {
+		throw redirect('/admin/employees')
+	}
+	return false
 }
 
 export async function requireAnonymous(request: Request) {
@@ -88,6 +101,45 @@ export async function requireAnonymous(request: Request) {
 	if (userId) {
 		throw redirect('/')
 	}
+}
+
+/**
+ * Determines the appropriate redirect path for a user after authentication.
+ * Admin users go to /admin/employees, regular users go to /employee/{employeeId}.
+ */
+export async function getRedirectPathForUser(userId: string): Promise<string> {
+	// Check if user is admin
+	const user = await prisma.user.findUnique({
+		where: { id: userId },
+		select: {
+			email: true,
+			roles: {
+				select: { name: true },
+			},
+		},
+	})
+
+	if (!user) {
+		return '/'
+	}
+
+	// Check if user has admin role
+	const isAdmin = user.roles.some((role) => role.name === 'admin')
+	if (isAdmin) {
+		return '/admin/employees'
+	}
+
+	// For regular users, find their employee record and redirect to their ID page
+	const employee = await prisma.employee.findUnique({
+		where: { email: user.email },
+		select: { id: true },
+	})
+
+	if (!employee) {
+		return '/'
+	}
+
+	return `/employee/${employee.id}`
 }
 
 export async function login({

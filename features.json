@@ -395,5 +395,26 @@
 		],
 		"implemented": true,
 		"tests_passed": true
+	},
+	{
+		"id": "F028",
+		"title": "Add to Wallet (Apple Wallet / Google Pay)",
+		"description": "Add an \"Add to Wallet\" button on the employee's own ID page (/employee/id) that auto-detects the device (iOS/Android) and generates the appropriate wallet pass file. The pass mirrors the PDF ID card, including employee name, job title, photo, expiration date, QR code for verification, and school branding. On iOS, it generates an Apple Wallet pass (.pkpass); on Android, it generates a Google Pay pass. The button downloads the pass file, which users can then add to their device's wallet app.",
+		"tests": [
+			"Unit: Service function generates valid Apple Wallet pass (.pkpass) with all required fields (name, title, photo, expiration, QR code, branding)",
+			"Unit: Service function generates valid Google Pay pass with all required fields",
+			"Unit: Pass generation handles missing photo gracefully (shows placeholder or omits photo)",
+			"Unit: Pass generation handles missing branding gracefully (uses defaults)",
+			"Unit: Device detection correctly identifies iOS vs Android from user agent",
+			"E2E: \"Add to Wallet\" button appears on employee ID page for authenticated employees",
+			"E2E: Clicking button on iOS device downloads .pkpass file",
+			"E2E: Clicking button on Android device downloads Google Pay pass file",
+			"E2E: Button is not visible for unauthenticated users",
+			"Manual: Verify generated Apple Wallet pass can be successfully added to Apple Wallet app on iOS device",
+			"Manual: Verify generated Google Pay pass can be successfully added to Google Wallet app on Android device",
+			"Manual: Verify pass displays correctly in wallet apps with all information (photo, QR code, etc.)"
+		],
+		"implemented": true,
+		"tests_passed": true
 	}
 ]

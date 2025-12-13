@@ -9,9 +9,11 @@ import {
 } from 'react-router'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Field } from '#app/components/forms.tsx'
-import { Spacer } from '#app/components/spacer.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
+import { Card } from '#app/components/ui/card.tsx'
+import { PageTitle } from '#app/ui/components/PageTitle.tsx'
+import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { syncEmployeesFromFacts } from '#app/utils/employee-sync.server.ts'
 import {
@@ -249,223 +251,212 @@ export default function AdminEmployeesRoute({
 		await submit(form)
 	}, 400)
 
+	const syncButton = (
+		<Form method="post">
+			<input type="hidden" name="intent" value="sync" />
+			<StatusButton
+				type="submit"
+				status={syncPending ? 'pending' : 'idle'}
+				disabled={syncPending}
+			>
+				<Icon name="update" />
+				Sync from FACTS
+			</StatusButton>
+		</Form>
+	)
+
 	return (
-		<div className="container">
-			<div className="flex items-center justify-between">
-				<h1 className="text-h1">Employee Management</h1>
-				<Form method="post">
-					<input type="hidden" name="intent" value="sync" />
-					<StatusButton
-						type="submit"
-						variant="outline"
-						status={syncPending ? 'pending' : 'idle'}
-						disabled={syncPending}
-					>
-						<Icon name="update" />
-						Sync from FACTS
-					</StatusButton>
-				</Form>
-			</div>
-			<Spacer size="2xs" />
+		<div>
+			<PageTitle title="Employee Management" rightSlot={syncButton} />
+
 			{(loaderData.expiringCount > 0 || loaderData.expiredCount > 0) && (
-				<div className="bg-muted/50 rounded-lg border p-4">
-					<h2 className="text-h4 mb-2">Expiration Warnings</h2>
-					<div className="flex flex-wrap gap-4">
-						{loaderData.expiringCount > 0 && (
-							<div className="flex items-center gap-2">
-								<span className="inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-sm font-medium text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+				<Card className="mt-6 border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20">
+					<div className="p-4">
+						<h2 className="text-h4 mb-2">Expiration Warnings</h2>
+						<div className="flex flex-wrap gap-4">
+							{loaderData.expiringCount > 0 && (
+								<StatusBadge variant="expiring">
 									{loaderData.expiringCount} ID
 									{loaderData.expiringCount !== 1 ? 's' : ''} expiring within 30
 									days
-								</span>
-							</div>
-						)}
-						{loaderData.expiredCount > 0 && (
-							<div className="flex items-center gap-2">
-								<span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-800 dark:bg-red-900 dark:text-red-200">
+								</StatusBadge>
+							)}
+							{loaderData.expiredCount > 0 && (
+								<StatusBadge variant="expired">
 									{loaderData.expiredCount} ID
 									{loaderData.expiredCount !== 1 ? 's' : ''} expired
-								</span>
-							</div>
-						)}
+								</StatusBadge>
+							)}
+						</div>
 					</div>
-				</div>
+				</Card>
 			)}
-			<Spacer size="2xs" />
-			<Form
-				method="get"
-				className="flex flex-col gap-4"
-				onChange={(e) => handleFormChange(e.currentTarget)}
-			>
-				<div className="flex flex-wrap items-center gap-4">
-					<Field
-						className="min-w-[200px] flex-1"
-						labelProps={{ children: 'Search' }}
-						inputProps={{
-							type: 'search',
-							name: 'search',
-							defaultValue: search,
-							placeholder: 'Search by name or email',
-						}}
-					/>
-					<div className="flex flex-col gap-1">
-						<label htmlFor="status-filter" className="text-body-xs">
-							Status
-						</label>
-						<select
-							id="status-filter"
-							name="status"
-							defaultValue={status}
-							className="border-input bg-background h-16 rounded-md border px-3 py-2"
-						>
-							<option value="all">All</option>
-							<option value="active">Active</option>
-							<option value="inactive">Inactive</option>
-						</select>
+
+			<div className="mt-6">
+				<Form
+					method="get"
+					className="flex flex-col gap-4"
+					onChange={(e) => handleFormChange(e.currentTarget)}
+				>
+					<div className="flex flex-wrap items-end gap-4">
+						<Field
+							className="min-w-[200px] flex-1"
+							labelProps={{ children: 'Search' }}
+							inputProps={{
+								type: 'search',
+								name: 'search',
+								defaultValue: search,
+								placeholder: 'Search by name or email',
+							}}
+						/>
+						<div className="flex flex-col gap-1">
+							<label htmlFor="status-filter" className="text-body-xs">
+								Status
+							</label>
+							<select
+								id="status-filter"
+								name="status"
+								defaultValue={status}
+								className="border-input bg-background h-10 rounded-md border px-3 py-2"
+							>
+								<option value="all">All</option>
+								<option value="active">Active</option>
+								<option value="inactive">Inactive</option>
+							</select>
+						</div>
 					</div>
-				</div>
-			</Form>
-			<Spacer size="2xs" />
-			<div
-				className={cn('flex flex-col gap-4', {
-					'opacity-50': isPending,
-				})}
-			>
-				{loaderData.employees.length > 0 ? (
-					<div className="overflow-x-auto">
-						<table className="w-full border-collapse">
-							<thead>
-								<tr className="border-b">
-									<th className="p-2 text-left">Name</th>
-									<th className="p-2 text-left">Job Title</th>
-									<th className="p-2 text-left">Email</th>
-									<th className="p-2 text-left">Status</th>
-									<th className="p-2 text-left">Expiration Date</th>
-									<th className="p-2 text-left">Photo</th>
-									<th className="p-2 text-left">Actions</th>
-								</tr>
-							</thead>
-							<tbody>
-								{loaderData.employees.map((employee) => (
-									<tr key={employee.id} className="hover:bg-muted/50 border-b">
-										<td className="p-2">
-											<Link
-												to={`/admin/employees/${employee.id}`}
-												className="text-foreground hover:underline"
-											>
-												{employee.fullName}
-											</Link>
-										</td>
-										<td className="p-2">{employee.jobTitle}</td>
-										<td className="p-2">{employee.email}</td>
-										<td className="p-2">
-											<span
-												className={cn(
-													'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium',
-													{
-														'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200':
-															employee.status === 'active',
-														'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200':
-															employee.status === 'inactive',
-													},
-												)}
-											>
-												{employee.status}
-											</span>
-										</td>
-										<td className="p-2">
-											<div className="flex flex-col gap-1">
+				</Form>
+			</div>
+
+			<div className="mt-6">
+				<div className={cn('flex flex-col gap-4', isPending && 'opacity-50')}>
+					{loaderData.employees.length > 0 ? (
+						<div className="overflow-x-auto">
+							<table className="w-full border-collapse">
+								<thead>
+									<tr className="border-b">
+										<th className="p-2 text-left">Name</th>
+										<th className="p-2 text-left">Job Title</th>
+										<th className="p-2 text-left">Email</th>
+										<th className="p-2 text-left">Status</th>
+										<th className="p-2 text-left">Expiration Date</th>
+										<th className="p-2 text-left">Photo</th>
+										<th className="p-2 text-left">Actions</th>
+									</tr>
+								</thead>
+								<tbody>
+									{loaderData.employees.map((employee) => (
+										<tr
+											key={employee.id}
+											className="hover:bg-muted/50 border-b"
+										>
+											<td className="p-2">
 												<Link
-													to={`/admin/employees/${employee.id}/expiration`}
+													to={`/admin/employees/${employee.id}`}
 													className="text-foreground hover:underline"
 												>
-													{employee.employeeId?.expirationDate
-														? new Date(
-																employee.employeeId.expirationDate,
-															).toLocaleDateString()
-														: 'Not set'}
+													{employee.fullName}
 												</Link>
-												{employee.expirationStatus &&
-													employee.expirationStatus.type !== 'valid' && (
-														<span
-															className={cn(
-																'inline-flex w-fit items-center rounded-full px-2 py-1 text-xs font-medium',
-																{
-																	'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200':
-																		employee.expirationStatus.type ===
-																		'expiring',
-																	'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200':
-																		employee.expirationStatus.type ===
-																		'expired',
-																},
-															)}
-														>
-															{employee.expirationStatus.type === 'expiring'
-																? `Expires in ${employee.expirationStatus.daysUntilExpiration} day${employee.expirationStatus.daysUntilExpiration !== 1 ? 's' : ''}`
-																: `Expired ${employee.expirationStatus.daysSinceExpiration} day${employee.expirationStatus.daysSinceExpiration !== 1 ? 's' : ''} ago`}
-														</span>
-													)}
-											</div>
-										</td>
-										<td className="p-2">
-											<Link
-												to={`/admin/employees/${employee.id}/photo`}
-												className="text-foreground hover:underline"
-											>
-												{employee.employeeId?.photoUrl ? (
-													<span className="text-green-600 dark:text-green-400">
-														✓ Has photo
-													</span>
-												) : (
-													<span className="text-muted-foreground">
-														No photo
-													</span>
-												)}
-											</Link>
-										</td>
-										<td className="p-2">
-											<Form method="post" className="inline">
-												<input
-													type="hidden"
-													name="intent"
-													value="recheck-facts-photo"
-												/>
-												<input
-													type="hidden"
-													name="employeeId"
-													value={employee.id}
-												/>
-												<StatusButton
-													type="submit"
-													variant="outline"
-													size="sm"
-													status={
-														navigation.state === 'submitting' &&
-														navigation.formData?.get('employeeId') ===
-															employee.id
-															? 'pending'
-															: 'idle'
-													}
-													disabled={
-														navigation.state === 'submitting' &&
-														navigation.formData?.get('employeeId') ===
-															employee.id
+											</td>
+											<td className="p-2">{employee.jobTitle}</td>
+											<td className="p-2">{employee.email}</td>
+											<td className="p-2">
+												<StatusBadge
+													variant={
+														employee.status === 'active' ? 'active' : 'inactive'
 													}
 												>
-													<Icon name="update" className="scale-75">
-														Recheck
-													</Icon>
-												</StatusButton>
-											</Form>
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
-				) : (
-					<p className="text-muted-foreground">No employees found</p>
-				)}
+													{employee.status}
+												</StatusBadge>
+											</td>
+											<td className="p-2">
+												<div className="flex flex-col gap-1">
+													<Link
+														to={`/admin/employees/${employee.id}/expiration`}
+														className="text-foreground hover:underline"
+													>
+														{employee.employeeId?.expirationDate
+															? new Date(
+																	employee.employeeId.expirationDate,
+																).toLocaleDateString()
+															: 'Not set'}
+													</Link>
+													{employee.expirationStatus &&
+														employee.expirationStatus.type !== 'valid' && (
+															<StatusBadge
+																variant={
+																	employee.expirationStatus.type === 'expiring'
+																		? 'expiring'
+																		: 'expired'
+																}
+															>
+																{employee.expirationStatus.type === 'expiring'
+																	? `Expires in ${employee.expirationStatus.daysUntilExpiration} day${employee.expirationStatus.daysUntilExpiration !== 1 ? 's' : ''}`
+																	: `Expired ${employee.expirationStatus.daysSinceExpiration} day${employee.expirationStatus.daysSinceExpiration !== 1 ? 's' : ''} ago`}
+															</StatusBadge>
+														)}
+												</div>
+											</td>
+											<td className="p-2">
+												<Link
+													to={`/admin/employees/${employee.id}/photo`}
+													className="text-foreground hover:underline"
+												>
+													{employee.employeeId?.photoUrl ? (
+														<span className="text-green-600 dark:text-green-400">
+															✓ Has photo
+														</span>
+													) : (
+														<span className="text-muted-foreground">
+															No photo
+														</span>
+													)}
+												</Link>
+											</td>
+											<td className="p-2">
+												<Form method="post" className="inline">
+													<input
+														type="hidden"
+														name="intent"
+														value="recheck-facts-photo"
+													/>
+													<input
+														type="hidden"
+														name="employeeId"
+														value={employee.id}
+													/>
+													<StatusButton
+														type="submit"
+														variant="outline"
+														size="sm"
+														status={
+															navigation.state === 'submitting' &&
+															navigation.formData?.get('employeeId') ===
+																employee.id
+																? 'pending'
+																: 'idle'
+														}
+														disabled={
+															navigation.state === 'submitting' &&
+															navigation.formData?.get('employeeId') ===
+																employee.id
+														}
+													>
+														<Icon name="update" className="scale-75">
+															Recheck
+														</Icon>
+													</StatusButton>
+												</Form>
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					) : (
+						<p className="text-muted-foreground">No employees found</p>
+					)}
+				</div>
 			</div>
 		</div>
 	)

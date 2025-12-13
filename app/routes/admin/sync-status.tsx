@@ -1,9 +1,10 @@
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
 import { Form, Link, redirect, useRevalidator } from 'react-router'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
-import { Spacer } from '#app/components/spacer.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
+import { PageTitle } from '#app/ui/components/PageTitle.tsx'
+import { CardSection } from '#app/ui/components/CardSection.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { syncEmployeesFromFacts } from '#app/utils/employee-sync.server.ts'
 import { useIsPending } from '#app/utils/misc.tsx'
@@ -112,120 +113,120 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 	const syncPending = useIsPending({ formAction: '/admin/sync-status' })
 	const revalidator = useRevalidator()
 
-	return (
-		<div className="container">
-			<div className="flex items-center justify-between">
-				<h1 className="text-h1">SIS Sync Status</h1>
-				<div className="flex gap-2">
-					<StatusButton
-						type="button"
-						variant="outline"
-						status={revalidator.state === 'loading' ? 'pending' : 'idle'}
-						disabled={revalidator.state === 'loading'}
-						onClick={() => revalidator.revalidate()}
-					>
-						<Icon name="update" />
-						Refresh
-					</StatusButton>
-					<Form method="post">
-						<input type="hidden" name="intent" value="sync" />
-						<StatusButton
-							type="submit"
-							status={syncPending ? 'pending' : 'idle'}
-							disabled={syncPending}
-						>
-							<Icon name="update" />
-							Sync Now
-						</StatusButton>
-					</Form>
-				</div>
-			</div>
-			<Spacer size="2xs" />
+	const actionButtons = (
+		<div className="flex gap-2">
+			<StatusButton
+				type="button"
+				variant="outline"
+				status={revalidator.state === 'loading' ? 'pending' : 'idle'}
+				disabled={revalidator.state === 'loading'}
+				onClick={() => revalidator.revalidate()}
+			>
+				<Icon name="update" />
+				Refresh
+			</StatusButton>
+			<Form method="post">
+				<input type="hidden" name="intent" value="sync" />
+				<StatusButton
+					type="submit"
+					status={syncPending ? 'pending' : 'idle'}
+					disabled={syncPending}
+				>
+					<Icon name="update" />
+					Sync Now
+				</StatusButton>
+			</Form>
+		</div>
+	)
 
-			{/* Last Sync Status */}
-			<div className="border-border bg-card rounded-lg border p-6">
-				<h2 className="text-h2 mb-4">Last Sync</h2>
-				{lastSync ? (
-					<div className="space-y-2">
-						<div className="flex items-center gap-2">
-							<Icon
-								name={lastSync.success ? 'check' : 'cross'}
-								className={
-									lastSync.success ? 'text-success' : 'text-destructive'
-								}
-							/>
-							<span className="font-semibold">
-								{lastSync.success ? 'Successful' : 'Failed'}
-							</span>
-							<span className="text-muted-foreground">
-								• {new Date(lastSync.createdAt).toLocaleString()}
-							</span>
-						</div>
-						<div className="grid grid-cols-3 gap-4 text-sm">
-							<div>
-								<span className="text-muted-foreground">Created:</span>{' '}
-								<span className="font-medium">{lastSync.created}</span>
-							</div>
-							<div>
-								<span className="text-muted-foreground">Updated:</span>{' '}
-								<span className="font-medium">{lastSync.updated}</span>
-							</div>
-							<div>
-								<span className="text-muted-foreground">Errors:</span>{' '}
-								<span
+	return (
+		<div>
+			<PageTitle title="SIS Sync Status" rightSlot={actionButtons} />
+
+			<div className="mt-6">
+				{/* Last Sync Status */}
+				<CardSection title="Last Sync">
+					<h2 className="text-h2 mb-4">Last Sync</h2>
+					{lastSync ? (
+						<div className="space-y-2">
+							<div className="flex items-center gap-2">
+								<Icon
+									name={lastSync.success ? 'check' : 'cross'}
 									className={
-										lastSync.errors > 0
-											? 'text-destructive font-medium'
-											: 'font-medium'
+										lastSync.success ? 'text-success' : 'text-destructive'
 									}
-								>
-									{lastSync.errors}
+								/>
+								<span className="font-semibold">
+									{lastSync.success ? 'Successful' : 'Failed'}
+								</span>
+								<span className="text-muted-foreground">
+									• {new Date(lastSync.createdAt).toLocaleString()}
 								</span>
 							</div>
-						</div>
-						{lastSync.errorMessage && (
-							<div className="bg-destructive/10 text-destructive mt-2 rounded p-2 text-sm">
-								{lastSync.errorMessage}
+							<div className="grid grid-cols-3 gap-4 text-sm">
+								<div>
+									<span className="text-muted-foreground">Created:</span>{' '}
+									<span className="font-medium">{lastSync.created}</span>
+								</div>
+								<div>
+									<span className="text-muted-foreground">Updated:</span>{' '}
+									<span className="font-medium">{lastSync.updated}</span>
+								</div>
+								<div>
+									<span className="text-muted-foreground">Errors:</span>{' '}
+									<span
+										className={
+											lastSync.errors > 0
+												? 'text-destructive font-medium'
+												: 'font-medium'
+										}
+									>
+										{lastSync.errors}
+									</span>
+								</div>
 							</div>
-						)}
-					</div>
-				) : (
-					<p className="text-muted-foreground">No sync history available</p>
-				)}
+							{lastSync.errorMessage && (
+								<div className="bg-destructive/10 text-destructive mt-2 rounded p-2 text-sm">
+									{lastSync.errorMessage}
+								</div>
+							)}
+						</div>
+					) : (
+						<p className="text-muted-foreground">No sync history available</p>
+					)}
+				</CardSection>
 			</div>
 
-			<Spacer size="xs" />
-
-			{/* Statistics */}
-			<div className="border-border bg-card rounded-lg border p-6">
-				<h2 className="text-h2 mb-4">Sync Statistics</h2>
-				<div className="grid grid-cols-3 gap-4">
-					<div>
-						<div className="text-2xl font-bold">{statistics.total}</div>
-						<div className="text-muted-foreground text-sm">Total Employees</div>
-					</div>
-					<div>
-						<div className="text-success text-2xl font-bold">
-							{statistics.active}
+			<div className="mt-6">
+				{/* Statistics */}
+				<CardSection title="Sync Statistics">
+					<div className="grid grid-cols-3 gap-4">
+						<div>
+							<div className="text-2xl font-bold">{statistics.total}</div>
+							<div className="text-muted-foreground text-sm">
+								Total Employees
+							</div>
 						</div>
-						<div className="text-muted-foreground text-sm">Active</div>
-					</div>
-					<div>
-						<div className="text-muted-foreground text-2xl font-bold">
-							{statistics.inactive}
+						<div>
+							<div className="text-success text-2xl font-bold">
+								{statistics.active}
+							</div>
+							<div className="text-muted-foreground text-sm">Active</div>
 						</div>
-						<div className="text-muted-foreground text-sm">Inactive</div>
+						<div>
+							<div className="text-muted-foreground text-2xl font-bold">
+								{statistics.inactive}
+							</div>
+							<div className="text-muted-foreground text-sm">Inactive</div>
+						</div>
 					</div>
-				</div>
+				</CardSection>
 			</div>
-
-			<Spacer size="xs" />
 
 			{/* Recent Errors */}
 			{recentErrors.length > 0 && (
-				<>
-					<div className="border-border bg-card rounded-lg border p-6">
-						<h2 className="text-h2 mb-4">Recent Sync Errors</h2>
+				<div className="mt-6">
+					<CardSection title="Recent Sync Errors">
 						<div className="space-y-3">
 							{recentErrors.map((error) => (
 								<div
@@ -251,50 +252,48 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 								</div>
 							))}
 						</div>
-					</div>
-					<Spacer size="xs" />
-				</>
+					</CardSection>
+				</div>
 			)}
 
 			{/* Employees with Sync Issues */}
 			{employeesWithSyncIssues.length > 0 && (
-				<div className="border-border bg-card rounded-lg border p-6">
-					<h2 className="text-h2 mb-4">
-						Employees Pending Sync ({employeesWithSyncIssues.length})
-					</h2>
-					<p className="text-muted-foreground mb-4 text-sm">
-						Employees that haven't been updated in the last 7 days
-					</p>
-					<div className="space-y-2">
-						{employeesWithSyncIssues.map((employee) => (
-							<div
-								key={employee.id}
-								className="border-border flex items-center justify-between rounded border p-2"
-							>
-								<div>
-									<Link
-										to={`/admin/employees/${employee.id}`}
-										className="font-medium hover:underline"
-									>
-										{employee.fullName}
-									</Link>
-									<div className="text-muted-foreground text-sm">
-										{employee.email} • Last updated:{' '}
-										{new Date(employee.updatedAt).toLocaleDateString()}
-									</div>
-								</div>
-								<span
-									className={`rounded px-2 py-1 text-xs ${
-										employee.status === 'active'
-											? 'bg-success/20 text-success'
-											: 'bg-muted text-muted-foreground'
-									}`}
+				<div className="mt-6">
+					<CardSection
+						title={`Employees Pending Sync (${employeesWithSyncIssues.length})`}
+						description="Employees that haven't been updated in the last 7 days"
+					>
+						<div className="space-y-2">
+							{employeesWithSyncIssues.map((employee) => (
+								<div
+									key={employee.id}
+									className="border-border flex items-center justify-between rounded border p-2"
 								>
-									{employee.status}
-								</span>
-							</div>
-						))}
-					</div>
+									<div>
+										<Link
+											to={`/admin/employees/${employee.id}`}
+											className="font-medium hover:underline"
+										>
+											{employee.fullName}
+										</Link>
+										<div className="text-muted-foreground text-sm">
+											{employee.email} • Last updated:{' '}
+											{new Date(employee.updatedAt).toLocaleDateString()}
+										</div>
+									</div>
+									<span
+										className={`rounded px-2 py-1 text-xs ${
+											employee.status === 'active'
+												? 'bg-success/20 text-success'
+												: 'bg-muted text-muted-foreground'
+										}`}
+									>
+										{employee.status}
+									</span>
+								</div>
+							))}
+						</div>
+					</CardSection>
 				</div>
 			)}
 		</div>

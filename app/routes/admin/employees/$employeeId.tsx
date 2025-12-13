@@ -3,16 +3,19 @@ import { Img } from 'openimg/react'
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
 import { Form, Link } from 'react-router'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
-import { Spacer } from '#app/components/spacer.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
+import { PageTitle } from '#app/ui/components/PageTitle.tsx'
+import { CardSection } from '#app/ui/components/CardSection.tsx'
+import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
+import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import {
 	getDefaultExpirationDate,
 	fetchAndCacheFactsProfilePicture,
 } from '#app/utils/employee.server.ts'
-import { getEmployeePhotoSrc, cn, useIsPending } from '#app/utils/misc.tsx'
+import { getEmployeePhotoSrc, useIsPending } from '#app/utils/misc.tsx'
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { type Route } from './+types/$employeeId.ts'
@@ -72,7 +75,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	// If no uploaded photo exists, try to fetch and cache from FACTS
 	// Note: This is done asynchronously to avoid blocking the loader response
 	// The photo will be available on the next page load if successfully cached
-	if (!employeeIdRecord.photoUrl && employee.sisEmployeeId) {
+	let photoUrl = employeeIdRecord?.photoUrl ?? null
+	if (!photoUrl && employee.sisEmployeeId) {
 		// Don't await - let it run in the background to avoid loader timeout
 		// The photo will be cached for the next page load
 		fetchAndCacheFactsProfilePicture(employee.id, employee.sisEmployeeId).catch(
@@ -95,6 +99,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 				updatedAt: new Date(),
 			},
 		},
+		photoUrl,
 	}
 }
 
@@ -159,8 +164,8 @@ export async function action({ request, params }: Route.ActionArgs) {
 export default function AdminEmployeeDetailRoute({
 	loaderData,
 }: Route.ComponentProps) {
-	const { employee } = loaderData
-	const hasPhoto = !!employee.employeeId?.photoUrl
+	const { employee, photoUrl } = loaderData
+	const hasPhoto = !!photoUrl
 	const expirationDate = employee.employeeId?.expirationDate
 		? new Date(employee.employeeId.expirationDate).toLocaleDateString()
 		: 'Not set'
@@ -169,8 +174,19 @@ export default function AdminEmployeeDetailRoute({
 		formAction: `/admin/employees/${employee.id}`,
 	})
 
+	const downloadButton = (
+		<Button
+			type="button"
+			onClick={() => {
+				window.location.href = `/resources/admin/employee-pdf/${employee.id}`
+			}}
+		>
+			<Icon name="download">Download ID Card</Icon>
+		</Button>
+	)
+
 	return (
-		<div className="container">
+		<div>
 			<div className="mb-4">
 				<Link
 					to="/admin/employees"
@@ -180,30 +196,19 @@ export default function AdminEmployeeDetailRoute({
 				</Link>
 			</div>
 
-			<div className="mb-6 flex items-center justify-between">
-				<div>
-					<h1 className="text-h1">Employee Details</h1>
-					<p className="text-muted-foreground">{employee.fullName}</p>
-				</div>
-				<Button
-					type="button"
-					variant="outline"
-					onClick={() => {
-						window.location.href = `/resources/admin/employee-pdf/${employee.id}`
-					}}
-				>
-					<Icon name="download">Download ID Card</Icon>
-				</Button>
-			</div>
+			<PageTitle
+				title="Employee Details"
+				subtitle={employee.fullName}
+				rightSlot={downloadButton}
+			/>
 
-			<div className="grid gap-6 md:grid-cols-2">
-				{/* Employee Photo */}
-				<div className="flex flex-col gap-4">
-					<h2 className="text-h3">Photo</h2>
+			<div className="mt-8 grid gap-6 md:grid-cols-2">
+				{/* Left Column: Photo */}
+				<CardSection title="Photo">
 					<div className="flex items-center gap-4">
 						{hasPhoto ? (
 							<Img
-								src={getEmployeePhotoSrc(employee.employeeId?.photoUrl)}
+								src={getEmployeePhotoSrc(photoUrl)}
 								alt={employee.fullName}
 								className="size-32 rounded-lg object-cover"
 								width={128}
@@ -235,141 +240,75 @@ export default function AdminEmployeeDetailRoute({
 									status={isPending ? 'pending' : 'idle'}
 									disabled={isPending}
 								>
-									<Icon name="update">Recheck FACTS Photo</Icon>
+									<Icon name="update">Recheck</Icon>
 								</StatusButton>
 							</Form>
 						</div>
 					</div>
-				</div>
+				</CardSection>
 
-				{/* Employee Information */}
-				<div className="flex flex-col gap-4">
-					<h2 className="text-h3">Information</h2>
-					<div className="flex flex-col gap-4">
-						<div className="flex flex-col gap-2">
-							<label className="text-body-xs text-muted-foreground">
-								Full Name
-							</label>
-							<p className="text-body-lg">{employee.fullName}</p>
-						</div>
+				{/* Right Column: Employee Info */}
+				<CardSection title="Employee Info">
+					<KeyValueList
+						items={[
+							{ key: 'Full Name', value: employee.fullName },
+							{ key: 'Job Title', value: employee.jobTitle },
+							{ key: 'Email', value: employee.email },
+							{
+								key: 'SIS Employee ID',
+								value: employee.sisEmployeeId || 'N/A',
+								mono: true,
+							},
+							{
+								key: 'Status',
+								value: (
+									<StatusBadge
+										variant={
+											employee.status === 'active' ? 'active' : 'inactive'
+										}
+									>
+										{employee.status}
+									</StatusBadge>
+								),
+							},
+						]}
+					/>
+				</CardSection>
+			</div>
 
-						<div className="flex flex-col gap-2">
-							<label className="text-body-xs text-muted-foreground">
-								Job Title
-							</label>
-							<p className="text-body-lg">{employee.jobTitle}</p>
-						</div>
-
-						<div className="flex flex-col gap-2">
-							<label className="text-body-xs text-muted-foreground">
-								Email
-							</label>
-							<p className="text-body-lg">{employee.email}</p>
-						</div>
-
-						<div className="flex flex-col gap-2">
-							<label className="text-body-xs text-muted-foreground">
-								SIS Employee ID
-							</label>
-							<p className="text-body-lg">{employee.sisEmployeeId}</p>
-						</div>
-
-						<div className="flex flex-col gap-2">
-							<label className="text-body-xs text-muted-foreground">
-								Status
-							</label>
-							<span
-								className={cn(
-									'inline-flex w-fit items-center rounded-full px-3 py-1 text-sm font-medium',
-									{
-										'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200':
-											employee.status === 'active',
-										'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200':
-											employee.status === 'inactive',
-									},
-								)}
-							>
-								{employee.status}
-							</span>
-						</div>
+			<div className="mt-6 grid gap-6 md:grid-cols-2">
+				{/* ID Card Info */}
+				<CardSection title="ID Card Info">
+					<KeyValueList
+						items={[
+							{
+								key: 'Expiration Date',
+								value: expirationDate,
+								mono: true,
+							},
+						]}
+					/>
+					<div className="mt-4">
+						<Button asChild variant="outline" size="sm">
+							<Link to={`/admin/employees/${employee.id}/expiration`}>
+								<Icon name="pencil-1">Update</Icon>
+							</Link>
+						</Button>
 					</div>
-				</div>
-			</div>
+				</CardSection>
 
-			<Spacer size="md" />
-
-			{/* SIS Sync Status */}
-			<div className="flex flex-col gap-4">
-				<h2 className="text-h3">SIS Sync Status</h2>
-				<div className="flex flex-col gap-2">
-					<label className="text-body-xs text-muted-foreground">
-						Last Updated from SIS
-					</label>
-					<p className="text-body-lg">{lastUpdated}</p>
-				</div>
-			</div>
-
-			<Spacer size="md" />
-
-			{/* ID Card Information */}
-			<div className="flex flex-col gap-4">
-				<h2 className="text-h3">ID Card Information</h2>
-				<div className="flex flex-col gap-4">
-					<div className="flex flex-col gap-2">
-						<label className="text-body-xs text-muted-foreground">
-							Expiration Date
-						</label>
-						<div className="flex items-center gap-4">
-							<p className="text-body-lg">{expirationDate}</p>
-							<Button asChild variant="outline" size="sm">
-								<Link to={`/admin/employees/${employee.id}/expiration`}>
-									<Icon name="pencil-1">Update</Icon>
-								</Link>
-							</Button>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<Spacer size="md" />
-
-			{/* Actions */}
-			<div className="flex flex-col gap-4">
-				<h2 className="text-h3">Actions</h2>
-				<div className="flex flex-wrap gap-4">
-					<Button asChild variant="outline">
-						<Link to={`/admin/employees/${employee.id}/photo`}>
-							<Icon name="pencil-1">
-								{hasPhoto ? 'Change Photo' : 'Upload Photo'}
-							</Icon>
-						</Link>
-					</Button>
-					<Button asChild variant="outline">
-						<Link to={`/admin/employees/${employee.id}/expiration`}>
-							<Icon name="calendar">Update Expiration Date</Icon>
-						</Link>
-					</Button>
-					<Button
-						type="button"
-						variant="outline"
-						onClick={() => {
-							window.location.href = `/resources/admin/employee-pdf/${employee.id}`
-						}}
-					>
-						<Icon name="download">Download ID Card</Icon>
-					</Button>
-					<Form method="post">
-						<input type="hidden" name="intent" value="recheck-facts-photo" />
-						<StatusButton
-							type="submit"
-							variant="outline"
-							status={isPending ? 'pending' : 'idle'}
-							disabled={isPending}
-						>
-							<Icon name="update">Recheck FACTS Photo</Icon>
-						</StatusButton>
-					</Form>
-				</div>
+				{/* SIS Sync Status */}
+				<CardSection title="SIS Sync Status">
+					<KeyValueList
+						items={[
+							{
+								key: 'Last Updated from SIS',
+								value: lastUpdated,
+								mono: true,
+							},
+						]}
+					/>
+				</CardSection>
 			</div>
 		</div>
 	)

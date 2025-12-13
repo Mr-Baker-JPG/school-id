@@ -3,12 +3,15 @@ import { invariantResponse } from '@epic-web/invariant'
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
 import { Img } from 'openimg/react'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
-import { Spacer } from '#app/components/spacer.tsx'
+import { Card } from '#app/components/ui/card.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { getBrandingConfig } from '#app/utils/branding.server.ts'
 import { getVerificationStatus } from '#app/utils/verification.server.ts'
 import { fetchAndCacheFactsProfilePicture } from '#app/utils/employee.server.ts'
-import { cn, getDomainUrl, getEmployeePhotoSrc } from '#app/utils/misc.tsx'
+import { getDomainUrl, getEmployeePhotoSrc } from '#app/utils/misc.tsx'
+import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
+import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
+import { SCHOOL_NAME, LOGO_SRC } from '#app/ui/brand.ts'
 import { type Route } from './+types/$employeeId.ts'
 
 export const handle: SEOHandle = {
@@ -127,182 +130,68 @@ export default function VerifyRoute({ loaderData }: Route.ComponentProps) {
 		: 'Not set'
 
 	return (
-		<div className="container mt-36 mb-48 flex flex-col items-center justify-center">
-			<Spacer size="4xs" />
-			<div
-				className="container flex flex-col items-center rounded-3xl p-12"
-				style={{
-					backgroundColor: branding.secondaryColor,
-				}}
-			>
-				{/* School Logo */}
-				{branding.logoUrl && (
-					<div className="mb-6">
+		<div className="bg-muted/20 flex min-h-screen items-center justify-center px-4 py-10">
+			<Card className="mx-auto w-full max-w-md p-8">
+				{/* School Logo and Name */}
+				<div className="mb-6 flex flex-col items-center gap-3">
+					{branding.logoUrl && (
 						<Img
 							src={branding.logoUrl}
-							alt={branding.schoolName}
-							className="h-16 w-auto object-contain"
-							width={256}
-							height={64}
+							alt={SCHOOL_NAME}
+							className="h-12 w-auto object-contain"
+							width={128}
+							height={48}
 						/>
-					</div>
-				)}
-
-				{/* School Name */}
-				<h1
-					className="text-h2 mb-6"
-					style={{
-						color: branding.primaryColor,
-					}}
-				>
-					{branding.schoolName}
-				</h1>
-				<h2
-					className="text-h3 mb-8"
-					style={{
-						color: branding.primaryColor,
-						opacity: 0.7,
-					}}
-				>
-					Employee Verification
-				</h2>
+					)}
+					<h1 className="text-h2 text-center">{SCHOOL_NAME}</h1>
+					<h2 className="text-h4 text-muted-foreground text-center">
+						Employee Verification
+					</h2>
+				</div>
 
 				{/* Employee Photo */}
-				<div className="mb-6">
-					{employee.photoUrl ? (
-						<Img
-							src={getEmployeePhotoSrc(employee.photoUrl)}
-							alt={employee.fullName}
-							className="size-48 rounded-lg object-cover"
-							width={384}
-							height={384}
-						/>
-					) : (
-						<div className="bg-muted-foreground/20 flex size-48 items-center justify-center rounded-lg">
-							<span className="text-muted-foreground text-4xl">
-								{employee.fullName.charAt(0).toUpperCase()}
-							</span>
-						</div>
-					)}
+				<div className="mb-6 flex justify-center">
+					<img
+						src={getEmployeePhotoSrc(employee.photoUrl)}
+						alt={employee.fullName}
+						className="size-32 rounded-lg object-cover"
+						width={128}
+						height={128}
+					/>
 				</div>
 
 				{/* Validity Badge */}
-				<div className="mb-8">
-					<span
-						className={cn(
-							'inline-flex items-center rounded-full px-4 py-2 text-lg font-semibold',
-							{
-								'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200':
-									verificationStatus.isValid,
-								'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200':
-									!verificationStatus.isValid,
-							},
-						)}
+				<div className="mb-6 flex justify-center">
+					<StatusBadge
+						variant={verificationStatus.isValid ? 'valid' : 'invalid'}
 					>
 						{verificationStatus.isValid ? '✓ Valid' : '✗ Invalid'}
-					</span>
+					</StatusBadge>
 				</div>
 
 				{/* Employee Information */}
-				<div className="flex w-full max-w-md flex-col gap-4">
-					<div className="flex flex-col gap-2">
-						<label
-							className="text-body-xs"
-							style={{
-								color: branding.primaryColor,
-								opacity: 0.7,
-							}}
-						>
-							Name
-						</label>
-						<p
-							className="text-body-lg"
-							style={{
-								color: branding.primaryColor,
-							}}
-						>
-							{employee.fullName}
-						</p>
-					</div>
-
-					<div className="flex flex-col gap-2">
-						<label
-							className="text-body-xs"
-							style={{
-								color: branding.primaryColor,
-								opacity: 0.7,
-							}}
-						>
-							Job Title
-						</label>
-						<p
-							className="text-body-lg"
-							style={{
-								color: branding.primaryColor,
-							}}
-						>
-							{employee.jobTitle}
-						</p>
-					</div>
-
-					<div className="flex flex-col gap-2">
-						<label className="text-body-xs text-muted-foreground">Status</label>
-						<span
-							className={cn(
-								'inline-flex w-fit items-center rounded-full px-3 py-1 text-sm font-medium',
-								{
-									'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200':
-										employee.status === 'active',
-									'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200':
-										employee.status === 'inactive',
-								},
-							)}
-						>
-							{employee.status}
-						</span>
-					</div>
-
-					<div className="flex flex-col gap-2">
-						<label
-							className="text-body-xs"
-							style={{
-								color: branding.primaryColor,
-								opacity: 0.7,
-							}}
-						>
-							Expiration Date
-						</label>
-						<p
-							className="text-body-lg"
-							style={{
-								color: branding.primaryColor,
-							}}
-						>
-							{expirationDate}
-						</p>
-					</div>
-
-					{!verificationStatus.isValid && (
-						<div
-							className="mt-4 rounded-lg p-4"
-							style={{
-								backgroundColor: branding.primaryColor,
-								opacity: 0.1,
-							}}
-						>
-							<p
-								className="text-body-sm"
-								style={{
-									color: branding.primaryColor,
-									opacity: 0.8,
-								}}
-							>
-								<strong>Reason:</strong> {verificationStatus.reason}
-							</p>
-						</div>
-					)}
+				<div className="mb-6">
+					<KeyValueList
+						items={[
+							{ key: 'Status', value: employee.status },
+							{
+								key: 'Expiration Date',
+								value: expirationDate,
+								mono: true,
+							},
+						]}
+					/>
 				</div>
-			</div>
+
+				{/* Invalid Reason */}
+				{!verificationStatus.isValid && (
+					<div className="border-destructive/20 bg-destructive/5 rounded-lg border p-4">
+						<p className="text-body-sm text-destructive">
+							<strong>Reason:</strong> {verificationStatus.reason}
+						</p>
+					</div>
+				)}
+			</Card>
 		</div>
 	)
 }

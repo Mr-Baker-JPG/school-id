@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { ErrorList, Field } from '#app/components/forms.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
+import { Separator } from '#app/components/ui/separator.tsx'
 import { requireAnonymous } from '#app/utils/auth.server.ts'
 import {
 	ProviderConnectionForm,
@@ -138,53 +139,49 @@ export default function SignupRoute({ actionData }: Route.ComponentProps) {
 	})
 
 	return (
-		<div className="container flex flex-col justify-center pt-20 pb-32">
+		<div className="flex flex-col gap-6">
 			<div className="text-center">
 				<h1 className="text-h1">Let's start your journey!</h1>
 				<p className="text-body-md text-muted-foreground mt-3">
 					Please enter your email.
 				</p>
 			</div>
-			<div className="mx-auto mt-16 max-w-sm min-w-full sm:min-w-[368px]">
-				<Form method="POST" {...getFormProps(form)}>
-					<HoneypotInputs />
-					<Field
-						labelProps={{
-							htmlFor: fields.email.id,
-							children: 'Email',
-						}}
-						inputProps={{
-							...getInputProps(fields.email, { type: 'email' }),
-							autoFocus: true,
-							autoComplete: 'email',
-						}}
-						errors={fields.email.errors}
-					/>
-					<ErrorList errors={form.errors} id={form.errorId} />
-					<StatusButton
-						className="w-full"
-						status={isPending ? 'pending' : (form.status ?? 'idle')}
-						type="submit"
-						disabled={isPending}
-					>
-						Submit
-					</StatusButton>
-				</Form>
-				<ul className="flex flex-col gap-4 py-4">
-					{providerNames.map((providerName) => (
-						<>
-							<hr />
-							<li key={providerName}>
-								<ProviderConnectionForm
-									type="Signup"
-									providerName={providerName}
-									redirectTo={redirectTo}
-								/>
-							</li>
-						</>
-					))}
-				</ul>
-			</div>
+			<Form method="POST" {...getFormProps(form)}>
+				<HoneypotInputs />
+				<Field
+					labelProps={{
+						htmlFor: fields.email.id,
+						children: 'Email',
+					}}
+					inputProps={{
+						...getInputProps(fields.email, { type: 'email' }),
+						autoFocus: true,
+						autoComplete: 'email',
+					}}
+					errors={fields.email.errors}
+				/>
+				<ErrorList errors={form.errors} id={form.errorId} />
+				<StatusButton
+					className="w-full"
+					status={isPending ? 'pending' : (form.status ?? 'idle')}
+					type="submit"
+					disabled={isPending}
+				>
+					Submit
+				</StatusButton>
+			</Form>
+			<Separator className="my-4" />
+			<ul className="flex flex-col gap-4 py-4">
+				{providerNames.map((providerName) => (
+					<li key={providerName}>
+						<ProviderConnectionForm
+							type="Signup"
+							providerName={providerName}
+							redirectTo={redirectTo}
+						/>
+					</li>
+				))}
+			</ul>
 		</div>
 	)
 }

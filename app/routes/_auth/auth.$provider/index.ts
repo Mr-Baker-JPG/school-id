@@ -13,7 +13,7 @@ import { getRedirectCookieHeader } from '#app/utils/redirect-cookie.server.ts'
 import { type Route } from './+types/index.ts'
 
 export async function loader() {
-	return redirect('/login')
+	return redirect('/')
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
