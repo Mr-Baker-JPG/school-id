@@ -1,6 +1,6 @@
 /**
  * Reusable Employee ID Card Components
- * 
+ *
  * This module provides both PDF (React PDF) and Preview (React/HTML) versions
  * of the employee ID card layout components for use in PDF generation and
  * browser preview.
@@ -246,10 +246,7 @@ export function IDCardFrontPDF({
 /**
  * PDF version: React PDF component for ID card back
  */
-export function IDCardBackPDF({
-	qrCodeDataURL,
-	branding,
-}: IDCardBackProps) {
+export function IDCardBackPDF({ qrCodeDataURL, branding }: IDCardBackProps) {
 	const styles = createIDCardPDFStyles(branding)
 	return (
 		<Page size={[ID_WIDTH, ID_HEIGHT]} style={styles.page}>

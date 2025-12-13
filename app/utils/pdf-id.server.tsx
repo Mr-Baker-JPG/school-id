@@ -83,7 +83,6 @@ async function getSchoolLogoDataURL(logoUrl?: string): Promise<string | null> {
 	}
 }
 
-
 /**
  * Generates a PDF ID card for an employee
  *

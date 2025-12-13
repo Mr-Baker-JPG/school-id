@@ -55,6 +55,8 @@ export async function syncEmployeesFromFacts(): Promise<SyncResult> {
 		}
 
 		result.success = true
+		// Log sync history
+		await logSyncHistory(result)
 		return result
 	} catch (error) {
 		result.success = false
@@ -66,8 +68,27 @@ export async function syncEmployeesFromFacts(): Promise<SyncResult> {
 			result.errorMessage = 'Unknown error during sync'
 		}
 		console.error('Employee sync failed:', error)
+		// Log sync history even on failure
+		await logSyncHistory(result).catch((logError) => {
+			console.error('Failed to log sync history:', logError)
+		})
 		return result
 	}
+}
+
+/**
+ * Log sync history to database
+ */
+async function logSyncHistory(result: SyncResult): Promise<void> {
+	await prisma.syncHistory.create({
+		data: {
+			success: result.success,
+			created: result.created,
+			updated: result.updated,
+			errors: result.errors,
+			errorMessage: result.errorMessage || null,
+		},
+	})
 }
 
 /**

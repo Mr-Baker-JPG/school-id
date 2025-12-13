@@ -69,7 +69,7 @@ describe('Employee ID Card Components', () => {
 
 		it('applies school branding correctly', () => {
 			const styles = createIDCardPDFStyles(mockBranding)
-			
+
 			// Check that styles use branding colors
 			expect(styles.frontPage.backgroundColor).toBe(mockBranding.secondaryColor)
 			expect(styles.schoolName.color).toBe(mockBranding.primaryColor)
@@ -109,7 +109,7 @@ describe('Employee ID Card Components', () => {
 
 		it('applies school branding correctly', () => {
 			const styles = createIDCardPDFStyles(mockBranding)
-			
+
 			// Check that styles use branding colors
 			expect(styles.backPage.backgroundColor).toBe(mockBranding.secondaryColor)
 		})
@@ -217,7 +217,7 @@ describe('Employee ID Card Components', () => {
 			const qrCodeImage = container.querySelector('img')
 			expect(qrCodeImage).toBeTruthy()
 			expect(qrCodeImage?.src).toContain('data:image/png;base64,test')
-			
+
 			// Check that verification text is rendered
 			expect(container.textContent).toContain('Scan to verify employee status')
 			expect(container.textContent).toContain(mockBranding.schoolName)

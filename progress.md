@@ -1438,7 +1438,8 @@ error messages. Toast notifications provide immediate feedback for user actions.
 
 **Implementation:**
 
-- Created reusable ID card component module (`app/components/employee-id-card.tsx`) with:
+- Created reusable ID card component module
+  (`app/components/employee-id-card.tsx`) with:
   - PDF components (`IDCardFrontPDF`, `IDCardBackPDF`) for PDF generation using
     `@react-pdf/renderer`
   - Preview components (`IDCardFrontPreview`, `IDCardBackPreview`) for browser
@@ -1447,8 +1448,8 @@ error messages. Toast notifications provide immediate feedback for user actions.
   - Branding-aware styling with configurable colors
 - Updated PDF generation service (`app/utils/pdf-id.server.tsx`) to use exported
   PDF components instead of inline definitions
-- Updated employee ID view route (`/employee/id`) to display ID card preview using
-  preview components:
+- Updated employee ID view route (`/employee/id`) to display ID card preview
+  using preview components:
   - Shows both front and back of ID card
   - Uses signed URLs for photos and logos
   - Generates QR code data URL for preview
@@ -1492,6 +1493,64 @@ error messages. Toast notifications provide immediate feedback for user actions.
 
 - `app/utils/pdf-id.server.tsx` - Updated to use exported PDF components
 - `app/routes/employee/id.tsx` - Added ID card preview using preview components
+
+---
+
+## 2025-12-13 – F023
+
+**Feature:** SIS Sync Status Dashboard
+
+**Implementation:**
+
+- Created `SyncHistory` Prisma model to track sync attempts with fields:
+  - `id`, `success`, `created`, `updated`, `errors`, `errorMessage`, `createdAt`
+  - Indexed by `createdAt` for efficient querying
+- Updated `employee-sync.server.ts` to log sync history:
+  - Added `logSyncHistory()` function that creates SyncHistory records after each sync
+  - Logs sync results including success status, counts, and error messages
+  - History is logged even when sync fails
+- Created admin sync status dashboard route at `/admin/sync-status` with:
+  - Loader that fetches last sync timestamp, statistics, recent errors, and employees with sync issues
+  - Displays last sync status with timestamp, success/failure indicator, and counts
+  - Shows sync statistics (total, active, inactive employees)
+  - Lists recent sync errors (last 10 syncs with errors)
+  - Lists employees pending sync (employees not updated in last 7 days, limited to 50)
+  - Manual sync trigger button that executes sync and redirects with toast notification
+  - Refresh button to reload dashboard data
+- Dashboard UI features:
+  - Visual indicators for sync success/failure status
+  - Color-coded error displays
+  - Links to employee detail pages for employees with sync issues
+  - Responsive layout with cards for different sections
+
+**Tests:**
+
+- ✅ Dashboard displays last sync timestamp: Last sync record is retrieved and displayed correctly
+- ✅ Dashboard shows sync errors if any occurred: Recent errors are displayed with error messages and counts
+- ✅ Dashboard lists employees with sync issues: Employees not updated in last 7 days are listed correctly
+- ✅ Dashboard shows sync statistics (total, active, inactive): Statistics are calculated correctly from Employee table
+- ✅ Dashboard is only accessible to admins: Non-admin users are denied access (403 error)
+- ✅ Dashboard refreshes sync status on demand: Refresh functionality available via useRevalidator
+- ✅ All 8 unit tests pass
+
+**Test File:**
+
+- Created `app/routes/admin/sync-status.test.ts` with comprehensive test coverage
+- Tests cover authentication, authorization, data display, sync history, errors, statistics, and employees with sync issues
+
+**Files Created:**
+
+- `app/routes/admin/sync-status.tsx` - Sync status dashboard route
+- `app/routes/admin/sync-status.test.ts` - Dashboard tests
+
+**Files Modified:**
+
+- `prisma/schema.prisma` - Added SyncHistory model
+- `app/utils/employee-sync.server.ts` - Added sync history logging
+
+**Migration:**
+
+- Migration `20251213060422_add_sync_history` created and applied
 
 ---
 

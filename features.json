@@ -328,8 +328,8 @@
 			"Dashboard is only accessible to admins",
 			"Dashboard refreshes sync status on demand"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F024",
