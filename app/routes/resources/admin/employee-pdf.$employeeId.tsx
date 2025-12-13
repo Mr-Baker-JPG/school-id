@@ -1,15 +1,14 @@
 import { captureException } from '@sentry/react-router'
 import { invariantResponse } from '@epic-web/invariant'
-import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { generateEmployeeIDPDF } from '#app/utils/pdf-id.server.tsx'
 import { getDefaultExpirationDate } from '#app/utils/employee.server.ts'
-import { type Route } from './+types/download.ts'
+import { type Route } from './+types/admin/employee-pdf.$employeeId.ts'
 
 /**
- * PDF download endpoint for admins to download any employee's ID card
- * Admins can download any employee's PDF
+ * Resource route for PDF download - admins can download any employee's ID card
+ * This is a resource route (no default export) to ensure proper file download handling
  */
 export async function loader({ request, params }: Route.LoaderArgs) {
 	try {
@@ -21,7 +20,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 			console.error('[Admin ID Download] Missing employee ID parameter')
 			captureException(error, {
 				tags: {
-					route: 'admin/employees/$employeeId/id/download',
+					route: 'resources/admin/employee-pdf',
 					errorType: 'missing_employee_id',
 				},
 			})
@@ -52,7 +51,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 			console.error('[Admin ID Download] Employee not found:', employeeId)
 			captureException(error, {
 				tags: {
-					route: 'admin/employees/$employeeId/id/download',
+					route: 'resources/admin/employee-pdf',
 					errorType: 'employee_not_found',
 					employeeId,
 				},
@@ -102,7 +101,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 			)
 			captureException(error, {
 				tags: {
-					route: 'admin/employees/$employeeId/id/download',
+					route: 'resources/admin/employee-pdf',
 					errorType: 'missing_employee_data',
 					employeeId: employeePDFData.id,
 				},
@@ -129,7 +128,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 			)
 			captureException(pdfError, {
 				tags: {
-					route: 'admin/employees/$employeeId/id/download',
+					route: 'resources/admin/employee-pdf',
 					errorType: 'pdf_generation_failed',
 					employeeId: employee.id,
 				},
@@ -159,7 +158,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		console.error('[Admin ID Download] Unexpected error:', error)
 		captureException(error, {
 			tags: {
-				route: 'admin/employees/$employeeId/id/download',
+				route: 'resources/admin/employee-pdf',
 				errorType: 'unexpected_error',
 			},
 		})
@@ -168,66 +167,4 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 			{ status: 500 },
 		)
 	}
-}
-
-export function ErrorBoundary() {
-	return (
-		<GeneralErrorBoundary
-			statusHandlers={{
-				400: ({ error }) => (
-					<div className="container mt-36 mb-48 flex flex-col items-center justify-center">
-						<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
-							<h1 className="text-h2 mb-4">Invalid Request</h1>
-							<p className="text-body-lg text-muted-foreground">
-								{error?.data || 'Invalid request. Please try again.'}
-							</p>
-						</div>
-					</div>
-				),
-				403: ({ error }) => (
-					<div className="container mt-36 mb-48 flex flex-col items-center justify-center">
-						<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
-							<h1 className="text-h2 mb-4">Access Denied</h1>
-							<p className="text-body-lg text-muted-foreground">
-								{error?.data ||
-									'You do not have permission to access this resource.'}
-							</p>
-						</div>
-					</div>
-				),
-				404: ({ error }) => (
-					<div className="container mt-36 mb-48 flex flex-col items-center justify-center">
-						<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
-							<h1 className="text-h2 mb-4">Employee Not Found</h1>
-							<p className="text-body-lg text-muted-foreground">
-								{error?.data ||
-									'The employee you are looking for does not exist or has been removed.'}
-							</p>
-						</div>
-					</div>
-				),
-				500: ({ error }) => (
-					<div className="container mt-36 mb-48 flex flex-col items-center justify-center">
-						<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
-							<h1 className="text-h2 mb-4">Error Generating ID Card</h1>
-							<p className="text-body-lg text-muted-foreground">
-								{error?.data ||
-									'An error occurred while generating the ID card. Please try again or contact support if the problem persists.'}
-							</p>
-						</div>
-					</div>
-				),
-			}}
-			unexpectedErrorHandler={(error) => (
-				<div className="container mt-36 mb-48 flex flex-col items-center justify-center">
-					<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
-						<h1 className="text-h2 mb-4">Unexpected Error</h1>
-						<p className="text-body-lg text-muted-foreground">
-							An unexpected error occurred. Please try again or contact support.
-						</p>
-					</div>
-				</div>
-			)}
-		/>
-	)
 }

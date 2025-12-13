@@ -149,7 +149,11 @@ export async function action({ request, params }: Route.ActionArgs) {
 		}
 	}
 
-	return redirect(`/admin/employees/${employeeId}`)
+	return redirectWithToast(`/admin/employees/${employeeId}`, {
+		type: 'success',
+		title: 'Photo Updated',
+		description: `Successfully refreshed FACTS profile picture for ${employeeId}`,
+	})
 }
 
 export default function AdminEmployeeDetailRoute({
@@ -181,10 +185,14 @@ export default function AdminEmployeeDetailRoute({
 					<h1 className="text-h1">Employee Details</h1>
 					<p className="text-muted-foreground">{employee.fullName}</p>
 				</div>
-				<Button asChild variant="outline">
-					<a href={`/admin/employees/${employee.id}/id/download`}>
-						<Icon name="download">Download ID Card</Icon>
-					</a>
+				<Button
+					type="button"
+					variant="outline"
+					onClick={() => {
+						window.location.href = `/resources/admin/employee-pdf/${employee.id}`
+					}}
+				>
+					<Icon name="download">Download ID Card</Icon>
 				</Button>
 			</div>
 
@@ -341,10 +349,14 @@ export default function AdminEmployeeDetailRoute({
 							<Icon name="calendar">Update Expiration Date</Icon>
 						</Link>
 					</Button>
-					<Button asChild variant="outline">
-						<a href={`/admin/employees/${employee.id}/id/download`}>
-							<Icon name="download">Download ID Card</Icon>
-						</a>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => {
+							window.location.href = `/resources/admin/employee-pdf/${employee.id}`
+						}}
+					>
+						<Icon name="download">Download ID Card</Icon>
 					</Button>
 					<Form method="post">
 						<input type="hidden" name="intent" value="recheck-facts-photo" />
