@@ -124,7 +124,10 @@ export async function action({ request, params }: Route.ActionArgs) {
 				if (data.intent === 'delete') return { intent: 'delete' }
 				if (data.photoFile.size <= 0) return z.NEVER
 				try {
-					const objectKey = await uploadEmployeePhoto(employeeId, data.photoFile)
+					const objectKey = await uploadEmployeePhoto(
+						employeeId,
+						data.photoFile,
+					)
 					return {
 						intent: data.intent,
 						objectKey,
@@ -249,9 +252,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 		})
 		const employeeId = params.employeeId
 		return redirectWithToast(
-			employeeId
-				? `/admin/employees/${employeeId}/photo`
-				: '/admin/employees',
+			employeeId ? `/admin/employees/${employeeId}/photo` : '/admin/employees',
 			{
 				type: 'error',
 				title: 'Unexpected Error',
@@ -413,7 +414,8 @@ export function ErrorBoundary() {
 						<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
 							<h1 className="text-h2 mb-4">Invalid Request</h1>
 							<p className="text-body-lg text-muted-foreground">
-								{error?.data || 'Invalid request. Please check the file and try again.'}
+								{error?.data ||
+									'Invalid request. Please check the file and try again.'}
 							</p>
 						</div>
 					</div>

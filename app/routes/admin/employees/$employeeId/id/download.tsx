@@ -49,10 +49,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
 		if (!employee) {
 			const error = new Error('Employee not found')
-			console.error(
-				'[Admin ID Download] Employee not found:',
-				employeeId,
-			)
+			console.error('[Admin ID Download] Employee not found:', employeeId)
 			captureException(error, {
 				tags: {
 					route: 'admin/employees/$employeeId/id/download',
@@ -91,8 +88,14 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		}
 
 		// Validate required fields before PDF generation
-		if (!employeePDFData.id || !employeePDFData.fullName || !employeePDFData.jobTitle) {
-			const error = new Error('Missing required employee data for PDF generation')
+		if (
+			!employeePDFData.id ||
+			!employeePDFData.fullName ||
+			!employeePDFData.jobTitle
+		) {
+			const error = new Error(
+				'Missing required employee data for PDF generation',
+			)
 			console.error(
 				'[Admin ID Download] Missing required data:',
 				employeePDFData,
@@ -186,7 +189,8 @@ export function ErrorBoundary() {
 						<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
 							<h1 className="text-h2 mb-4">Access Denied</h1>
 							<p className="text-body-lg text-muted-foreground">
-								{error?.data || 'You do not have permission to access this resource.'}
+								{error?.data ||
+									'You do not have permission to access this resource.'}
 							</p>
 						</div>
 					</div>

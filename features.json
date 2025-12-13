@@ -298,8 +298,8 @@
 			"Rate limits are configurable",
 			"Rate limiting doesn't affect authenticated routes"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F022",

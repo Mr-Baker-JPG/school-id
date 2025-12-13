@@ -431,8 +431,8 @@ export function ErrorBoundary() {
 					<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
 						<h1 className="text-h2 mb-4">Unexpected Error</h1>
 						<p className="text-body-lg text-muted-foreground">
-							An unexpected error occurred while verifying the employee ID. Please
-							try again later.
+							An unexpected error occurred while verifying the employee ID.
+							Please try again later.
 						</p>
 					</div>
 				</div>

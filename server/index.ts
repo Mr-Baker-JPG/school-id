@@ -11,6 +11,7 @@ import getPort, { portNumbers } from 'get-port'
 import morgan from 'morgan'
 import cron from 'node-cron'
 import { type ServerBuild } from 'react-router'
+import { createVerificationRateLimiter } from '../app/utils/rate-limit.server.ts'
 
 const MODE = process.env.NODE_ENV ?? 'development'
 const IS_PROD = MODE === 'production'
@@ -152,11 +153,18 @@ const strongRateLimit = rateLimit({
 })
 
 const generalRateLimit = rateLimit(rateLimitDefault)
+
+// Create dedicated rate limiter for verification endpoint
+// This provides configurable rate limiting specifically for the public verification route
+const verificationRateLimiter = createVerificationRateLimiter({
+	isProduction: IS_PROD,
+	isTest: !!process.env.PLAYWRIGHT_TEST_BASE_URL,
+})
+
 app.use((req, res, next) => {
 	const strongPaths = [
 		'/login',
 		'/signup',
-		'/verify',
 		'/admin',
 		'/onboarding',
 		'/reset-password',
@@ -171,10 +179,10 @@ app.use((req, res, next) => {
 		return strongRateLimit(req, res, next)
 	}
 
-	// the verify route is a special case because it's a GET route that
-	// can have a token in the query string
-	if (req.path.includes('/verify')) {
-		return strongestRateLimit(req, res, next)
+	// the verify route uses a dedicated rate limiter with configurable limits
+	// This prevents abuse and scraping while allowing reasonable access
+	if (req.path.includes('/verify') && !req.path.includes('/resources/verify')) {
+		return verificationRateLimiter(req, res, next)
 	}
 
 	return generalRateLimit(req, res, next)

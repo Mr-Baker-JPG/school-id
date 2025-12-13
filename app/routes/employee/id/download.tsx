@@ -93,8 +93,14 @@ export async function loader({ request }: Route.LoaderArgs) {
 		}
 
 		// Validate required fields before PDF generation
-		if (!employeePDFData.id || !employeePDFData.fullName || !employeePDFData.jobTitle) {
-			const error = new Error('Missing required employee data for PDF generation')
+		if (
+			!employeePDFData.id ||
+			!employeePDFData.fullName ||
+			!employeePDFData.jobTitle
+		) {
+			const error = new Error(
+				'Missing required employee data for PDF generation',
+			)
 			console.error(
 				'[Employee ID Download] Missing required data:',
 				employeePDFData,

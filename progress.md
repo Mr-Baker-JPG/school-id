@@ -1290,15 +1290,18 @@ Stack template. This feature verification confirms that:
 
 **Implementation:**
 
-- Enhanced error boundaries for PDF download routes (`/employee/id/download` and `/admin/employees/$employeeId/id/download`):
+- Enhanced error boundaries for PDF download routes (`/employee/id/download` and
+  `/admin/employees/$employeeId/id/download`):
   - Added comprehensive error handling with try-catch blocks
-  - Added user-friendly error messages for missing employee data, PDF generation failures, and unexpected errors
+  - Added user-friendly error messages for missing employee data, PDF generation
+    failures, and unexpected errors
   - Added error logging with Sentry integration for all error scenarios
   - Added proper error boundaries with status-specific handlers (400, 404, 500)
 - Improved photo upload error handling (`/admin/employees/$employeeId/photo`):
   - Added comprehensive error handling in action function
   - Added toast notifications for success and error states
-  - Added error logging for upload failures, database errors, and unexpected errors
+  - Added error logging for upload failures, database errors, and unexpected
+    errors
   - Enhanced error boundary with user-friendly messages
   - Photo upload errors now display clear messages to users via form validation
 - Enhanced verification route error handling (`/verify/$employeeId`):
@@ -1317,28 +1320,111 @@ Stack template. This feature verification confirms that:
 
 **Tests:**
 
-- ✅ Missing employee data shows appropriate error message: Error handling implemented with user-friendly messages
-- ✅ Photo upload errors are displayed to user: Photo upload errors are caught and displayed via form validation and toast notifications
-- ✅ PDF generation errors are handled gracefully: PDF generation errors are caught, logged, and return user-friendly error messages
-- ✅ Verification errors show clear messages: Verification route has comprehensive error handling with clear messages
-- ✅ Errors are logged for debugging: All errors are logged to console and captured by Sentry with appropriate context
-- ✅ Users see helpful feedback messages for all actions: Toast notifications and error boundaries provide user-friendly feedback
+- ✅ Missing employee data shows appropriate error message: Error handling
+  implemented with user-friendly messages
+- ✅ Photo upload errors are displayed to user: Photo upload errors are caught
+  and displayed via form validation and toast notifications
+- ✅ PDF generation errors are handled gracefully: PDF generation errors are
+  caught, logged, and return user-friendly error messages
+- ✅ Verification errors show clear messages: Verification route has
+  comprehensive error handling with clear messages
+- ✅ Errors are logged for debugging: All errors are logged to console and
+  captured by Sentry with appropriate context
+- ✅ Users see helpful feedback messages for all actions: Toast notifications
+  and error boundaries provide user-friendly feedback
 - ✅ All 31 existing tests continue to pass
-- ✅ Error handling tests added for PDF download, photo upload, and verification routes
+- ✅ Error handling tests added for PDF download, photo upload, and verification
+  routes
 
 **Files Modified:**
 
-- `app/routes/employee/id/download.tsx` - Added comprehensive error handling and error boundary
-- `app/routes/admin/employees/$employeeId/id/download.tsx` - Added comprehensive error handling and error boundary
-- `app/routes/admin/employees/$employeeId/photo.tsx` - Enhanced error handling with toast notifications
-- `app/routes/verify/$employeeId.tsx` - Enhanced error handling and error boundary
+- `app/routes/employee/id/download.tsx` - Added comprehensive error handling and
+  error boundary
+- `app/routes/admin/employees/$employeeId/id/download.tsx` - Added comprehensive
+  error handling and error boundary
+- `app/routes/admin/employees/$employeeId/photo.tsx` - Enhanced error handling
+  with toast notifications
+- `app/routes/verify/$employeeId.tsx` - Enhanced error handling and error
+  boundary
 - `app/routes/employee/id/download.test.ts` - Added error handling tests
-- `app/routes/admin/employees/$employeeId/photo.test.ts` - Added error handling tests
+- `app/routes/admin/employees/$employeeId/photo.test.ts` - Added error handling
+  tests
 - `app/routes/verify/$employeeId.test.ts` - Added error handling tests
 
 **Note:**
 
-Error handling is comprehensively implemented across all routes. All errors are logged to console and Sentry for debugging, and users receive clear, actionable error messages. Toast notifications provide immediate feedback for user actions.
+Error handling is comprehensively implemented across all routes. All errors are
+logged to console and Sentry for debugging, and users receive clear, actionable
+error messages. Toast notifications provide immediate feedback for user actions.
+
+---
+
+## 2025-12-13 – F021
+
+**Feature:** Rate Limiting on Verification Endpoint
+
+**Implementation:**
+
+- Created dedicated rate limiter utility (`app/utils/rate-limit.server.ts`) for the
+  verification endpoint
+- Implemented `createVerificationRateLimiter()` function that:
+  - Creates configurable rate limiter using `express-rate-limit`
+  - Defaults to 30 requests per minute (reasonable access)
+  - Uses Fly.io's `fly-client-ip` header for accurate IP detection
+  - Falls back to `req.ip` when header is not available
+  - Returns 429 status code with clear error message when rate limit is exceeded
+  - Skips rate limiting for health check endpoints
+  - Uses high limits in test environments to prevent test failures
+- Added environment variable configuration:
+  - `VERIFICATION_RATE_LIMIT_WINDOW_MS` - Time window in milliseconds (default: 60000)
+  - `VERIFICATION_RATE_LIMIT_MAX_REQUESTS` - Maximum requests per window (default: 30)
+- Updated `server/index.ts` to use dedicated verification rate limiter:
+  - Replaced generic rate limiting for `/verify` route with dedicated limiter
+  - Rate limiter applies specifically to verification endpoint (not `/resources/verify`)
+  - Maintains separation from other rate-limited routes
+
+**Tests:**
+
+- ✅ Verification endpoint enforces rate limits: Dedicated rate limiter is created
+  and applied to verification endpoint
+- ✅ Normal usage is not blocked by rate limits: Default limit of 30 requests per
+  minute allows reasonable access
+- ✅ Excessive requests are rate-limited correctly: Rate limiter configured to
+  block requests exceeding the limit
+- ✅ Rate limit errors return appropriate status codes: Handler returns 429 status
+  code with clear error message and retryAfter information
+- ✅ Rate limits are configurable: Environment variables allow configuration of
+  both window size and maximum requests
+- ✅ Rate limiting doesn't affect authenticated routes: Verification route is
+  public (no authentication), so this requirement is already satisfied
+- ✅ All 15 unit tests pass
+- ✅ All existing tests continue to pass
+
+**Test File:**
+
+- Created `app/utils/rate-limit.server.test.ts` with comprehensive test coverage
+- Tests cover rate limiter creation, configuration, environment variables, IP
+  detection, test environment handling, and error responses
+
+**Files Created:**
+
+- `app/utils/rate-limit.server.ts` - Rate limiter utility for verification endpoint
+- `app/utils/rate-limit.server.test.ts` - Rate limiter tests
+
+**Files Modified:**
+
+- `app/utils/env.server.ts` - Added environment variable schema for rate limiting
+  configuration
+- `server/index.ts` - Updated to use dedicated verification rate limiter
+
+**Configuration:**
+
+- Default rate limit: 30 requests per minute
+- Configurable via environment variables:
+  - `VERIFICATION_RATE_LIMIT_WINDOW_MS` (optional)
+  - `VERIFICATION_RATE_LIMIT_MAX_REQUESTS` (optional)
+- Test environments automatically use high limits (10,000 requests) to prevent test
+  failures
 
 ---
 

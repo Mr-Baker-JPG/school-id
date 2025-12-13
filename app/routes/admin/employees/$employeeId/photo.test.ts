@@ -519,9 +519,9 @@ test('Photo upload errors are displayed to user', async () => {
 		if ('result' in result && result.result) {
 			const errors = result.result as any
 			if (errors.fieldErrors) {
-				expect(
-					JSON.stringify(errors.fieldErrors).toLowerCase(),
-				).toContain('upload')
+				expect(JSON.stringify(errors.fieldErrors).toLowerCase()).toContain(
+					'upload',
+				)
 			}
 		}
 

@@ -46,6 +46,16 @@ const schema = z.object({
 	SCHOOL_LOGO_URL: z.string().url().optional(),
 	SCHOOL_PRIMARY_COLOR: z.string().optional(),
 	SCHOOL_SECONDARY_COLOR: z.string().optional(),
+
+	// Verification Rate Limiting Configuration (optional)
+	VERIFICATION_RATE_LIMIT_WINDOW_MS: z
+		.string()
+		.optional()
+		.transform((val) => (val ? Number.parseInt(val, 10) : undefined)),
+	VERIFICATION_RATE_LIMIT_MAX_REQUESTS: z
+		.string()
+		.optional()
+		.transform((val) => (val ? Number.parseInt(val, 10) : undefined)),
 })
 
 declare global {
