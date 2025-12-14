@@ -1,7 +1,8 @@
 import { invariantResponse } from '@epic-web/invariant'
-import { type Route } from './+types/wallet.ts'
+import { type EmployeePDFData } from '#app/components/employee-id-card.tsx'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
+import { getDeviceTypeFromRequest } from '#app/utils/device-detection.server.ts'
 import {
 	getDefaultExpirationDate,
 	fetchAndCacheFactsProfilePicture,
@@ -10,8 +11,7 @@ import {
 	generateAppleWalletPass,
 	generateGooglePayPass,
 } from '#app/utils/wallet-pass.server.ts'
-import { getDeviceTypeFromRequest } from '#app/utils/device-detection.server.ts'
-import { type EmployeePDFData } from '#app/components/employee-id-card.tsx'
+import { type Route } from './+types/wallet.ts'
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
@@ -124,7 +124,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	}
 
 	// Return wallet pass file
-	return new Response(passBuffer, {
+	return new Response(Buffer.from(passBuffer).toString('base64'), {
 		headers: {
 			'Content-Type': contentType,
 			'Content-Disposition': `attachment; filename="${filename}"`,

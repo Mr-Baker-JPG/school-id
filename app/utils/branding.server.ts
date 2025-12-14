@@ -40,3 +40,4 @@ export function getBrandingConfig(): BrandingConfig {
 		secondaryColor: process.env.SCHOOL_SECONDARY_COLOR || '#ffffff',
 	}
 }
+

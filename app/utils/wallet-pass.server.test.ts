@@ -180,3 +180,4 @@ describe('wallet-pass.server', () => {
 		})
 	})
 })
+

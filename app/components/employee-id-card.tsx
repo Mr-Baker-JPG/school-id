@@ -44,6 +44,8 @@ export interface IDCardFrontPDFProps {
 	photoDataURL: string | null
 	logoDataURL: string | null
 	branding: BrandingConfig
+	academicYear: string
+	barcodeDataURL: string | null
 }
 
 /**
@@ -54,6 +56,8 @@ export interface IDCardFrontPreviewProps {
 	photoUrl: string | null
 	logoUrl: string | null
 	branding: BrandingConfig
+	academicYear: string
+	barcodeDataURL: string | null
 }
 
 /**
@@ -65,11 +69,39 @@ export interface IDCardBackProps {
 }
 
 /**
- * Creates PDF styles with branding colors
- * Note: React PDF StyleSheet.create doesn't support dynamic values,
- * so we create styles dynamically based on branding config
+ * Formats school name to uppercase, splitting into two lines if needed
+ */
+function formatSchoolName(schoolName: string): string[] {
+	const upper = schoolName.toUpperCase()
+	// Split by common patterns or at natural break points
+	const words = upper.split(/\s+/)
+	if (words.length <= 3) {
+		// For short names, try to split evenly
+		const mid = Math.ceil(words.length / 2)
+		return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')]
+	}
+	// For longer names, split at "THE" or other common words, or at midpoint
+	const theIndex = words.indexOf('THE')
+	if (theIndex > 0 && theIndex < words.length - 1) {
+		return [
+			words.slice(0, theIndex + 1).join(' '),
+			words.slice(theIndex + 1).join(' '),
+		]
+	}
+	// Otherwise split roughly in half
+	const mid = Math.ceil(words.length / 2)
+	return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')]
+}
+
+/**
+ * Creates PDF styles matching the reference design
  */
 export function createIDCardPDFStyles(branding: BrandingConfig) {
+	// Reference colors: light blue-grey background, black text, dark red separator
+	const bgColor = '#e8eaed' // Light blue-grey
+	const textColor = '#000000' // Black
+	const separatorColor = '#8B0000' // Dark red
+
 	return StyleSheet.create({
 		page: {
 			width: ID_WIDTH,
@@ -79,17 +111,16 @@ export function createIDCardPDFStyles(branding: BrandingConfig) {
 		frontPage: {
 			width: ID_WIDTH,
 			height: ID_HEIGHT,
-			backgroundColor: branding.secondaryColor,
-			padding: 12,
+			backgroundColor: bgColor,
+			border: '1px solid #000000',
+			padding: 8,
 			display: 'flex',
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 12,
+			flexDirection: 'column',
 		},
 		backPage: {
 			width: ID_WIDTH,
 			height: ID_HEIGHT,
-			backgroundColor: branding.secondaryColor,
+			backgroundColor: bgColor,
 			padding: 12,
 			display: 'flex',
 			flexDirection: 'column',
@@ -97,78 +128,150 @@ export function createIDCardPDFStyles(branding: BrandingConfig) {
 			justifyContent: 'center',
 			gap: 8,
 		},
+		// Top section: logo + school name + photo
+		topSection: {
+			display: 'flex',
+			flexDirection: 'row',
+			alignItems: 'flex-start',
+			marginBottom: 8,
+		},
+		logoAndNameContainer: {
+			flex: 1,
+			display: 'flex',
+			flexDirection: 'row',
+			alignItems: 'flex-start',
+			gap: 6,
+		},
 		logoContainer: {
-			width: 40,
-			height: 40,
+			width: 35,
+			height: 35,
 			display: 'flex',
 			alignItems: 'center',
 			justifyContent: 'center',
-			marginBottom: 4,
 		},
 		logo: {
-			width: 40,
-			height: 40,
+			width: 35,
+			height: 35,
 			objectFit: 'contain',
 		},
+		schoolNameContainer: {
+			flex: 1,
+			display: 'flex',
+			flexDirection: 'column',
+			justifyContent: 'flex-start',
+		},
+		schoolNameLine1: {
+			fontSize: 8,
+			fontWeight: 'normal',
+			color: textColor,
+			fontFamily: 'Times-Roman',
+			lineHeight: 1.2,
+		},
+		schoolNameLine2: {
+			fontSize: 8,
+			fontWeight: 'normal',
+			color: textColor,
+			fontFamily: 'Times-Roman',
+			lineHeight: 1.2,
+		},
 		photoContainer: {
-			width: 80,
-			height: 100,
+			width: 70,
+			height: 85,
 			display: 'flex',
 			alignItems: 'center',
 			justifyContent: 'center',
-			backgroundColor: '#f0f0f0',
-			borderRadius: 4,
+			backgroundColor: '#ffffff',
 			overflow: 'hidden',
 		},
 		photo: {
-			width: 80,
-			height: 100,
+			width: 70,
+			height: 85,
 			objectFit: 'cover',
 		},
 		photoPlaceholder: {
-			width: 80,
-			height: 100,
+			width: 70,
+			height: 85,
 			display: 'flex',
 			alignItems: 'center',
 			justifyContent: 'center',
 			backgroundColor: '#e0e0e0',
-			borderRadius: 4,
 		},
-		infoContainer: {
-			flex: 1,
+		// Middle section: name, role, academic year
+		middleSection: {
 			display: 'flex',
 			flexDirection: 'column',
-			gap: 4,
-		},
-		schoolName: {
-			fontSize: 10,
-			fontWeight: 'bold',
-			color: branding.primaryColor,
-			marginBottom: 2,
+			gap: 2,
+			marginBottom: 4,
 		},
 		name: {
 			fontSize: 14,
 			fontWeight: 'bold',
-			color: branding.primaryColor,
-			marginBottom: 2,
+			color: textColor,
+			fontFamily: 'Times-Bold',
+			lineHeight: 1.3,
 		},
-		jobTitle: {
-			fontSize: 10,
-			color: branding.primaryColor,
-			opacity: 0.7,
-			marginBottom: 4,
+		role: {
+			fontSize: 9,
+			fontWeight: 'normal',
+			color: textColor,
+			fontFamily: 'Times-Roman',
+			lineHeight: 1.2,
 		},
-		employeeId: {
-			fontSize: 8,
-			color: branding.primaryColor,
-			opacity: 0.7,
-			marginBottom: 2,
+		academicYear: {
+			fontSize: 9,
+			fontWeight: 'normal',
+			color: textColor,
+			fontFamily: 'Times-Roman',
+			lineHeight: 1.2,
 		},
-		expiration: {
-			fontSize: 8,
-			color: branding.primaryColor,
-			opacity: 0.7,
-			marginTop: 'auto',
+		// Red separator line
+		separator: {
+			width: '100%',
+			height: 3,
+			backgroundColor: separatorColor,
+			marginBottom: 6,
+		},
+		// Bottom section: barcode + ID number
+		bottomSection: {
+			display: 'flex',
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'flex-end',
+		},
+		barcodeContainer: {
+			display: 'flex',
+			flexDirection: 'column',
+			alignItems: 'flex-start',
+			gap: 2,
+		},
+		barcode: {
+			width: 100,
+			height: 25,
+			objectFit: 'contain',
+		},
+		barcodeNumber: {
+			fontSize: 7,
+			fontWeight: 'normal',
+			color: textColor,
+			fontFamily: 'Times-Roman',
+		},
+		idNumberContainer: {
+			display: 'flex',
+			flexDirection: 'column',
+			alignItems: 'flex-end',
+			gap: 2,
+		},
+		idNumberLabel: {
+			fontSize: 7,
+			fontWeight: 'normal',
+			color: textColor,
+			fontFamily: 'Times-Roman',
+		},
+		idNumber: {
+			fontSize: 12,
+			fontWeight: 'bold',
+			color: textColor,
+			fontFamily: 'Times-Bold',
 		},
 		qrCodeContainer: {
 			display: 'flex',
@@ -183,10 +286,10 @@ export function createIDCardPDFStyles(branding: BrandingConfig) {
 		},
 		verificationText: {
 			fontSize: 8,
-			color: branding.primaryColor,
-			opacity: 0.7,
+			color: textColor,
 			textAlign: 'center',
 			marginTop: 4,
+			fontFamily: 'Times-Roman',
 		},
 	})
 }
@@ -199,44 +302,64 @@ export function IDCardFrontPDF({
 	photoDataURL,
 	logoDataURL,
 	branding,
+	academicYear,
+	barcodeDataURL,
 }: IDCardFrontPDFProps) {
 	const styles = createIDCardPDFStyles(branding)
+	const schoolNameLines = formatSchoolName(branding.schoolName)
+
 	return (
 		<Page size={[ID_WIDTH, ID_HEIGHT]} style={styles.page}>
 			<View style={styles.frontPage}>
-				{/* Photo Section */}
-				<View style={styles.photoContainer}>
-					{photoDataURL ? (
-						<Image src={photoDataURL} style={styles.photo} />
-					) : (
-						<View style={styles.photoPlaceholder}>
-							<Text
-								style={{
-									fontSize: 8,
-									color: branding.primaryColor,
-									opacity: 0.5,
-								}}
-							>
-								No Photo
+				{/* Top Section: Logo + School Name + Photo */}
+				<View style={styles.topSection}>
+					<View style={styles.logoAndNameContainer}>
+						{logoDataURL && (
+							<View style={styles.logoContainer}>
+								<Image src={logoDataURL} style={styles.logo} />
+							</View>
+						)}
+						<View style={styles.schoolNameContainer}>
+							<Text style={styles.schoolNameLine1}>{schoolNameLines[0]}</Text>
+							<Text style={styles.schoolNameLine2}>{schoolNameLines[1]}</Text>
+						</View>
+					</View>
+					{/* Photo */}
+					<View style={styles.photoContainer}>
+						{photoDataURL ? (
+							<Image src={photoDataURL} style={styles.photo} />
+						) : (
+							<View style={styles.photoPlaceholder}>
+								<Text style={{ fontSize: 6, color: '#999999' }}>No Photo</Text>
+							</View>
+						)}
+					</View>
+				</View>
+
+				{/* Middle Section: Name, Role, Academic Year */}
+				<View style={styles.middleSection}>
+					<Text style={styles.name}>{employee.fullName.toUpperCase()}</Text>
+					<Text style={styles.role}>{employee.jobTitle.toUpperCase()}</Text>
+					<Text style={styles.academicYear}>{academicYear}</Text>
+				</View>
+
+				{/* Red Separator Line */}
+				<View style={styles.separator} />
+
+				{/* Bottom Section: Barcode + ID Number */}
+				<View style={styles.bottomSection}>
+					{barcodeDataURL && (
+						<View style={styles.barcodeContainer}>
+							<Image src={barcodeDataURL} style={styles.barcode} />
+							<Text style={styles.barcodeNumber}>
+								*{employee.sisEmployeeId}*
 							</Text>
 						</View>
 					)}
-				</View>
-
-				{/* Info Section */}
-				<View style={styles.infoContainer}>
-					{logoDataURL && (
-						<View style={styles.logoContainer}>
-							<Image src={logoDataURL} style={styles.logo} />
-						</View>
-					)}
-					<Text style={styles.schoolName}>{branding.schoolName}</Text>
-					<Text style={styles.name}>{employee.fullName}</Text>
-					<Text style={styles.jobTitle}>{employee.jobTitle}</Text>
-					<Text style={styles.employeeId}>ID: {employee.sisEmployeeId}</Text>
-					<Text style={styles.expiration}>
-						Expires: {format(employee.expirationDate, 'MM/dd/yyyy')}
-					</Text>
+					<View style={styles.idNumberContainer}>
+						<Text style={styles.idNumberLabel}>ID NUMBER:</Text>
+						<Text style={styles.idNumber}>{employee.sisEmployeeId}</Text>
+					</View>
 				</View>
 			</View>
 		</Page>
@@ -257,7 +380,9 @@ export function IDCardBackPDF({ qrCodeDataURL, branding }: IDCardBackProps) {
 				<Text style={styles.verificationText}>
 					Scan to verify employee status
 				</Text>
-				<Text style={styles.schoolName}>{branding.schoolName}</Text>
+				<Text style={{ fontSize: 10, fontWeight: 'bold', color: '#000000' }}>
+					{branding.schoolName.toUpperCase()}
+				</Text>
 			</View>
 		</Page>
 	)
@@ -273,93 +398,185 @@ export function IDCardFrontPreview({
 	photoUrl,
 	logoUrl,
 	branding,
+	academicYear,
+	barcodeDataURL,
 }: IDCardFrontPreviewProps) {
 	// Convert points to pixels (assuming 72 DPI: 1 point = 1 pixel)
 	const widthPx = ID_WIDTH
 	const heightPx = ID_HEIGHT
+	const bgColor = '#e8eaed'
+	const textColor = '#000000'
+	const separatorColor = '#8B0000'
+	const schoolNameLines = formatSchoolName(branding.schoolName)
 
 	return (
 		<div
-			className="flex items-center gap-3 rounded-lg border-2 p-3"
+			className="flex flex-col border border-black"
 			style={{
 				width: `${widthPx}px`,
 				height: `${heightPx}px`,
-				backgroundColor: branding.secondaryColor,
-				borderColor: branding.primaryColor,
+				backgroundColor: bgColor,
+				padding: '8px',
+				fontFamily: 'Times, "Times New Roman", serif',
 			}}
 		>
-			{/* Photo Section */}
-			<div
-				className="flex items-center justify-center overflow-hidden rounded"
-				style={{
-					width: '80px',
-					height: '100px',
-					backgroundColor: '#f0f0f0',
-				}}
-			>
-				{photoUrl ? (
-					<img
-						src={photoUrl}
-						alt={employee.fullName}
-						className="h-full w-full object-cover"
-					/>
-				) : (
-					<div
-						className="flex items-center justify-center"
-						style={{
-							width: '80px',
-							height: '100px',
-							backgroundColor: '#e0e0e0',
-							color: branding.primaryColor,
-							opacity: 0.5,
-							fontSize: '8px',
-						}}
-					>
-						No Photo
+			{/* Top Section: Logo + School Name + Photo */}
+			<div className="mb-2 flex items-start" style={{ gap: '6px' }}>
+				<div className="flex flex-1 items-start" style={{ gap: '6px' }}>
+					{logoUrl && (
+						<div
+							className="flex items-center justify-center"
+							style={{ width: '35px', height: '35px' }}
+						>
+							<img
+								src={logoUrl}
+								alt="School Logo"
+								style={{ width: '35px', height: '35px', objectFit: 'contain' }}
+							/>
+						</div>
+					)}
+					<div className="flex flex-col">
+						<div
+							style={{
+								fontSize: '8px',
+								color: textColor,
+								lineHeight: 1.2,
+							}}
+						>
+							{schoolNameLines[0]}
+						</div>
+						<div
+							style={{
+								fontSize: '8px',
+								color: textColor,
+								lineHeight: 1.2,
+							}}
+						>
+							{schoolNameLines[1]}
+						</div>
 					</div>
-				)}
+				</div>
+				{/* Photo */}
+				<div
+					className="flex items-center justify-center overflow-hidden bg-white"
+					style={{
+						width: '70px',
+						height: '85px',
+					}}
+				>
+					{photoUrl ? (
+						<img
+							src={photoUrl}
+							alt={employee.fullName}
+							style={{
+								width: '70px',
+								height: '85px',
+								objectFit: 'cover',
+							}}
+						/>
+					) : (
+						<div
+							className="flex items-center justify-center"
+							style={{
+								width: '70px',
+								height: '85px',
+								backgroundColor: '#e0e0e0',
+								fontSize: '6px',
+								color: '#999999',
+							}}
+						>
+							No Photo
+						</div>
+					)}
+				</div>
 			</div>
 
-			{/* Info Section */}
-			<div className="flex flex-1 flex-col gap-1">
-				{logoUrl && (
-					<div className="mb-1 flex items-center justify-center">
+			{/* Middle Section: Name, Role, Academic Year */}
+			<div className="mb-1 flex flex-col" style={{ gap: '2px' }}>
+				<div
+					style={{
+						fontSize: '14px',
+						fontWeight: 'bold',
+						color: textColor,
+						lineHeight: 1.3,
+					}}
+				>
+					{employee.fullName.toUpperCase()}
+				</div>
+				<div
+					style={{
+						fontSize: '9px',
+						color: textColor,
+						lineHeight: 1.2,
+					}}
+				>
+					{employee.jobTitle.toUpperCase()}
+				</div>
+				<div
+					style={{
+						fontSize: '9px',
+						color: textColor,
+						lineHeight: 1.2,
+					}}
+				>
+					{academicYear}
+				</div>
+			</div>
+
+			{/* Red Separator Line */}
+			<div
+				style={{
+					width: '100%',
+					height: '3px',
+					backgroundColor: separatorColor,
+					marginBottom: '6px',
+				}}
+			/>
+
+			{/* Bottom Section: Barcode + ID Number */}
+			<div
+				className="flex items-end justify-between"
+				style={{ marginTop: 'auto' }}
+			>
+				{barcodeDataURL && (
+					<div className="flex flex-col items-start" style={{ gap: '2px' }}>
 						<img
-							src={logoUrl}
-							alt={branding.schoolName}
-							className="h-10 w-10 object-contain"
+							src={barcodeDataURL}
+							alt="Barcode"
+							style={{
+								width: '100px',
+								height: '25px',
+								objectFit: 'contain',
+							}}
 						/>
+						<div
+							style={{
+								fontSize: '7px',
+								color: textColor,
+							}}
+						>
+							*{employee.sisEmployeeId}*
+						</div>
 					</div>
 				)}
-				<div
-					className="text-xs font-bold"
-					style={{ color: branding.primaryColor }}
-				>
-					{branding.schoolName}
-				</div>
-				<div
-					className="text-sm font-bold"
-					style={{ color: branding.primaryColor }}
-				>
-					{employee.fullName}
-				</div>
-				<div
-					className="text-xs"
-					style={{ color: branding.primaryColor, opacity: 0.7 }}
-				>
-					{employee.jobTitle}
-				</div>
-				<div
-					className="text-[8px]"
-					style={{ color: branding.primaryColor, opacity: 0.7 }}
-				>
-					ID: {employee.sisEmployeeId}
-				</div>
-				<div
-					className="mt-auto text-[8px]"
-					style={{ color: branding.primaryColor, opacity: 0.7 }}
-				>
-					Expires: {format(employee.expirationDate, 'MM/dd/yyyy')}
+				<div className="flex flex-col items-end" style={{ gap: '2px' }}>
+					<div
+						style={{
+							fontSize: '7px',
+							color: textColor,
+						}}
+					>
+						ID NUMBER:
+					</div>
+					<div
+						style={{
+							fontSize: '12px',
+							fontWeight: 'bold',
+							color: textColor,
+						}}
+					>
+						{employee.sisEmployeeId}
+					</div>
 				</div>
 			</div>
 		</div>
@@ -378,35 +595,42 @@ export function IDCardBackPreview({
 	// Convert points to pixels (assuming 72 DPI: 1 point = 1 pixel)
 	const widthPx = ID_WIDTH
 	const heightPx = ID_HEIGHT
+	const bgColor = '#e8eaed'
 
 	return (
 		<div
-			className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-3"
+			className="flex flex-col items-center justify-center gap-2 border border-black"
 			style={{
 				width: `${widthPx}px`,
 				height: `${heightPx}px`,
-				backgroundColor: branding.secondaryColor,
-				borderColor: branding.primaryColor,
+				backgroundColor: bgColor,
+				padding: '12px',
 			}}
 		>
 			<div className="flex items-center justify-center">
 				<img
 					src={qrCodeDataURL}
 					alt="QR Code"
-					className="h-[120px] w-[120px]"
+					style={{ width: '120px', height: '120px' }}
 				/>
 			</div>
 			<div
-				className="text-center text-[8px]"
-				style={{ color: branding.primaryColor, opacity: 0.7 }}
+				style={{
+					fontSize: '8px',
+					color: '#000000',
+					textAlign: 'center',
+				}}
 			>
 				Scan to verify employee status
 			</div>
 			<div
-				className="text-xs font-bold"
-				style={{ color: branding.primaryColor }}
+				style={{
+					fontSize: '10px',
+					fontWeight: 'bold',
+					color: '#000000',
+				}}
 			>
-				{branding.schoolName}
+				{branding.schoolName.toUpperCase()}
 			</div>
 		</div>
 	)

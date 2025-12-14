@@ -1,6 +1,6 @@
 /**
  * Device Detection Utilities
- * 
+ *
  * Detects device type (iOS, Android, etc.) from user agent strings
  * for wallet pass generation
  */
@@ -25,7 +25,9 @@ export function isAndroidDevice(userAgent: string | null): boolean {
  * Gets the device type from a user agent string
  * @returns 'ios', 'android', or 'unknown'
  */
-export function getDeviceType(userAgent: string | null): 'ios' | 'android' | 'unknown' {
+export function getDeviceType(
+	userAgent: string | null,
+): 'ios' | 'android' | 'unknown' {
 	if (isIOSDevice(userAgent)) return 'ios'
 	if (isAndroidDevice(userAgent)) return 'android'
 	return 'unknown'
@@ -35,7 +37,10 @@ export function getDeviceType(userAgent: string | null): 'ios' | 'android' | 'un
  * Gets the device type from a Request object
  * @returns 'ios', 'android', or 'unknown'
  */
-export function getDeviceTypeFromRequest(request: Request): 'ios' | 'android' | 'unknown' {
+export function getDeviceTypeFromRequest(
+	request: Request,
+): 'ios' | 'android' | 'unknown' {
 	const userAgent = request.headers.get('user-agent')
 	return getDeviceType(userAgent)
 }
+

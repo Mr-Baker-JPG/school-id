@@ -24,7 +24,7 @@ export function getCurrentAcademicYear(): string {
 	const now = new Date()
 	const currentYear = now.getFullYear()
 	const month = now.getMonth() // 0-indexed: 0=Jan, 6=Jul, 11=Dec
-	
+
 	// If July-December (month 6-11), use current year - next year
 	if (month >= 6) {
 		return `${currentYear}-${currentYear + 1}`

@@ -45,3 +45,4 @@ test('Landing page has correct meta title', () => {
 	const metaData = meta({ data: {}, params: {}, location: {} } as any)
 	expect(metaData).toContainEqual({ title: 'Employee ID System' })
 })
+

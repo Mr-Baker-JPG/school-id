@@ -43,6 +43,8 @@ describe('Employee ID Card Components', () => {
 						photoDataURL="data:image/png;base64,test"
 						logoDataURL="data:image/png;base64,test"
 						branding={mockBranding}
+						academicYear="2024-2025"
+						barcodeDataURL="data:image/png;base64,barcode"
 					/>
 				</Document>
 			)
@@ -59,6 +61,8 @@ describe('Employee ID Card Components', () => {
 						photoDataURL={null}
 						logoDataURL={null}
 						branding={mockBranding}
+						academicYear="2024-2025"
+						barcodeDataURL="data:image/png;base64,barcode"
 					/>
 				</Document>
 			)
@@ -70,9 +74,8 @@ describe('Employee ID Card Components', () => {
 		it('applies school branding correctly', () => {
 			const styles = createIDCardPDFStyles(mockBranding)
 
-			// Check that styles use branding colors
-			expect(styles.frontPage.backgroundColor).toBe(mockBranding.secondaryColor)
-			expect(styles.schoolName.color).toBe(mockBranding.primaryColor)
+			// Check that styles use the fixed background color (light blue-grey)
+			expect(styles.frontPage.backgroundColor).toBe('#e8eaed')
 		})
 
 		it('validates required props', () => {
@@ -84,6 +87,8 @@ describe('Employee ID Card Components', () => {
 						photoDataURL={null}
 						logoDataURL={null}
 						branding={mockBranding}
+						academicYear="2024-2025"
+						barcodeDataURL={null}
 					/>
 				</Document>
 			)
@@ -123,14 +128,23 @@ describe('Employee ID Card Components', () => {
 					photoUrl="https://example.com/photo.jpg"
 					logoUrl="https://example.com/logo.png"
 					branding={mockBranding}
+					academicYear="2024-2025"
+					barcodeDataURL="data:image/png;base64,barcode"
 				/>,
 			)
 
 			// Check that employee name is rendered
-			expect(container.textContent).toContain(mockEmployee.fullName)
-			expect(container.textContent).toContain(mockEmployee.jobTitle)
+			expect(container.textContent).toContain(
+				mockEmployee.fullName.toUpperCase(),
+			)
+			expect(container.textContent).toContain(
+				mockEmployee.jobTitle.toUpperCase(),
+			)
 			expect(container.textContent).toContain(mockEmployee.sisEmployeeId)
-			expect(container.textContent).toContain(mockBranding.schoolName)
+			expect(container.textContent).toContain(
+				mockBranding.schoolName.toUpperCase(),
+			)
+			expect(container.textContent).toContain('2024-2025')
 		})
 
 		it('handles missing photo gracefully', () => {
@@ -140,6 +154,8 @@ describe('Employee ID Card Components', () => {
 					photoUrl={null}
 					logoUrl={null}
 					branding={mockBranding}
+					academicYear="2024-2025"
+					barcodeDataURL={null}
 				/>,
 			)
 
@@ -154,22 +170,16 @@ describe('Employee ID Card Components', () => {
 					photoUrl={null}
 					logoUrl={null}
 					branding={mockBranding}
+					academicYear="2024-2025"
+					barcodeDataURL={null}
 				/>,
 			)
 
 			const card = container.firstChild as HTMLElement
 			expect(card).toBeTruthy()
-			// Check that branding colors are applied via inline styles
-			// Note: CSS converts hex colors to rgb, so we check for both
+			// Check that the fixed background color is applied
 			const styleAttr = card.getAttribute('style') || ''
-			expect(
-				styleAttr.includes(mockBranding.secondaryColor) ||
-					styleAttr.includes('rgb(255, 255, 255)'),
-			).toBe(true)
-			expect(
-				styleAttr.includes(mockBranding.primaryColor) ||
-					styleAttr.includes('rgb(26, 26, 26)'),
-			).toBe(true)
+			expect(styleAttr.includes('#e8eaed')).toBe(true)
 		})
 
 		it('is responsive and printable', () => {
@@ -179,6 +189,8 @@ describe('Employee ID Card Components', () => {
 					photoUrl={null}
 					logoUrl={null}
 					branding={mockBranding}
+					academicYear="2024-2025"
+					barcodeDataURL={null}
 				/>,
 			)
 
@@ -197,6 +209,8 @@ describe('Employee ID Card Components', () => {
 					photoUrl={null}
 					logoUrl={null}
 					branding={mockBranding}
+					academicYear="2024-2025"
+					barcodeDataURL={null}
 				/>,
 			)
 

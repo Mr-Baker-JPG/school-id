@@ -2,6 +2,8 @@ import { Document, pdf } from '@react-pdf/renderer'
 import { getBrandingConfig } from './branding.server.ts'
 import { generateEmployeeQRCodeBuffer } from './qr-code.server.ts'
 import { getSignedGetRequestInfo } from './storage.server.ts'
+import { generateBarcodeDataURL } from './barcode.server.ts'
+import { getCurrentAcademicYear } from './employee.server.ts'
 import {
 	IDCardFrontPDF,
 	IDCardBackPDF,
@@ -112,12 +114,26 @@ export async function generateEmployeeIDPDF(
 		// Fetch school logo
 		const logoDataURL = await getSchoolLogoDataURL(branding.logoUrl)
 
-		// Generate QR code
+		// Generate QR code for back of card
 		const qrCodeBuffer = await generateEmployeeQRCodeBuffer(
 			employee.id,
 			request,
 		)
 		const qrCodeDataURL = `data:image/png;base64,${qrCodeBuffer.toString('base64')}`
+
+		// Generate barcode for front of card
+		const barcodeDataURL = await generateBarcodeDataURL(
+			employee.sisEmployeeId,
+			{
+				width: 2,
+				height: 40,
+				format: 'CODE128',
+				displayValue: false,
+			},
+		)
+
+		// Get current academic year
+		const academicYear = getCurrentAcademicYear()
 
 		// Create PDF document
 		const doc = (
@@ -127,6 +143,8 @@ export async function generateEmployeeIDPDF(
 					photoDataURL={photoDataURL}
 					logoDataURL={logoDataURL}
 					branding={branding}
+					academicYear={academicYear}
+					barcodeDataURL={barcodeDataURL}
 				/>
 				<IDCardBackPDF qrCodeDataURL={qrCodeDataURL} branding={branding} />
 			</Document>

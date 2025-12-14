@@ -34,9 +34,7 @@ describe('device-detection.server', () => {
 
 		it('should return false for Android user agent', () => {
 			expect(
-				isIOSDevice(
-					'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36',
-				),
+				isIOSDevice('Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36'),
 			).toBe(false)
 		})
 
@@ -56,9 +54,7 @@ describe('device-detection.server', () => {
 	describe('isAndroidDevice', () => {
 		it('should return true for Android user agent', () => {
 			expect(
-				isAndroidDevice(
-					'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36',
-				),
+				isAndroidDevice('Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36'),
 			).toBe(true)
 		})
 
@@ -102,9 +98,7 @@ describe('device-detection.server', () => {
 
 		it('should return "android" for Android user agent', () => {
 			expect(
-				getDeviceType(
-					'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36',
-				),
+				getDeviceType('Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36'),
 			).toBe('android')
 		})
 
@@ -135,8 +129,7 @@ describe('device-detection.server', () => {
 		it('should return "android" for Android request', () => {
 			const request = new Request('https://example.com', {
 				headers: {
-					'user-agent':
-						'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36',
+					'user-agent': 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36',
 				},
 			})
 			expect(getDeviceTypeFromRequest(request)).toBe('android')
@@ -148,3 +141,4 @@ describe('device-detection.server', () => {
 		})
 	})
 })
+

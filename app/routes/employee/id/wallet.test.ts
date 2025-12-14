@@ -132,8 +132,7 @@ describe('employee/id/wallet route', () => {
 
 		const request = new Request('https://example.com/employee/id/wallet', {
 			headers: {
-				'user-agent':
-					'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36',
+				'user-agent': 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36',
 			},
 		})
 		const args = { request } as Route.LoaderArgs
@@ -157,7 +156,8 @@ describe('employee/id/wallet route', () => {
 
 		// Mock certificates to allow pass generation
 		process.env.APPLE_WALLET_WWDR_CERT = Buffer.from('wwdr').toString('base64')
-		process.env.APPLE_WALLET_SIGNER_CERT = Buffer.from('cert').toString('base64')
+		process.env.APPLE_WALLET_SIGNER_CERT =
+			Buffer.from('cert').toString('base64')
 		process.env.APPLE_WALLET_SIGNER_KEY = Buffer.from('key').toString('base64')
 
 		const request = new Request('https://example.com/employee/id/wallet', {
@@ -183,8 +183,7 @@ describe('employee/id/wallet route', () => {
 
 		const request = new Request('https://example.com/employee/id/wallet', {
 			headers: {
-				'user-agent':
-					'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36',
+				'user-agent': 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36',
 			},
 		})
 		const args = { request } as Route.LoaderArgs
@@ -218,3 +217,4 @@ describe('employee/id/wallet route', () => {
 		await expect(loader(args)).rejects.toThrow('Failed to generate wallet pass')
 	})
 })
+

@@ -1786,22 +1786,26 @@ tests are properly structured and can be debugged in future iterations.
 **Implementation:**
 
 - Installed `passkit-generator` library for Apple Wallet pass generation
-- Created device detection utility (`app/utils/device-detection.server.ts`) that:
+- Created device detection utility (`app/utils/device-detection.server.ts`)
+  that:
   - Detects iOS devices from user agent (iPhone, iPad, iPod)
   - Detects Android devices from user agent
   - Returns device type ('ios', 'android', or 'unknown')
-- Created wallet pass generation service (`app/utils/wallet-pass.server.ts`) that:
+- Created wallet pass generation service (`app/utils/wallet-pass.server.ts`)
+  that:
   - Generates Apple Wallet passes (.pkpass) using passkit-generator
   - Generates Google Pay passes (JSON format) following Google Wallet format
   - Handles missing photos gracefully (omits photo in pass)
   - Handles missing branding gracefully (uses defaults)
   - Fetches employee photos and school logos as buffers
   - Generates QR codes for verification URLs
-  - Requires Apple Developer certificates for Apple Wallet (configured via environment variables)
+  - Requires Apple Developer certificates for Apple Wallet (configured via
+    environment variables)
 - Created wallet pass download route (`/employee/id/wallet`) that:
   - Requires authentication (employees can only download their own passes)
   - Auto-detects device type from user agent
-  - Generates appropriate pass format (Apple Wallet for iOS, Google Pay for Android)
+  - Generates appropriate pass format (Apple Wallet for iOS, Google Pay for
+    Android)
   - Returns pass file with correct content type and filename
   - Handles errors gracefully with user-friendly messages
 - Added "Add to Wallet" button to employee ID page (`/employee/id`):
@@ -1812,21 +1816,30 @@ tests are properly structured and can be debugged in future iterations.
 
 **Tests:**
 
-- ✅ Unit: Device detection correctly identifies iOS vs Android from user agent: 18 unit tests pass
-- ✅ Unit: Service function generates valid Google Pay pass with all required fields: Google Pay pass generation tested with all required fields
-- ✅ Unit: Service function handles missing photo gracefully: Pass generation omits photo when not available
-- ✅ Unit: Service function handles missing branding gracefully: Default branding used when not configured
-- ✅ Unit: Service function generates valid Apple Wallet pass structure: Apple Wallet pass structure validated (certificates required for full functionality)
+- ✅ Unit: Device detection correctly identifies iOS vs Android from user agent:
+  18 unit tests pass
+- ✅ Unit: Service function generates valid Google Pay pass with all required
+  fields: Google Pay pass generation tested with all required fields
+- ✅ Unit: Service function handles missing photo gracefully: Pass generation
+  omits photo when not available
+- ✅ Unit: Service function handles missing branding gracefully: Default
+  branding used when not configured
+- ✅ Unit: Service function generates valid Apple Wallet pass structure: Apple
+  Wallet pass structure validated (certificates required for full functionality)
 - ✅ Unit: Device detection utility tests: All 18 tests pass
 - ✅ Unit: Wallet pass generation service tests: All 10 tests pass
-- ⚠️ E2E tests: Need to be added for full browser-based testing (button visibility, download functionality)
-- ⚠️ Manual verification: Requires manual testing on actual iOS/Android devices with proper certificates
+- ⚠️ E2E tests: Need to be added for full browser-based testing (button
+  visibility, download functionality)
+- ⚠️ Manual verification: Requires manual testing on actual iOS/Android devices
+  with proper certificates
 
 **Test Files:**
 
-- Created `app/utils/device-detection.server.test.ts` with 18 comprehensive tests
+- Created `app/utils/device-detection.server.test.ts` with 18 comprehensive
+  tests
 - Created `app/utils/wallet-pass.server.test.ts` with 10 comprehensive tests
-- Created `app/routes/employee/id/wallet.test.ts` with route tests (note: some tests may need certificate configuration)
+- Created `app/routes/employee/id/wallet.test.ts` with route tests (note: some
+  tests may need certificate configuration)
 
 **Files Created:**
 
@@ -1849,16 +1862,22 @@ tests are properly structured and can be debugged in future iterations.
   - `APPLE_WALLET_SIGNER_CERT` - Signer certificate (base64 encoded)
   - `APPLE_WALLET_SIGNER_KEY` - Signer key (base64 encoded)
   - `APPLE_WALLET_SIGNER_KEY_PASSPHRASE` - Optional key passphrase
-  - `APPLE_WALLET_PASS_TYPE_IDENTIFIER` - Pass type identifier (optional, defaults to 'pass.com.school.employeeid')
-  - `APPLE_WALLET_TEAM_IDENTIFIER` - Team identifier (optional, defaults to 'TEAM_ID')
-- Google Pay passes are generated as JSON files (may require Google Wallet API integration for full functionality)
+  - `APPLE_WALLET_PASS_TYPE_IDENTIFIER` - Pass type identifier (optional,
+    defaults to 'pass.com.school.employeeid')
+  - `APPLE_WALLET_TEAM_IDENTIFIER` - Team identifier (optional, defaults to
+    'TEAM_ID')
+- Google Pay passes are generated as JSON files (may require Google Wallet API
+  integration for full functionality)
 
 **Note:**
 
-- Apple Wallet pass generation requires valid Apple Developer certificates for signing
+- Apple Wallet pass generation requires valid Apple Developer certificates for
+  signing
 - Google Pay passes are generated as JSON files following Google Wallet format
-- E2E tests should be added to verify button visibility and download functionality in browsers
-- Manual verification on actual devices is required to confirm passes can be added to wallet apps
+- E2E tests should be added to verify button visibility and download
+  functionality in browsers
+- Manual verification on actual devices is required to confirm passes can be
+  added to wallet apps
 
 ---
 

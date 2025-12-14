@@ -18,9 +18,11 @@ import {
 	getDefaultExpirationDate,
 	fetchAndCacheFactsProfilePicture,
 	getExpirationStatus,
+	getCurrentAcademicYear,
 } from '#app/utils/employee.server.ts'
 import { getBrandingConfig } from '#app/utils/branding.server.ts'
 import { generateEmployeeQRCodeDataURL } from '#app/utils/qr-code.server.ts'
+import { generateBarcodeDataURL } from '#app/utils/barcode.server.ts'
 import { cn, getEmployeePhotoSrc } from '#app/utils/misc.tsx'
 import { type Route } from './+types/id.ts'
 
@@ -108,6 +110,17 @@ export async function loader({ request }: Route.LoaderArgs) {
 		request,
 	)
 
+	// Generate barcode data URL for preview
+	const barcodeDataURL = await generateBarcodeDataURL(employee.sisEmployeeId, {
+		width: 2,
+		height: 40,
+		format: 'CODE128',
+		displayValue: false,
+	})
+
+	// Get current academic year
+	const academicYear = getCurrentAcademicYear()
+
 	// Ensure we always have an expiration date for the component
 	const defaultExpirationDate = getDefaultExpirationDate()
 
@@ -128,6 +141,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 		photoUrl,
 		logoUrl,
 		qrCodeDataURL,
+		barcodeDataURL,
+		academicYear,
 		defaultExpirationDate,
 		expirationStatus,
 	}
@@ -140,6 +155,8 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 		photoUrl,
 		logoUrl,
 		qrCodeDataURL,
+		barcodeDataURL,
+		academicYear,
 		defaultExpirationDate,
 		expirationStatus,
 	} = loaderData
@@ -199,6 +216,8 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 								photoUrl={photoUrl ? getEmployeePhotoSrc(photoUrl) : null}
 								logoUrl={logoUrl}
 								branding={branding}
+								academicYear={academicYear}
+								barcodeDataURL={barcodeDataURL}
 							/>
 						</div>
 					</CardSection>

@@ -59,3 +59,4 @@ describe('Email Domain Validation', () => {
 		expect(getAllowedEmailDomain()).toBeNull()
 	})
 })
+

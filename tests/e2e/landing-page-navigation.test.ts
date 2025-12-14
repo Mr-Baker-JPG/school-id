@@ -156,3 +156,4 @@ test('Footer does not display theme switcher', async ({ page }) => {
 	const themeSwitch = page.getByRole('button', { name: /theme/i })
 	await expect(themeSwitch).not.toBeVisible()
 })
+
