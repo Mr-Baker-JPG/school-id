@@ -115,9 +115,9 @@ describe('getExpiringEmployees', () => {
 		})
 
 		const expiring = await getExpiringEmployees(30, now)
-		expect(expiring.length).toBe(1)
-		expect(expiring[0].id).toBe(employee.id)
-		expect(expiring[0].expirationStatus?.type).toBe('expiring')
+		expect(expiring).toHaveLength(1)
+		expect(expiring[0]?.id).toBe(employee?.id)
+		expect(expiring[0]?.expirationStatus?.type).toBe('expiring')
 	})
 
 	it('returns employees with expired IDs', async () => {
@@ -142,9 +142,9 @@ describe('getExpiringEmployees', () => {
 		})
 
 		const expiring = await getExpiringEmployees(30, now)
-		expect(expiring.length).toBe(1)
-		expect(expiring[0].id).toBe(employee.id)
-		expect(expiring[0].expirationStatus?.type).toBe('expired')
+		expect(expiring).toHaveLength(1)
+		expect(expiring[0]?.id).toBe(employee?.id)
+		expect(expiring[0]?.expirationStatus?.type).toBe('expired')
 	})
 
 	it('does not return employees with valid IDs', async () => {
@@ -169,7 +169,7 @@ describe('getExpiringEmployees', () => {
 		})
 
 		const expiring = await getExpiringEmployees(30, now)
-		expect(expiring.length).toBe(0)
+		expect(expiring).toHaveLength(0)
 	})
 
 	it('only returns active employees', async () => {
@@ -194,7 +194,7 @@ describe('getExpiringEmployees', () => {
 		})
 
 		const expiring = await getExpiringEmployees(30, now)
-		expect(expiring.length).toBe(0)
+		expect(expiring).toHaveLength(0)
 	})
 
 	it('orders results by expiration date ascending', async () => {
@@ -236,9 +236,9 @@ describe('getExpiringEmployees', () => {
 		})
 
 		const expiring = await getExpiringEmployees(30, now)
-		expect(expiring.length).toBe(2)
+		expect(expiring).toHaveLength(2)
 		// Should be ordered by expiration date ascending (earliest first)
-		expect(expiring[0].id).toBe(employee1.id)
-		expect(expiring[1].id).toBe(employee2.id)
+		expect(expiring[0]?.id).toBe(employee1?.id)
+		expect(expiring[1]?.id).toBe(employee2?.id)
 	})
 })

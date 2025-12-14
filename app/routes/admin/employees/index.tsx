@@ -1,5 +1,5 @@
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
 	redirect,
 	Form,
@@ -13,7 +13,15 @@ import { Field } from '#app/components/forms.tsx'
 import { Card } from '#app/components/ui/card.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from '#app/components/ui/tooltip.tsx'
+import { BulkActionsBar } from '#app/ui/components/BulkActionsBar.tsx'
 import { CardSection } from '#app/ui/components/CardSection.tsx'
+import { EmployeeQuickViewDrawer } from '#app/ui/components/EmployeeQuickViewDrawer.tsx'
 import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
 import { PageTitle } from '#app/ui/components/PageTitle.tsx'
 import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
@@ -33,6 +41,8 @@ import {
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { type Route } from './+types/index.ts'
+import { createColumns } from './columns.tsx'
+import { DataTable } from './data-table.tsx'
 
 export const handle: SEOHandle = {
 	getSitemapEntries: () => null,
@@ -169,7 +179,69 @@ export async function action({ request }: Route.ActionArgs) {
 
 	if (intent === 'recheck-facts-photo') {
 		const employeeId = formData.get('employeeId')
+		const employeeIds = formData.getAll('employeeIds')
 
+		// Handle bulk recheck
+		if (employeeIds.length > 0) {
+			const searchParams = new URL(request.url).searchParams
+			const redirectUrl = `/admin/employees${
+				searchParams.toString() ? `?${searchParams.toString()}` : ''
+			}`
+
+			let successCount = 0
+			let errorCount = 0
+
+			for (const id of employeeIds) {
+				if (typeof id !== 'string') continue
+
+				const employee = await prisma.employee.findUnique({
+					where: { id },
+					select: { sisEmployeeId: true, fullName: true },
+				})
+
+				if (!employee) {
+					errorCount++
+					continue
+				}
+
+				try {
+					const cachedPhotoUrl = await fetchAndCacheFactsProfilePicture(
+						id,
+						employee.sisEmployeeId,
+						true, // force re-fetch
+					)
+					if (cachedPhotoUrl) {
+						successCount++
+					} else {
+						errorCount++
+					}
+				} catch {
+					errorCount++
+				}
+			}
+
+			if (successCount > 0 && errorCount === 0) {
+				return redirectWithToast(redirectUrl, {
+					type: 'success',
+					title: 'Photos Updated',
+					description: `Successfully refreshed ${successCount} employee photo${successCount !== 1 ? 's' : ''}`,
+				})
+			} else if (successCount > 0) {
+				return redirectWithToast(redirectUrl, {
+					type: 'success',
+					title: 'Photos Updated',
+					description: `Refreshed ${successCount} photo${successCount !== 1 ? 's' : ''}. ${errorCount} failed.`,
+				})
+			} else {
+				return redirectWithToast(redirectUrl, {
+					type: 'error',
+					title: 'Photo Update Failed',
+					description: `Failed to refresh ${errorCount} employee photo${errorCount !== 1 ? 's' : ''}`,
+				})
+			}
+		}
+
+		// Handle single recheck
 		if (!employeeId || typeof employeeId !== 'string') {
 			const searchParams = new URL(request.url).searchParams
 			const redirectUrl = `/admin/employees${
@@ -244,6 +316,10 @@ export default function AdminEmployeesRoute({
 	const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(
 		new Set(),
 	)
+	const [drawerOpen, setDrawerOpen] = useState(false)
+	const [selectedEmployeeForDrawer, setSelectedEmployeeForDrawer] = useState<
+		(typeof loaderData.employees)[0] | null
+	>(null)
 
 	const isPending = useDelayedIsPending({
 		formMethod: 'GET',
@@ -257,26 +333,65 @@ export default function AdminEmployeesRoute({
 		await submit(form)
 	}, 400)
 
-	const handleSelectAll = () => {
-		if (selectedEmployees.size === loaderData.employees.length) {
-			setSelectedEmployees(new Set())
-		} else {
-			setSelectedEmployees(new Set(loaderData.employees.map((e) => e.id)))
-		}
-	}
+	const handleRowClick = useCallback(
+		(employee: (typeof loaderData.employees)[0]) => {
+			setSelectedEmployeeForDrawer(employee)
+			setDrawerOpen(true)
+		},
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[],
+	)
 
-	const handleSelectEmployee = (employeeId: string) => {
-		const newSelection = new Set(selectedEmployees)
-		if (newSelection.has(employeeId)) {
-			newSelection.delete(employeeId)
-		} else {
-			newSelection.add(employeeId)
-		}
-		setSelectedEmployees(newSelection)
-	}
+	const handleClearAllSelection = useCallback(() => {
+		setSelectedEmployees(new Set())
+	}, [])
 
-	const handlePrintSelected = () => {
-		if (selectedEmployees.size === 0) return
+	const columns = useMemo(
+		() => createColumns(handleRowClick, handleClearAllSelection),
+		[handleRowClick, handleClearAllSelection],
+	)
+
+	// Convert selectedEmployees Set to TanStack Table rowSelection format
+	const rowSelection = useMemo(() => {
+		const selection: Record<string, boolean> = {}
+		selectedEmployees.forEach((id) => {
+			selection[id] = true
+		})
+		return selection
+	}, [selectedEmployees])
+
+	const handleRowSelectionChange = useCallback(
+		(selection: Record<string, boolean>) => {
+			console.log('handleRowSelectionChange called with:', selection)
+			const newSelection = new Set<string>()
+			Object.keys(selection).forEach((id) => {
+				if (selection[id]) {
+					newSelection.add(id)
+				}
+			})
+			console.log('Setting selectedEmployees to:', Array.from(newSelection))
+			setSelectedEmployees(newSelection)
+		},
+		[],
+	)
+
+	const handleSelectEmployee = useCallback((employeeId: string) => {
+		setSelectedEmployees((prev) => {
+			const newSelection = new Set(prev)
+			if (newSelection.has(employeeId)) {
+				newSelection.delete(employeeId)
+			} else {
+				newSelection.add(employeeId)
+			}
+			return newSelection
+		})
+	}, [])
+
+	const handlePrintSelected = useCallback(() => {
+		if (selectedEmployees.size === 0) {
+			console.warn('No employees selected for printing')
+			return
+		}
 
 		// Build URL with employee IDs as query parameters
 		const params = new URLSearchParams()
@@ -285,7 +400,36 @@ export default function AdminEmployeesRoute({
 		})
 
 		// Open in new window to trigger download
-		window.open(`/admin/employees/print?${params.toString()}`, '_blank')
+		const printUrl = `/admin/employees/print?${params.toString()}`
+		window.open(printUrl, '_blank')
+	}, [selectedEmployees])
+
+	const handleBulkRecheckPhotos = () => {
+		if (selectedEmployees.size === 0) return
+
+		// Create form with all selected employee IDs
+		const form = document.createElement('form')
+		form.method = 'POST'
+		form.style.display = 'none'
+
+		const intentInput = document.createElement('input')
+		intentInput.type = 'hidden'
+		intentInput.name = 'intent'
+		intentInput.value = 'recheck-facts-photo'
+		form.appendChild(intentInput)
+
+		// Add all selected employee IDs
+		Array.from(selectedEmployees).forEach((employeeId) => {
+			const employeeIdInput = document.createElement('input')
+			employeeIdInput.type = 'hidden'
+			employeeIdInput.name = 'employeeIds'
+			employeeIdInput.value = employeeId
+			form.appendChild(employeeIdInput)
+		})
+
+		document.body.appendChild(form)
+		form.submit()
+		// Note: Form will be removed by page navigation
 	}
 
 	const syncButton = (
@@ -296,7 +440,7 @@ export default function AdminEmployeesRoute({
 				status={syncPending ? 'pending' : 'idle'}
 				disabled={syncPending}
 			>
-				<Icon name="update" />
+				<Icon name="update" className="mr-4" />
 				Sync from FACTS
 			</StatusButton>
 		</Form>
@@ -308,7 +452,7 @@ export default function AdminEmployeesRoute({
 				title="Employee Management"
 				rightSlot={
 					<div className="flex items-center gap-2">
-						{selectedEmployees.size > 0 ? (
+						{/* {selectedEmployees.size > 0 ? (
 							<StatusButton
 								type="button"
 								onClick={handlePrintSelected}
@@ -318,14 +462,14 @@ export default function AdminEmployeesRoute({
 								<Icon name="file-text" />
 								Print Selected ({selectedEmployees.size})
 							</StatusButton>
-						) : null}
+						) : null} */}
 						{syncButton}
 					</div>
 				}
 			/>
 
 			{(loaderData.expiringCount > 0 || loaderData.expiredCount > 0) && (
-				<Card className="mt-6 border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20">
+				<Card className="mt-6 border-amber-500/50 bg-amber-50/50 shadow-sm dark:bg-amber-950/20">
 					<div className="p-4">
 						<h2 className="text-h4 mb-2">Expiration Warnings</h2>
 						<div className="flex flex-wrap gap-4">
@@ -383,25 +527,25 @@ export default function AdminEmployeesRoute({
 				</Form>
 			</div>
 
-			{selectedEmployees.size > 0 && (
-				<div className="bg-muted/50 mt-6 flex items-center justify-between rounded-md border p-3">
-					<div className="text-muted-foreground text-sm">
-						{selectedEmployees.size} employee
-						{selectedEmployees.size !== 1 ? 's' : ''} selected
-					</div>
-					<div className="flex gap-2">
-						<button
-							type="button"
-							onClick={handleSelectAll}
-							className="text-foreground text-sm hover:underline"
-						>
-							{selectedEmployees.size === loaderData.employees.length
-								? 'Deselect All'
-								: 'Select All'}
-						</button>
-					</div>
-				</div>
-			)}
+			{/* Bulk Action Bar */}
+			<BulkActionsBar
+				selectedCount={selectedEmployees.size}
+				onClearSelection={() => setSelectedEmployees(new Set())}
+				actions={[
+					{
+						label: 'Recheck Photos',
+						icon: 'update',
+						onClick: handleBulkRecheckPhotos,
+						variant: 'default',
+					},
+					{
+						label: 'Download ID Cards',
+						icon: 'download',
+						onClick: handlePrintSelected,
+						variant: 'outline',
+					},
+				]}
+			/>
 
 			<div className="mt-6">
 				<div className={cn('flex flex-col gap-4', isPending && 'opacity-50')}>
@@ -410,7 +554,10 @@ export default function AdminEmployeesRoute({
 							{/* Mobile Card View */}
 							<div className="flex flex-col gap-4 md:hidden">
 								{loaderData.employees.map((employee) => (
-									<Card key={employee.id} className="hover:bg-muted/50">
+									<Card
+										key={employee.id}
+										className="border-muted/50 hover:bg-muted/50 shadow-sm"
+									>
 										<CardSection>
 											<div className="flex flex-col gap-4">
 												<div className="flex items-start gap-2">
@@ -488,16 +635,26 @@ export default function AdminEmployeesRoute({
 															value: (
 																<Link
 																	to={`/admin/employees/${employee.id}/photo`}
-																	className="text-foreground hover:underline"
+																	className="text-foreground flex items-center gap-1.5 text-sm hover:underline"
 																>
 																	{employee.employeeId?.photoUrl ? (
-																		<span className="text-green-600 dark:text-green-400">
-																			✓ Has photo
-																		</span>
+																		<>
+																			<Icon
+																				name="check"
+																				className="size-4 text-green-600 dark:text-green-400"
+																			/>
+																			<span>Has photo</span>
+																		</>
 																	) : (
-																		<span className="text-muted-foreground">
-																			No photo
-																		</span>
+																		<>
+																			<Icon
+																				name="cross-1"
+																				className="text-muted-foreground size-4"
+																			/>
+																			<span className="text-muted-foreground">
+																				No photo
+																			</span>
+																		</>
 																	)}
 																</Link>
 															),
@@ -516,27 +673,40 @@ export default function AdminEmployeesRoute({
 															name="employeeId"
 															value={employee.id}
 														/>
-														<StatusButton
-															type="submit"
-															variant="outline"
-															size="sm"
-															status={
-																navigation.state === 'submitting' &&
-																navigation.formData?.get('employeeId') ===
-																	employee.id
-																	? 'pending'
-																	: 'idle'
-															}
-															disabled={
-																navigation.state === 'submitting' &&
-																navigation.formData?.get('employeeId') ===
-																	employee.id
-															}
-														>
-															<Icon name="update" className="scale-75">
-																Recheck
-															</Icon>
-														</StatusButton>
+														<TooltipProvider>
+															<Tooltip>
+																<TooltipTrigger asChild>
+																	<div>
+																		<StatusButton
+																			type="submit"
+																			variant="outline"
+																			size="sm"
+																			status={
+																				navigation.state === 'submitting' &&
+																				navigation.formData?.get(
+																					'employeeId',
+																				) === employee.id
+																					? 'pending'
+																					: 'idle'
+																			}
+																			disabled={
+																				navigation.state === 'submitting' &&
+																				navigation.formData?.get(
+																					'employeeId',
+																				) === employee.id
+																			}
+																		>
+																			<Icon name="update" className="scale-75">
+																				Re-verify
+																			</Icon>
+																		</StatusButton>
+																	</div>
+																</TooltipTrigger>
+																<TooltipContent>
+																	Re-sync employee record from FACTS SIS
+																</TooltipContent>
+															</Tooltip>
+														</TooltipProvider>
 													</Form>
 												</div>
 											</div>
@@ -546,157 +716,43 @@ export default function AdminEmployeesRoute({
 							</div>
 
 							{/* Desktop Table View */}
-							<div className="hidden overflow-x-auto md:block">
-								<table className="w-full border-collapse">
-									<thead>
-										<tr className="border-b">
-											<th className="p-2 text-left">
-												<input
-													type="checkbox"
-													checked={
-														loaderData.employees.length > 0 &&
-														selectedEmployees.size ===
-															loaderData.employees.length
-													}
-													onChange={handleSelectAll}
-													className="h-4 w-4 rounded border-gray-300"
-												/>
-											</th>
-											<th className="p-2 text-left">Name</th>
-											<th className="p-2 text-left">Job Title</th>
-											<th className="p-2 text-left">Email</th>
-											<th className="p-2 text-left">Status</th>
-											<th className="p-2 text-left">Expiration Date</th>
-											<th className="p-2 text-left">Photo</th>
-											<th className="p-2 text-left">Actions</th>
-										</tr>
-									</thead>
-									<tbody>
-										{loaderData.employees.map((employee) => (
-											<tr
-												key={employee.id}
-												className="hover:bg-muted/50 border-b"
-											>
-												<td className="p-2">
-													<input
-														type="checkbox"
-														checked={selectedEmployees.has(employee.id)}
-														onChange={() => handleSelectEmployee(employee.id)}
-														className="h-4 w-4 rounded border-gray-300"
-													/>
-												</td>
-												<td className="p-2">
-													<Link
-														to={`/admin/employees/${employee.id}`}
-														className="text-foreground hover:underline"
-													>
-														{employee.fullName}
-													</Link>
-												</td>
-												<td className="p-2">{employee.jobTitle}</td>
-												<td className="p-2">{employee.email}</td>
-												<td className="p-2">
-													<StatusBadge
-														variant={
-															employee.status === 'active'
-																? 'active'
-																: 'inactive'
-														}
-													>
-														{employee.status}
-													</StatusBadge>
-												</td>
-												<td className="p-2">
-													<div className="flex flex-col gap-1">
-														<Link
-															to={`/admin/employees/${employee.id}/expiration`}
-															className="text-foreground hover:underline"
-														>
-															{employee.employeeId?.expirationDate
-																? new Date(
-																		employee.employeeId.expirationDate,
-																	).toLocaleDateString()
-																: 'Not set'}
-														</Link>
-														{employee.expirationStatus &&
-															employee.expirationStatus.type !== 'valid' && (
-																<StatusBadge
-																	variant={
-																		employee.expirationStatus.type ===
-																		'expiring'
-																			? 'expiring'
-																			: 'expired'
-																	}
-																>
-																	{employee.expirationStatus.type === 'expiring'
-																		? `Expires in ${employee.expirationStatus.daysUntilExpiration} day${employee.expirationStatus.daysUntilExpiration !== 1 ? 's' : ''}`
-																		: `Expired ${employee.expirationStatus.daysSinceExpiration} day${employee.expirationStatus.daysSinceExpiration !== 1 ? 's' : ''} ago`}
-																</StatusBadge>
-															)}
-													</div>
-												</td>
-												<td className="p-2">
-													<Link
-														to={`/admin/employees/${employee.id}/photo`}
-														className="text-foreground hover:underline"
-													>
-														{employee.employeeId?.photoUrl ? (
-															<span className="text-green-600 dark:text-green-400">
-																✓ Has photo
-															</span>
-														) : (
-															<span className="text-muted-foreground">
-																No photo
-															</span>
-														)}
-													</Link>
-												</td>
-												<td className="p-2">
-													<Form method="post" className="inline">
-														<input
-															type="hidden"
-															name="intent"
-															value="recheck-facts-photo"
-														/>
-														<input
-															type="hidden"
-															name="employeeId"
-															value={employee.id}
-														/>
-														<StatusButton
-															type="submit"
-															variant="outline"
-															size="sm"
-															status={
-																navigation.state === 'submitting' &&
-																navigation.formData?.get('employeeId') ===
-																	employee.id
-																	? 'pending'
-																	: 'idle'
-															}
-															disabled={
-																navigation.state === 'submitting' &&
-																navigation.formData?.get('employeeId') ===
-																	employee.id
-															}
-														>
-															<Icon name="update" className="scale-75">
-																Recheck
-															</Icon>
-														</StatusButton>
-													</Form>
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
+							<div className="hidden md:block">
+								<DataTable
+									columns={columns}
+									data={loaderData.employees}
+									onRowClick={handleRowClick}
+									rowSelection={rowSelection}
+									onRowSelectionChange={handleRowSelectionChange}
+								/>
 							</div>
 						</>
 					) : (
-						<p className="text-muted-foreground">No employees found</p>
+						<div className="bg-muted/30 border-border flex flex-col items-center justify-center rounded-lg border p-12 text-center">
+							<Icon
+								name="user"
+								className="text-muted-foreground mb-4 size-12"
+							/>
+							<p className="text-foreground mb-2 text-lg font-semibold">
+								No employees found
+							</p>
+							<p className="text-muted-foreground text-sm">
+								{search || status !== 'all'
+									? 'Try adjusting your search or filter criteria'
+									: 'No employees have been added yet'}
+							</p>
+						</div>
 					)}
 				</div>
 			</div>
+
+			{/* Employee Quick View Drawer */}
+			{selectedEmployeeForDrawer && (
+				<EmployeeQuickViewDrawer
+					open={drawerOpen}
+					onOpenChange={setDrawerOpen}
+					employee={selectedEmployeeForDrawer}
+				/>
+			)}
 		</div>
 	)
 }

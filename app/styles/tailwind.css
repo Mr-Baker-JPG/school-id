@@ -241,7 +241,25 @@
 		border-color: hsl(var(--border));
 	}
 
+	html {
+		scrollbar-gutter: stable;
+	}
+
 	body {
 		scrollbar-gutter: stable;
+	}
+
+	/* Prevent layout shift when Radix UI locks scroll for modal dropdowns */
+	body[data-scroll-locked] {
+		margin-right: 0 !important;
+		margin-left: 0 !important;
+		padding-right: 0 !important;
+		padding-left: 0 !important;
+		overflow: visible !important;
+	}
+
+	/* Ensure dropdown menu content doesn't cause layout shifts */
+	[data-slot='dropdown-menu-content'] {
+		position: fixed !important;
 	}
 }

@@ -195,7 +195,7 @@ test('Dashboard shows sync errors if any occurred', async () => {
 		created: 10,
 		updated: 5,
 		errors: 2,
-		errorMessage: null,
+		errorMessage: undefined,
 		createdAt: new Date('2024-01-15T11:00:00Z'),
 	})
 
@@ -213,11 +213,11 @@ test('Dashboard shows sync errors if any occurred', async () => {
 	expect(result.recentErrors.map((e) => e.id)).toContain(errorSync1.id)
 	expect(result.recentErrors.map((e) => e.id)).toContain(errorSync2.id)
 	// Should be sorted by createdAt desc
-	expect(result.recentErrors[0].id).toBe(errorSync2.id)
-	expect(result.recentErrors[0].errors).toBe(2)
-	expect(result.recentErrors[1].id).toBe(errorSync1.id)
-	expect(result.recentErrors[1].errors).toBe(5)
-	expect(result.recentErrors[1].errorMessage).toBe(
+	expect(result.recentErrors[0]?.id).toBe(errorSync2.id)
+	expect(result.recentErrors[0]?.errors).toBe(2)
+	expect(result.recentErrors[1]?.id).toBe(errorSync1.id)
+	expect(result.recentErrors[1]?.errors).toBe(5)
+	expect(result.recentErrors[1]?.errorMessage).toBe(
 		'FACTS API error: Connection timeout',
 	)
 
@@ -266,19 +266,27 @@ test('Dashboard lists employees with sync issues', async () => {
 	expect(result.employeesWithSyncIssues.length).toBeGreaterThanOrEqual(2)
 	// Should include old employees but not recent ones
 	const employeeIds = result.employeesWithSyncIssues.map((e) => e.id)
-	expect(employeeIds).toContain(oldEmployee1.id)
-	expect(employeeIds).toContain(oldEmployee2.id)
-	expect(employeeIds).not.toContain(recentEmployee.id)
+	expect(employeeIds).toContain(oldEmployee1?.id)
+	expect(employeeIds).toContain(oldEmployee2?.id)
+	expect(employeeIds).not.toContain(recentEmployee?.id)
 
 	// Should be sorted by updatedAt asc (oldest first)
 	expect(
-		result.employeesWithSyncIssues[0].updatedAt.getTime(),
-	).toBeLessThanOrEqual(result.employeesWithSyncIssues[1].updatedAt.getTime())
+		result.employeesWithSyncIssues[0]?.updatedAt.getTime(),
+	).toBeLessThanOrEqual(
+		result.employeesWithSyncIssues[1]?.updatedAt.getTime() ?? 0,
+	)
 
 	// Cleanup
 	await prisma.employee.deleteMany({
 		where: {
-			id: { in: [oldEmployee1.id, oldEmployee2.id, recentEmployee.id] },
+			id: {
+				in: [
+					oldEmployee1?.id ?? '',
+					oldEmployee2?.id ?? '',
+					recentEmployee?.id ?? '',
+				],
+			},
 		},
 	})
 	await prisma.user.delete({ where: { id: admin.id } })
@@ -314,7 +322,9 @@ test('Dashboard shows sync statistics (total, active, inactive)', async () => {
 
 	// Cleanup
 	await prisma.employee.deleteMany({
-		where: { id: { in: [active1.id, active2.id, inactive1.id] } },
+		where: {
+			id: { in: [active1?.id ?? '', active2?.id ?? '', inactive1?.id ?? ''] },
+		},
 	})
 	await prisma.user.delete({ where: { id: admin.id } })
 })
@@ -395,12 +405,11 @@ test('Dashboard limits employees with sync issues to 50', async () => {
 		context: {},
 	} as any)
 
-	expect(result.employeesWithSyncIssues.length).toBe(50)
+	expect(result.employeesWithSyncIssues).toHaveLength(50)
 
 	// Cleanup
 	await prisma.employee.deleteMany({
-		where: { id: { in: employees.map((e) => e.id) } },
+		where: { id: { in: employees.map((e) => e?.id ?? '') } },
 	})
 	await prisma.user.delete({ where: { id: admin.id } })
 })
-

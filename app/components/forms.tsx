@@ -11,6 +11,7 @@ import {
 import { Input } from './ui/input.tsx'
 import { Label } from './ui/label.tsx'
 import { Textarea } from './ui/textarea.tsx'
+import { cn } from '#app/utils/misc.tsx'
 
 export type ListOfErrors = Array<string | null | undefined> | null | undefined
 
@@ -57,7 +58,7 @@ export function Field({
 				aria-describedby={errorId}
 				{...inputProps}
 			/>
-			<div className="min-h-[32px] px-4 pt-1 pb-3">
+			<div className={cn('px-4', errorId ? 'min-h-[32px] pt-1 pb-3' : 'pb-0')}>
 				{errorId ? <ErrorList id={errorId} errors={errors} /> : null}
 			</div>
 		</div>

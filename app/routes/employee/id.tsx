@@ -1,6 +1,5 @@
 import { invariantResponse } from '@epic-web/invariant'
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
-import { Img } from 'openimg/react'
 import {
 	IDCardFrontPreview,
 	IDCardBackPreview,
@@ -9,8 +8,10 @@ import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { CardSection } from '#app/ui/components/CardSection.tsx'
+import { IdPreviewCard } from '#app/ui/components/IdPreviewCard.tsx'
 import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
 import { PageTitle } from '#app/ui/components/PageTitle.tsx'
+import { PrimaryActionBar } from '#app/ui/components/PrimaryActionBar.tsx'
 import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { generateBarcodeDataURL } from '#app/utils/barcode.server.ts'
@@ -178,62 +179,87 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 			: new Date(defaultExpirationDate),
 	}
 
-	const downloadButton = (
+	const primaryAction = (
 		<Button size="lg" asChild>
-			<a href="/resources/employee-pdf">
-				<Icon name="download">Download ID Card (PDF)</Icon>
-			</a>
-		</Button>
-	)
-
-	const addToWalletButton = (
-		<Button size="lg" variant="outline" asChild>
 			<a href="/employee/id/wallet">
 				<Icon name="plus">Add to Wallet</Icon>
 			</a>
 		</Button>
 	)
 
+	const secondaryActions = [
+		{
+			label: 'Download PDF',
+			icon: 'download',
+			href: '/resources/employee-pdf',
+			asChild: true,
+		},
+	]
+
 	return (
 		<div className="pb-20 md:pb-8">
-			<PageTitle
-				title="My Employee ID"
-				rightSlot={
-					<div className="hidden md:flex md:gap-2">
-						{addToWalletButton}
-						{downloadButton}
-					</div>
-				}
-			/>
+			<PageTitle title="My Employee ID" />
+
+			{/* Actions Section */}
+			<div className="mt-6">
+				<PrimaryActionBar
+					primaryAction={primaryAction}
+					secondaryActions={secondaryActions}
+				/>
+			</div>
 
 			<div className="mt-8 grid gap-6 md:grid-cols-2">
 				{/* Left Column: ID Card Previews */}
 				<div className="space-y-6">
-					<CardSection title="Front">
-						<div className="flex justify-center">
-							<IDCardFrontPreview
-								employee={employeeCardData}
-								photoUrl={photoUrl ? getEmployeePhotoSrc(photoUrl) : null}
-								logoUrl={logoUrl}
-								branding={branding}
-								academicYear={academicYear}
-								barcodeDataURL={barcodeDataURL}
-							/>
-						</div>
+					<CardSection title="Front" className="border-muted/50 shadow-sm">
+						<IdPreviewCard
+							title="Front of ID"
+							previewContent={
+								<IDCardFrontPreview
+									employee={employeeCardData}
+									photoUrl={photoUrl ? getEmployeePhotoSrc(photoUrl) : null}
+									logoUrl={logoUrl}
+									branding={branding}
+									academicYear={academicYear}
+									barcodeDataURL={barcodeDataURL}
+								/>
+							}
+						>
+							<div className="flex justify-center">
+								<IDCardFrontPreview
+									employee={employeeCardData}
+									photoUrl={photoUrl ? getEmployeePhotoSrc(photoUrl) : null}
+									logoUrl={logoUrl}
+									branding={branding}
+									academicYear={academicYear}
+									barcodeDataURL={barcodeDataURL}
+								/>
+							</div>
+						</IdPreviewCard>
 					</CardSection>
-					<CardSection title="Back">
-						<div className="flex justify-center">
-							<IDCardBackPreview
-								qrCodeDataURL={qrCodeDataURL}
-								branding={branding}
-							/>
-						</div>
+					<CardSection title="Back" className="border-muted/50 shadow-sm">
+						<IdPreviewCard
+							title="Back of ID"
+							previewContent={
+								<IDCardBackPreview
+									qrCodeDataURL={qrCodeDataURL}
+									branding={branding}
+								/>
+							}
+						>
+							<div className="flex justify-center">
+								<IDCardBackPreview
+									qrCodeDataURL={qrCodeDataURL}
+									branding={branding}
+								/>
+							</div>
+						</IdPreviewCard>
 					</CardSection>
 				</div>
 
 				{/* Right Column: Status and Info */}
 				<div className="space-y-6">
-					<CardSection title="Status">
+					<CardSection title="Status" className="border-muted/50 shadow-sm">
 						<div className="flex flex-col gap-4">
 							{expirationStatus && (
 								<div>
@@ -257,30 +283,47 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 						</div>
 					</CardSection>
 
-					<CardSection title="Your Info">
+					<CardSection title="Expiration" className="border-muted/50 shadow-sm">
+						<div className="flex flex-col gap-2">
+							<div className="flex items-center gap-2">
+								<Icon name="calendar" className="size-5" />
+								<span className="text-h4 font-semibold">{expirationDate}</span>
+							</div>
+							{expirationStatus && expirationStatus.type !== 'valid' && (
+								<p
+									className={cn(
+										'text-sm',
+										expirationStatus.type === 'expired'
+											? 'text-destructive'
+											: 'text-amber-600 dark:text-amber-500',
+									)}
+								>
+									{expirationStatus.type === 'expired'
+										? 'Expired'
+										: 'Expiring soon'}
+								</p>
+							)}
+						</div>
+					</CardSection>
+
+					<CardSection title="Your Info" className="border-muted/50 shadow-sm">
 						<KeyValueList
 							items={[
 								{ key: 'Name', value: employee.fullName },
 								{ key: 'Job Title', value: employee.jobTitle },
 								{ key: 'Email', value: employee.email },
-								{ key: 'Status', value: employee.status },
-								{
-									key: 'Expiration Date',
-									value: expirationDate,
-									mono: true,
-								},
 							]}
 						/>
 					</CardSection>
 				</div>
 			</div>
 
-			{/* Mobile Sticky Download Buttons */}
+			{/* Mobile Sticky Action Buttons */}
 			<div className="bg-background/95 fixed inset-x-0 bottom-0 border-t p-3 backdrop-blur md:hidden">
-				<div className="flex gap-2">
-					{addToWalletButton}
-					{downloadButton}
-				</div>
+				<PrimaryActionBar
+					primaryAction={primaryAction}
+					secondaryActions={secondaryActions}
+				/>
 			</div>
 		</div>
 	)

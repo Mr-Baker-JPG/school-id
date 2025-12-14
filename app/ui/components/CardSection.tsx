@@ -22,7 +22,7 @@ export function CardSection({
 	className,
 }: CardSectionProps) {
 	return (
-		<Card className={cn(className)}>
+		<Card className={cn('border-muted/50 shadow-sm', className)}>
 			{(title || description) && (
 				<CardHeader>
 					{title && <CardTitle>{title}</CardTitle>}

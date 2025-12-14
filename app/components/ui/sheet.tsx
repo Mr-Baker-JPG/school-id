@@ -1,7 +1,7 @@
 import * as React from 'react'
-import { Icon } from './icon.tsx'
-import { Button } from './button.tsx'
 import { cn } from '#app/utils/misc.tsx'
+import { Button } from './button.tsx'
+import { Icon } from './icon.tsx'
 
 interface SheetContextValue {
 	open: boolean
@@ -81,6 +81,64 @@ interface SheetContentProps extends React.HTMLAttributes<HTMLDivElement> {
 const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
 	({ side = 'right', className, children, ...props }, ref) => {
 		const { open, setOpen } = useSheetContext()
+		const contentRef = React.useRef<HTMLDivElement>(null)
+
+		// Focus trap and initial focus
+		React.useEffect(() => {
+			if (!open) return
+			if (!open || !contentRef.current) return
+
+			const sheet = contentRef.current
+			const focusableElements = sheet.querySelectorAll(
+				'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+			)
+
+			if (focusableElements.length === 0) return
+
+			const firstElement = focusableElements[0] as HTMLElement
+			const lastElement = focusableElements[
+				focusableElements.length - 1
+			] as HTMLElement
+
+			// Focus first element after a short delay to ensure sheet is rendered
+			const focusTimeout = setTimeout(() => {
+				firstElement?.focus()
+			}, 0)
+
+			const handleTab = (e: KeyboardEvent) => {
+				if (e.key !== 'Tab') return
+
+				const activeElement = document.activeElement
+
+				if (e.shiftKey) {
+					// Shift + Tab
+					if (activeElement === firstElement) {
+						e.preventDefault()
+						lastElement?.focus()
+					}
+				} else {
+					// Tab
+					if (activeElement === lastElement) {
+						e.preventDefault()
+						firstElement?.focus()
+					}
+				}
+			}
+
+			const handleEscape = (e: KeyboardEvent) => {
+				if (e.key === 'Escape') {
+					setOpen(false)
+				}
+			}
+
+			document.addEventListener('keydown', handleTab)
+			document.addEventListener('keydown', handleEscape)
+			return () => {
+				clearTimeout(focusTimeout)
+				document.removeEventListener('keydown', handleTab)
+				document.removeEventListener('keydown', handleEscape)
+			}
+		}, [open, setOpen])
 
 		if (!open) return null
 
@@ -92,9 +150,9 @@ const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
 					aria-hidden="true"
 				/>
 				<div
-					ref={ref}
+					ref={ref || contentRef}
 					className={cn(
-						'bg-background fixed z-50 gap-4 p-6 shadow-lg',
+						'bg-background fixed z-50 gap-4 overflow-y-auto p-6 shadow-lg',
 						side === 'right' &&
 							'inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm',
 						side === 'left' &&
@@ -103,6 +161,8 @@ const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
 						side === 'bottom' && 'inset-x-0 bottom-0 border-t',
 						className,
 					)}
+					role="dialog"
+					aria-modal="true"
 					{...props}
 				>
 					{children}
@@ -111,6 +171,7 @@ const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
 						size="icon"
 						className="absolute top-4 right-4"
 						onClick={() => setOpen(false)}
+						aria-label="Close drawer"
 					>
 						<Icon name="cross" className="size-4" />
 						<span className="sr-only">Close</span>

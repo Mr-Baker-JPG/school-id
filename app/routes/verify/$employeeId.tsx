@@ -1,17 +1,16 @@
-import { captureException } from '@sentry/react-router'
-import { invariantResponse } from '@epic-web/invariant'
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
+import { captureException } from '@sentry/react-router'
 import { Img } from 'openimg/react'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Card } from '#app/components/ui/card.tsx'
-import { prisma } from '#app/utils/db.server.ts'
+import { SCHOOL_NAME, HEADER_LOGO_SRC } from '#app/ui/brand.ts'
+import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
+import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
 import { getBrandingConfig } from '#app/utils/branding.server.ts'
-import { getVerificationStatus } from '#app/utils/verification.server.ts'
+import { prisma } from '#app/utils/db.server.ts'
 import { fetchAndCacheFactsProfilePicture } from '#app/utils/employee.server.ts'
 import { getDomainUrl, getEmployeePhotoSrc } from '#app/utils/misc.tsx'
-import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
-import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
-import { SCHOOL_NAME, LOGO_SRC } from '#app/ui/brand.ts'
+import { getVerificationStatus } from '#app/utils/verification.server.ts'
 import { type Route } from './+types/$employeeId.ts'
 
 export const handle: SEOHandle = {
@@ -136,14 +135,14 @@ export default function VerifyRoute({ loaderData }: Route.ComponentProps) {
 				<div className="mb-6 flex flex-col items-center gap-3">
 					{branding.logoUrl && (
 						<Img
-							src={branding.logoUrl}
+							src={HEADER_LOGO_SRC}
 							alt={SCHOOL_NAME}
 							className="h-12 w-auto object-contain"
-							width={128}
+							width={228}
 							height={48}
 						/>
 					)}
-					<h1 className="text-h2 text-center">{SCHOOL_NAME}</h1>
+					{/* <h1 className="text-h2 text-center">{SCHOOL_NAME}</h1> */}
 					<h2 className="text-h4 text-muted-foreground text-center">
 						Employee Verification
 					</h2>

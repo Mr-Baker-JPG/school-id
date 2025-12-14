@@ -1,16 +1,25 @@
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
+import { useState } from 'react'
 import { Form, useNavigation } from 'react-router'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
+import { Button } from '#app/components/ui/button.tsx'
 import { Card } from '#app/components/ui/card.tsx'
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from '#app/components/ui/dialog.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
 import { CardSection } from '#app/ui/components/CardSection.tsx'
 import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
 import { PageTitle } from '#app/ui/components/PageTitle.tsx'
 import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
-import { prisma } from '#app/utils/db.server.ts'
-import { useIsPending } from '#app/utils/misc.tsx'
 import { requireSuperAdmin } from '#app/utils/auth.server.ts'
+import { prisma } from '#app/utils/db.server.ts'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { type Route } from './+types/index.ts'
 
@@ -116,15 +125,92 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function AdminUsersRoute({ loaderData }: Route.ComponentProps) {
 	const navigation = useNavigation()
+	const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+	const [pendingAction, setPendingAction] = useState<{
+		userId: string
+		userName: string
+		userEmail: string
+		intent: 'add-admin' | 'remove-admin'
+	} | null>(null)
 
 	const isAdmin = (userId: string) => {
 		const user = loaderData.users.find((u) => u.id === userId)
 		return user?.roles.some((role) => role.name === 'admin') ?? false
 	}
 
+	const handleActionClick = (
+		userId: string,
+		intent: 'add-admin' | 'remove-admin',
+	) => {
+		const user = loaderData.users.find((u) => u.id === userId)
+		if (!user) return
+
+		if (intent === 'remove-admin') {
+			setPendingAction({
+				userId,
+				userName: user.name || user.email,
+				userEmail: user.email,
+				intent,
+			})
+			setConfirmDialogOpen(true)
+		} else {
+			// For add-admin, submit directly (less destructive)
+			// We'll use a hidden form that gets submitted
+		}
+	}
+
 	return (
 		<div>
 			<PageTitle title="User Management" />
+
+			{/* Confirmation Dialog */}
+			{pendingAction && (
+				<Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>Remove Admin Access</DialogTitle>
+							<DialogDescription>
+								Are you sure you want to remove admin access from{' '}
+								<strong>{pendingAction.userName}</strong> (
+								{pendingAction.userEmail})?
+							</DialogDescription>
+						</DialogHeader>
+						<div className="bg-muted/50 border-border rounded-md border p-3 text-sm">
+							<p className="text-foreground font-medium">
+								This user will lose access to Administration pages.
+							</p>
+						</div>
+						<DialogFooter>
+							<Button
+								variant="outline"
+								onClick={() => {
+									setConfirmDialogOpen(false)
+									setPendingAction(null)
+								}}
+							>
+								Cancel
+							</Button>
+							{pendingAction && (
+								<Form method="post">
+									<input
+										type="hidden"
+										name="intent"
+										value={pendingAction.intent}
+									/>
+									<input
+										type="hidden"
+										name="userId"
+										value={pendingAction.userId}
+									/>
+									<Button type="submit" variant="destructive">
+										Remove Admin
+									</Button>
+								</Form>
+							)}
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
+			)}
 
 			<div className="mt-6">
 				<div className="flex flex-col gap-4">
@@ -139,7 +225,10 @@ export default function AdminUsersRoute({ loaderData }: Route.ComponentProps) {
 										navigation.formData?.get('userId') === user.id
 
 									return (
-										<Card key={user.id} className="hover:bg-muted/50">
+										<Card
+											key={user.id}
+											className="border-muted/50 hover:bg-muted/50 shadow-sm"
+										>
 											<CardSection>
 												<div className="flex flex-col gap-4">
 													<div>
@@ -175,35 +264,44 @@ export default function AdminUsersRoute({ loaderData }: Route.ComponentProps) {
 														]}
 													/>
 													<div className="pt-2">
-														<Form method="post" className="inline">
-															<input
-																type="hidden"
-																name="intent"
-																value={
-																	hasAdminRole ? 'remove-admin' : 'add-admin'
-																}
-															/>
-															<input
-																type="hidden"
-																name="userId"
-																value={user.id}
-															/>
+														{hasAdminRole ? (
 															<StatusButton
-																type="submit"
-																variant={
-																	hasAdminRole ? 'destructive' : 'default'
-																}
+																type="button"
+																variant="destructive"
 																size="sm"
 																status={isPending ? 'pending' : 'idle'}
 																disabled={isPending}
+																onClick={() =>
+																	handleActionClick(user.id, 'remove-admin')
+																}
 															>
-																<Icon
-																	name={hasAdminRole ? 'cross-1' : 'plus'}
-																	className="scale-75"
-																/>
-																{hasAdminRole ? 'Remove Admin' : 'Add Admin'}
+																<Icon name="cross-1" className="scale-75" />
+																Remove Admin
 															</StatusButton>
-														</Form>
+														) : (
+															<Form method="post" className="inline">
+																<input
+																	type="hidden"
+																	name="intent"
+																	value="add-admin"
+																/>
+																<input
+																	type="hidden"
+																	name="userId"
+																	value={user.id}
+																/>
+																<StatusButton
+																	type="submit"
+																	variant="default"
+																	size="sm"
+																	status={isPending ? 'pending' : 'idle'}
+																	disabled={isPending}
+																>
+																	<Icon name="plus" className="scale-75" />
+																	Add Admin
+																</StatusButton>
+															</Form>
+														)}
 													</div>
 												</div>
 											</CardSection>
@@ -264,35 +362,44 @@ export default function AdminUsersRoute({ loaderData }: Route.ComponentProps) {
 														)}
 													</td>
 													<td className="p-2">
-														<Form method="post" className="inline">
-															<input
-																type="hidden"
-																name="intent"
-																value={
-																	hasAdminRole ? 'remove-admin' : 'add-admin'
-																}
-															/>
-															<input
-																type="hidden"
-																name="userId"
-																value={user.id}
-															/>
+														{hasAdminRole ? (
 															<StatusButton
-																type="submit"
-																variant={
-																	hasAdminRole ? 'destructive' : 'default'
-																}
+																type="button"
+																variant="destructive"
 																size="sm"
 																status={isPending ? 'pending' : 'idle'}
 																disabled={isPending}
+																onClick={() =>
+																	handleActionClick(user.id, 'remove-admin')
+																}
 															>
-																<Icon
-																	name={hasAdminRole ? 'cross-1' : 'plus'}
-																	className="scale-75"
-																/>
-																{hasAdminRole ? 'Remove Admin' : 'Add Admin'}
+																<Icon name="cross-1" className="scale-75" />
+																Remove Admin
 															</StatusButton>
-														</Form>
+														) : (
+															<Form method="post" className="inline">
+																<input
+																	type="hidden"
+																	name="intent"
+																	value="add-admin"
+																/>
+																<input
+																	type="hidden"
+																	name="userId"
+																	value={user.id}
+																/>
+																<StatusButton
+																	type="submit"
+																	variant="default"
+																	size="sm"
+																	status={isPending ? 'pending' : 'idle'}
+																	disabled={isPending}
+																>
+																	<Icon name="plus" className="scale-75" />
+																	Add Admin
+																</StatusButton>
+															</Form>
+														)}
 													</td>
 												</tr>
 											)

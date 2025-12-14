@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Img } from 'openimg/react'
-import { SCHOOL_NAME, LOGO_SRC } from '../brand.ts'
+import { SCHOOL_NAME, HEADER_LOGO_SRC } from '../brand.ts'
 import { Card } from '#app/components/ui/card.tsx'
 
 interface AuthShellProps {
@@ -13,7 +13,7 @@ export function AuthShell({ children }: AuthShellProps) {
 			<div className="mx-auto w-full max-w-md">
 				<div className="mb-6 flex flex-col items-center gap-3">
 					<Img
-						src={LOGO_SRC}
+						src={HEADER_LOGO_SRC}
 						alt={SCHOOL_NAME}
 						className="h-12 w-auto object-contain"
 						width={128}

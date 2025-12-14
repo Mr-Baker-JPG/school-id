@@ -1,7 +1,7 @@
 import crypto from 'node:crypto'
 import { type Connection, type Password, type User } from '@prisma/client'
 import bcrypt from 'bcryptjs'
-import { redirect } from 'react-router'
+import { data, redirect } from 'react-router'
 import { Authenticator } from 'remix-auth'
 import { safeRedirect } from 'remix-utils/safe-redirect'
 import { providers, googleProviderInitPromise } from './connections.server.ts'
@@ -85,15 +85,16 @@ export async function requireAdmin(request: Request) {
 	if (!userId) {
 		throw redirect('/')
 	}
-	const isAdmin = await prisma.user.findFirst({
+	const user = await prisma.user.findFirst({
 		where: { id: userId },
 		select: { roles: true },
 	})
-	console.log('isAdmin', isAdmin)
-	if (!isAdmin?.roles.some((role) => role.name == 'admin')) {
-		throw redirect('/admin/employees')
+	if (!user?.roles.some((role) => role.name == 'admin')) {
+		// Redirect non-admin users to their appropriate destination
+		const redirectPath = await getRedirectPathForUser(userId)
+		throw redirect(redirectPath)
 	}
-	return false
+	return userId
 }
 
 export async function requireSuperAdmin(request: Request) {
@@ -103,7 +104,6 @@ export async function requireSuperAdmin(request: Request) {
 		select: { email: true },
 	})
 	if (!user || user.email.toLowerCase() !== 'cbaker@jpgacademy.org') {
-		const { data } = await import('react-router')
 		throw data(
 			{
 				error: 'Unauthorized',
@@ -212,16 +212,22 @@ export async function signup({
 	password: string
 }) {
 	const hashedPassword = await getPasswordHash(password)
+	const emailLower = email.toLowerCase()
+	const isSuperAdmin = emailLower === 'cbaker@jpgacademy.org'
 
 	const session = await prisma.session.create({
 		data: {
 			expirationDate: getSessionExpirationDate(),
 			user: {
 				create: {
-					email: email.toLowerCase(),
+					email: emailLower,
 					username: username.toLowerCase(),
 					name,
-					roles: { connect: { name: 'user' } },
+					roles: {
+						connect: isSuperAdmin
+							? [{ name: 'user' }, { name: 'admin' }]
+							: [{ name: 'user' }],
+					},
 					password: {
 						create: {
 							hash: hashedPassword,
@@ -251,12 +257,19 @@ export async function signupWithConnection({
 	providerName: Connection['providerName']
 	imageUrl?: string
 }) {
+	const emailLower = email.toLowerCase()
+	const isSuperAdmin = emailLower === 'cbaker@jpgacademy.org'
+
 	const user = await prisma.user.create({
 		data: {
-			email: email.toLowerCase(),
+			email: emailLower,
 			username: username.toLowerCase(),
 			name,
-			roles: { connect: { name: 'user' } },
+			roles: {
+				connect: isSuperAdmin
+					? [{ name: 'user' }, { name: 'admin' }]
+					: [{ name: 'user' }],
+			},
 			connections: { create: { providerId, providerName } },
 		},
 		select: { id: true },

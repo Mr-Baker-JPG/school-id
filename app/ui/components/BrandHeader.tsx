@@ -1,6 +1,7 @@
+import { Img } from 'openimg/react'
 import * as React from 'react'
 import { Form, Link } from 'react-router'
-import { Img } from 'openimg/react'
+import { Button } from '#app/components/ui/button.tsx'
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -9,11 +10,10 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '#app/components/ui/dropdown-menu.tsx'
-import { Button } from '#app/components/ui/button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
-import { APP_NAME, LOGO_SRC, headerAccent } from '../brand.ts'
 import { cn } from '#app/utils/misc.tsx'
 import { useOptionalUser } from '#app/utils/user.ts'
+import { APP_NAME, HEADER_LOGO_SRC, headerAccent } from '../brand.ts'
 
 interface BrandHeaderProps {
 	variant?: 'marketing' | 'app' | 'admin'
@@ -34,7 +34,7 @@ export function BrandHeader({
 			<div className="container flex h-16 items-center justify-between px-4">
 				<Link to="/" className="flex items-center gap-3">
 					<Img
-						src={LOGO_SRC}
+						src={HEADER_LOGO_SRC}
 						alt={APP_NAME}
 						className="h-8 w-auto object-contain"
 						width={128}
@@ -90,17 +90,14 @@ export function BrandHeader({
 					{rightSlot}
 
 					{user && (
-						<DropdownMenu modal={true}>
+						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<Button variant="ghost" size="icon">
 									<Icon name="avatar" />
 									<span className="sr-only">User menu</span>
 								</Button>
 							</DropdownMenuTrigger>
-							<DropdownMenuContent
-								align="end"
-								onCloseAutoFocus={(e) => e.preventDefault()}
-							>
+							<DropdownMenuContent align="end">
 								<DropdownMenuLabel>{user.name || 'User'}</DropdownMenuLabel>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem asChild>

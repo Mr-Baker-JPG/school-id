@@ -116,7 +116,7 @@ test('loader requires admin role', async () => {
 			params: { employeeId: employee.id },
 			context: {},
 		} as any),
-	).rejects.toThrow
+	).rejects.toThrow()
 
 	// Cleanup
 	await prisma.employee.delete({ where: { id: employee.id } })
@@ -226,7 +226,7 @@ test('action requires admin role', async () => {
 			params: { employeeId: employee.id },
 			context: {},
 		} as any),
-	).rejects.toThrow
+	).rejects.toThrow()
 
 	// Cleanup
 	await prisma.employee.delete({ where: { id: employee.id } })
@@ -258,7 +258,7 @@ test('action updates expiration date for existing EmployeeID', async () => {
 
 	// Consume the response to avoid unhandled promise rejection
 	expect(result).toBeInstanceOf(Response)
-	expect(result.status).toBe(302) // Redirect
+	expect((result as Response).status).toBe(302) // Redirect
 
 	// Verify expiration date was updated
 	const updatedEmployee = await prisma.employee.findUnique({
@@ -305,7 +305,7 @@ test('action creates EmployeeID record if it does not exist', async () => {
 
 	// Consume the response to avoid unhandled promise rejection
 	expect(result).toBeInstanceOf(Response)
-	expect(result.status).toBe(302) // Redirect
+	expect((result as Response).status).toBe(302) // Redirect
 
 	// Verify EmployeeID record was created
 	const updatedEmployee = await prisma.employee.findUnique({
@@ -350,9 +350,9 @@ test('action validates expiration date format', async () => {
 		context: {},
 	} as any)
 
-	expect(result.status).toBe(200) // Form error, not redirect
-	const responseData = await result.json()
-	expect(responseData.result?.status).toBe('error')
+	expect((result as Response).status).toBe(200) // Form error, not redirect
+	const responseData = await (result as Response).json()
+	expect((responseData as any).result?.status).toBe('error')
 
 	// Cleanup
 	await prisma.employee.delete({ where: { id: employee.id } })
@@ -380,9 +380,9 @@ test('action requires expiration date', async () => {
 		context: {},
 	} as any)
 
-	expect(result.status).toBe(200) // Form error, not redirect
-	const responseData = await result.json()
-	expect(responseData.result?.status).toBe('error')
+	expect((result as Response).status).toBe(200) // Form error, not redirect
+	const responseData = await (result as Response).json()
+	expect((responseData as any).result?.status).toBe('error')
 
 	// Cleanup
 	await prisma.employee.delete({ where: { id: employee.id } })
@@ -441,7 +441,7 @@ test('action accepts past dates (for expired IDs)', async () => {
 
 	// Consume the response to avoid unhandled promise rejection
 	expect(result).toBeInstanceOf(Response)
-	expect(result.status).toBe(302) // Redirect (success)
+	expect((result as Response).status).toBe(302) // Redirect (success)
 
 	// Verify expiration date was set
 	const updatedEmployee = await prisma.employee.findUnique({

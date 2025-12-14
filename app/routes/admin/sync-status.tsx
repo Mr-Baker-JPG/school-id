@@ -1,10 +1,20 @@
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
+import { useState } from 'react'
 import { Form, Link, redirect, useRevalidator } from 'react-router'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
+import { Button } from '#app/components/ui/button.tsx'
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from '#app/components/ui/dialog.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
-import { PageTitle } from '#app/ui/components/PageTitle.tsx'
 import { CardSection } from '#app/ui/components/CardSection.tsx'
+import { PageTitle } from '#app/ui/components/PageTitle.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { syncEmployeesFromFacts } from '#app/utils/employee-sync.server.ts'
 import { useIsPending } from '#app/utils/misc.tsx'
@@ -112,9 +122,11 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 		loaderData
 	const syncPending = useIsPending({ formAction: '/admin/sync-status' })
 	const revalidator = useRevalidator()
+	const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+	const [confirmationChecked, setConfirmationChecked] = useState(false)
 
 	const actionButtons = (
-		<div className="flex gap-2">
+		<div className="flex flex-col gap-2 sm:flex-row">
 			<StatusButton
 				type="button"
 				variant="outline"
@@ -125,17 +137,15 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 				<Icon name="update" />
 				Refresh
 			</StatusButton>
-			<Form method="post">
-				<input type="hidden" name="intent" value="sync" />
-				<StatusButton
-					type="submit"
-					status={syncPending ? 'pending' : 'idle'}
-					disabled={syncPending}
-				>
-					<Icon name="update" />
-					Sync Now
-				</StatusButton>
-			</Form>
+			<StatusButton
+				type="button"
+				status={syncPending ? 'pending' : 'idle'}
+				disabled={syncPending}
+				onClick={() => setConfirmDialogOpen(true)}
+			>
+				<Icon name="update" />
+				Sync Now
+			</StatusButton>
 		</div>
 	)
 
@@ -143,10 +153,114 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 		<div>
 			<PageTitle title="SIS Sync Status" rightSlot={actionButtons} />
 
+			{/* Help text */}
+			<div className="bg-muted/30 border-border mt-4 rounded-md border p-3 text-sm">
+				<p className="text-muted-foreground">
+					<strong>Refresh</strong> reloads the status page without making
+					changes. <strong>Sync Now</strong> pulls the latest employee data from
+					FACTS and may overwrite local changes.
+				</p>
+			</div>
+
+			{/* Confirmation Dialog */}
+			<Dialog
+				open={confirmDialogOpen}
+				onOpenChange={(open) => {
+					setConfirmDialogOpen(open)
+					if (!open) {
+						setConfirmationChecked(false)
+					}
+				}}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Sync from FACTS SIS</DialogTitle>
+						<DialogDescription>
+							This will pull the latest employee data from FACTS and may
+							overwrite local changes.
+						</DialogDescription>
+					</DialogHeader>
+
+					{/* Warning Callout */}
+					<div className="bg-destructive/10 border-destructive/20 text-destructive rounded-md border p-3 text-sm">
+						<div className="flex items-start gap-2">
+							<Icon name="cross-1" className="mt-0.5 size-4 flex-shrink-0" />
+							<div>
+								<p className="font-semibold">
+									Warning: Potential Data Overwrite
+								</p>
+								<p className="mt-1">
+									Local changes to employee records may be overwritten by data
+									from FACTS SIS. This action cannot be undone.
+								</p>
+							</div>
+						</div>
+					</div>
+
+					<div className="bg-muted/50 border-border rounded-md border p-3 text-sm">
+						<p className="text-foreground font-medium">
+							<strong>What will happen:</strong>
+						</p>
+						<ul className="text-muted-foreground mt-2 list-disc space-y-1 pl-5">
+							<li>Employee records will be updated from FACTS</li>
+							<li>New employees may be added</li>
+							<li>Local changes may be overwritten</li>
+							<li>Profile pictures may be refreshed</li>
+						</ul>
+					</div>
+
+					{/* Confirmation Checkbox */}
+					<div className="flex items-start gap-2">
+						<input
+							type="checkbox"
+							id="sync-confirmation"
+							checked={confirmationChecked}
+							onChange={(e) => setConfirmationChecked(e.target.checked)}
+							className="mt-1 h-4 w-4 rounded border-gray-300"
+						/>
+						<label
+							htmlFor="sync-confirmation"
+							className="text-foreground text-sm leading-relaxed"
+						>
+							I understand that local changes may be overwritten by this sync
+							operation.
+						</label>
+					</div>
+
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => {
+								setConfirmDialogOpen(false)
+								setConfirmationChecked(false)
+							}}
+							disabled={syncPending}
+						>
+							Cancel
+						</Button>
+						<Form method="post">
+							<input type="hidden" name="intent" value="sync" />
+							<Button
+								type="submit"
+								disabled={syncPending || !confirmationChecked}
+							>
+								{syncPending ? (
+									<>
+										<Icon name="update" className="mr-2 animate-spin" />
+										Syncing...
+									</>
+								) : (
+									'Sync Now'
+								)}
+							</Button>
+						</Form>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
 			<div className="mt-6">
 				{/* Last Sync Status */}
-				<CardSection title="Last Sync">
-					<h2 className="text-h2 mb-4">Last Sync</h2>
+				<CardSection title="Last Sync" className="border-muted/50 shadow-sm">
 					{lastSync ? (
 						<div className="space-y-2">
 							<div className="flex items-center gap-2">
@@ -199,7 +313,10 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 
 			<div className="mt-6">
 				{/* Statistics */}
-				<CardSection title="Sync Statistics">
+				<CardSection
+					title="Sync Statistics"
+					className="border-muted/50 shadow-sm"
+				>
 					<div className="grid grid-cols-3 gap-4">
 						<div>
 							<div className="text-2xl font-bold">{statistics.total}</div>
@@ -226,7 +343,10 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 			{/* Recent Errors */}
 			{recentErrors.length > 0 && (
 				<div className="mt-6">
-					<CardSection title="Recent Sync Errors">
+					<CardSection
+						title="Recent Sync Errors"
+						className="border-muted/50 shadow-sm"
+					>
 						<div className="space-y-3">
 							{recentErrors.map((error) => (
 								<div
@@ -262,6 +382,7 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 					<CardSection
 						title={`Employees Pending Sync (${employeesWithSyncIssues.length})`}
 						description="Employees that haven't been updated in the last 7 days"
+						className="border-muted/50 shadow-sm"
 					>
 						<div className="space-y-2">
 							{employeesWithSyncIssues.map((employee) => (

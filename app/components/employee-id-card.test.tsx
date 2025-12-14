@@ -179,7 +179,7 @@ describe('Employee ID Card Components', () => {
 			expect(card).toBeTruthy()
 			// Check that the fixed background color is applied
 			const styleAttr = card.getAttribute('style') || ''
-			expect(styleAttr.includes('#e8eaed')).toBe(true)
+			expect(styleAttr).toContain('#e8eaed')
 		})
 
 		it('is responsive and printable', () => {

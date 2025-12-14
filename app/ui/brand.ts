@@ -4,12 +4,14 @@
 
 export const APP_NAME = 'Employee ID System'
 export const SCHOOL_NAME = 'John Paul the Great Academy'
-export const LOGO_SRC = '/img/jpg-logo.svg'
+export const LOGO_SRC = '/img/jpg-logo.png'
+export const HEADER_LOGO_SRC = '/img/jpg-logo.svg'
 
 export const brand = {
 	appName: APP_NAME,
 	schoolName: SCHOOL_NAME,
 	logoSrc: LOGO_SRC,
+	headerLogoSrc: HEADER_LOGO_SRC,
 } as const
 
 /**

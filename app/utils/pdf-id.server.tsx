@@ -298,7 +298,7 @@ function createBulkPrintStyles() {
 
 /**
  * Generates a bulk PDF with multiple employee ID cards arranged per page
- * Prints card fronts and backs on separate pages
+ * Prints card fronts and backs alternating: Page 1 (front), Page 2 (back), Page 3 (front), etc.
  *
  * @param employees - Array of employee data for ID cards
  * @param request - Request object to determine base URL for QR codes
@@ -330,9 +330,8 @@ export async function generateBulkEmployeeIDPDF(
 
 		const styles = createBulkPrintStyles()
 
-		// Split cards into pages (6 per page)
-		const frontPages: JSX.Element[] = []
-		const backPages: JSX.Element[] = []
+		// Split cards into pages (6 per page) and create alternating front/back pages
+		const pages: React.JSX.Element[] = []
 
 		for (
 			let pageIndex = 0;
@@ -402,8 +401,8 @@ export async function generateBulkEmployeeIDPDF(
 				)
 			})
 
-			// Add pages to arrays
-			frontPages.push(
+			// Add front page (odd pages: 1, 3, 5, ...)
+			pages.push(
 				<Page
 					key={`front-page-${pageIndex}`}
 					size={[PAGE_WIDTH, PAGE_HEIGHT]}
@@ -412,7 +411,9 @@ export async function generateBulkEmployeeIDPDF(
 					{frontCardViews}
 				</Page>,
 			)
-			backPages.push(
+
+			// Add back page immediately after front (even pages: 2, 4, 6, ...)
+			pages.push(
 				<Page
 					key={`back-page-${pageIndex}`}
 					size={[PAGE_WIDTH, PAGE_HEIGHT]}
@@ -423,13 +424,8 @@ export async function generateBulkEmployeeIDPDF(
 			)
 		}
 
-		// Create PDF document with all front pages first, then all back pages
-		const doc = (
-			<Document>
-				{frontPages}
-				{backPages}
-			</Document>
-		)
+		// Create PDF document with alternating front/back pages
+		const doc = <Document>{pages}</Document>
 
 		// Generate PDF buffer
 		const pdfInstance = pdf(doc)
