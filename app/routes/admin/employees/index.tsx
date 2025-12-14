@@ -1,4 +1,5 @@
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
+import { useState } from 'react'
 import {
 	redirect,
 	Form,
@@ -9,9 +10,11 @@ import {
 } from 'react-router'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Field } from '#app/components/forms.tsx'
+import { Card } from '#app/components/ui/card.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
-import { Card } from '#app/components/ui/card.tsx'
+import { CardSection } from '#app/ui/components/CardSection.tsx'
+import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
 import { PageTitle } from '#app/ui/components/PageTitle.tsx'
 import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
 import { prisma } from '#app/utils/db.server.ts'
@@ -238,6 +241,9 @@ export default function AdminEmployeesRoute({
 	const submit = useSubmit()
 	const search = searchParams.get('search') ?? loaderData.search
 	const status = searchParams.get('status') ?? loaderData.status
+	const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(
+		new Set(),
+	)
 
 	const isPending = useDelayedIsPending({
 		formMethod: 'GET',
@@ -250,6 +256,37 @@ export default function AdminEmployeesRoute({
 	const handleFormChange = useDebounce(async (form: HTMLFormElement) => {
 		await submit(form)
 	}, 400)
+
+	const handleSelectAll = () => {
+		if (selectedEmployees.size === loaderData.employees.length) {
+			setSelectedEmployees(new Set())
+		} else {
+			setSelectedEmployees(new Set(loaderData.employees.map((e) => e.id)))
+		}
+	}
+
+	const handleSelectEmployee = (employeeId: string) => {
+		const newSelection = new Set(selectedEmployees)
+		if (newSelection.has(employeeId)) {
+			newSelection.delete(employeeId)
+		} else {
+			newSelection.add(employeeId)
+		}
+		setSelectedEmployees(newSelection)
+	}
+
+	const handlePrintSelected = () => {
+		if (selectedEmployees.size === 0) return
+
+		// Build URL with employee IDs as query parameters
+		const params = new URLSearchParams()
+		Array.from(selectedEmployees).forEach((id) => {
+			params.append('employeeIds', id)
+		})
+
+		// Open in new window to trigger download
+		window.open(`/admin/employees/print?${params.toString()}`, '_blank')
+	}
 
 	const syncButton = (
 		<Form method="post">
@@ -267,7 +304,25 @@ export default function AdminEmployeesRoute({
 
 	return (
 		<div>
-			<PageTitle title="Employee Management" rightSlot={syncButton} />
+			<PageTitle
+				title="Employee Management"
+				rightSlot={
+					<div className="flex items-center gap-2">
+						{selectedEmployees.size > 0 ? (
+							<StatusButton
+								type="button"
+								onClick={handlePrintSelected}
+								status="idle"
+								className="ml-2"
+							>
+								<Icon name="file-text" />
+								Print Selected ({selectedEmployees.size})
+							</StatusButton>
+						) : null}
+						{syncButton}
+					</div>
+				}
+			/>
 
 			{(loaderData.expiringCount > 0 || loaderData.expiredCount > 0) && (
 				<Card className="mt-6 border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20">
@@ -298,9 +353,9 @@ export default function AdminEmployeesRoute({
 					className="flex flex-col gap-4"
 					onChange={(e) => handleFormChange(e.currentTarget)}
 				>
-					<div className="flex flex-wrap items-end gap-4">
+					<div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-4">
 						<Field
-							className="min-w-[200px] flex-1"
+							className="min-w-0 flex-1"
 							labelProps={{ children: 'Search' }}
 							inputProps={{
 								type: 'search',
@@ -309,7 +364,7 @@ export default function AdminEmployeesRoute({
 								placeholder: 'Search by name or email',
 							}}
 						/>
-						<div className="flex flex-col gap-1">
+						<div className="flex flex-col gap-1 sm:w-auto">
 							<label htmlFor="status-filter" className="text-body-xs">
 								Status
 							</label>
@@ -328,131 +383,315 @@ export default function AdminEmployeesRoute({
 				</Form>
 			</div>
 
+			{selectedEmployees.size > 0 && (
+				<div className="bg-muted/50 mt-6 flex items-center justify-between rounded-md border p-3">
+					<div className="text-muted-foreground text-sm">
+						{selectedEmployees.size} employee
+						{selectedEmployees.size !== 1 ? 's' : ''} selected
+					</div>
+					<div className="flex gap-2">
+						<button
+							type="button"
+							onClick={handleSelectAll}
+							className="text-foreground text-sm hover:underline"
+						>
+							{selectedEmployees.size === loaderData.employees.length
+								? 'Deselect All'
+								: 'Select All'}
+						</button>
+					</div>
+				</div>
+			)}
+
 			<div className="mt-6">
 				<div className={cn('flex flex-col gap-4', isPending && 'opacity-50')}>
 					{loaderData.employees.length > 0 ? (
-						<div className="overflow-x-auto">
-							<table className="w-full border-collapse">
-								<thead>
-									<tr className="border-b">
-										<th className="p-2 text-left">Name</th>
-										<th className="p-2 text-left">Job Title</th>
-										<th className="p-2 text-left">Email</th>
-										<th className="p-2 text-left">Status</th>
-										<th className="p-2 text-left">Expiration Date</th>
-										<th className="p-2 text-left">Photo</th>
-										<th className="p-2 text-left">Actions</th>
-									</tr>
-								</thead>
-								<tbody>
-									{loaderData.employees.map((employee) => (
-										<tr
-											key={employee.id}
-											className="hover:bg-muted/50 border-b"
-										>
-											<td className="p-2">
-												<Link
-													to={`/admin/employees/${employee.id}`}
-													className="text-foreground hover:underline"
-												>
-													{employee.fullName}
-												</Link>
-											</td>
-											<td className="p-2">{employee.jobTitle}</td>
-											<td className="p-2">{employee.email}</td>
-											<td className="p-2">
-												<StatusBadge
-													variant={
-														employee.status === 'active' ? 'active' : 'inactive'
+						<>
+							{/* Mobile Card View */}
+							<div className="flex flex-col gap-4 md:hidden">
+								{loaderData.employees.map((employee) => (
+									<Card key={employee.id} className="hover:bg-muted/50">
+										<CardSection>
+											<div className="flex flex-col gap-4">
+												<div className="flex items-start gap-2">
+													<input
+														type="checkbox"
+														checked={selectedEmployees.has(employee.id)}
+														onChange={() => handleSelectEmployee(employee.id)}
+														className="mt-1 h-4 w-4 rounded border-gray-300"
+													/>
+													<div className="flex-1">
+														<div>
+															<Link
+																to={`/admin/employees/${employee.id}`}
+																className="text-h4 text-foreground hover:underline"
+															>
+																{employee.fullName}
+															</Link>
+														</div>
+													</div>
+												</div>
+												<KeyValueList
+													items={[
+														{ key: 'Job Title', value: employee.jobTitle },
+														{ key: 'Email', value: employee.email },
+														{
+															key: 'Status',
+															value: (
+																<StatusBadge
+																	variant={
+																		employee.status === 'active'
+																			? 'active'
+																			: 'inactive'
+																	}
+																>
+																	{employee.status}
+																</StatusBadge>
+															),
+														},
+														{
+															key: 'Expiration Date',
+															value: (
+																<div className="flex flex-col gap-1">
+																	<Link
+																		to={`/admin/employees/${employee.id}/expiration`}
+																		className="text-foreground hover:underline"
+																	>
+																		{employee.employeeId?.expirationDate
+																			? new Date(
+																					employee.employeeId.expirationDate,
+																				).toLocaleDateString()
+																			: 'Not set'}
+																	</Link>
+																	{employee.expirationStatus &&
+																		employee.expirationStatus.type !==
+																			'valid' && (
+																			<StatusBadge
+																				variant={
+																					employee.expirationStatus.type ===
+																					'expiring'
+																						? 'expiring'
+																						: 'expired'
+																				}
+																			>
+																				{employee.expirationStatus.type ===
+																				'expiring'
+																					? `Expires in ${employee.expirationStatus.daysUntilExpiration} day${employee.expirationStatus.daysUntilExpiration !== 1 ? 's' : ''}`
+																					: `Expired ${employee.expirationStatus.daysSinceExpiration} day${employee.expirationStatus.daysSinceExpiration !== 1 ? 's' : ''} ago`}
+																			</StatusBadge>
+																		)}
+																</div>
+															),
+														},
+														{
+															key: 'Photo',
+															value: (
+																<Link
+																	to={`/admin/employees/${employee.id}/photo`}
+																	className="text-foreground hover:underline"
+																>
+																	{employee.employeeId?.photoUrl ? (
+																		<span className="text-green-600 dark:text-green-400">
+																			✓ Has photo
+																		</span>
+																	) : (
+																		<span className="text-muted-foreground">
+																			No photo
+																		</span>
+																	)}
+																</Link>
+															),
+														},
+													]}
+												/>
+												<div className="pt-2">
+													<Form method="post" className="inline">
+														<input
+															type="hidden"
+															name="intent"
+															value="recheck-facts-photo"
+														/>
+														<input
+															type="hidden"
+															name="employeeId"
+															value={employee.id}
+														/>
+														<StatusButton
+															type="submit"
+															variant="outline"
+															size="sm"
+															status={
+																navigation.state === 'submitting' &&
+																navigation.formData?.get('employeeId') ===
+																	employee.id
+																	? 'pending'
+																	: 'idle'
+															}
+															disabled={
+																navigation.state === 'submitting' &&
+																navigation.formData?.get('employeeId') ===
+																	employee.id
+															}
+														>
+															<Icon name="update" className="scale-75">
+																Recheck
+															</Icon>
+														</StatusButton>
+													</Form>
+												</div>
+											</div>
+										</CardSection>
+									</Card>
+								))}
+							</div>
+
+							{/* Desktop Table View */}
+							<div className="hidden overflow-x-auto md:block">
+								<table className="w-full border-collapse">
+									<thead>
+										<tr className="border-b">
+											<th className="p-2 text-left">
+												<input
+													type="checkbox"
+													checked={
+														loaderData.employees.length > 0 &&
+														selectedEmployees.size ===
+															loaderData.employees.length
 													}
-												>
-													{employee.status}
-												</StatusBadge>
-											</td>
-											<td className="p-2">
-												<div className="flex flex-col gap-1">
+													onChange={handleSelectAll}
+													className="h-4 w-4 rounded border-gray-300"
+												/>
+											</th>
+											<th className="p-2 text-left">Name</th>
+											<th className="p-2 text-left">Job Title</th>
+											<th className="p-2 text-left">Email</th>
+											<th className="p-2 text-left">Status</th>
+											<th className="p-2 text-left">Expiration Date</th>
+											<th className="p-2 text-left">Photo</th>
+											<th className="p-2 text-left">Actions</th>
+										</tr>
+									</thead>
+									<tbody>
+										{loaderData.employees.map((employee) => (
+											<tr
+												key={employee.id}
+												className="hover:bg-muted/50 border-b"
+											>
+												<td className="p-2">
+													<input
+														type="checkbox"
+														checked={selectedEmployees.has(employee.id)}
+														onChange={() => handleSelectEmployee(employee.id)}
+														className="h-4 w-4 rounded border-gray-300"
+													/>
+												</td>
+												<td className="p-2">
 													<Link
-														to={`/admin/employees/${employee.id}/expiration`}
+														to={`/admin/employees/${employee.id}`}
 														className="text-foreground hover:underline"
 													>
-														{employee.employeeId?.expirationDate
-															? new Date(
-																	employee.employeeId.expirationDate,
-																).toLocaleDateString()
-															: 'Not set'}
+														{employee.fullName}
 													</Link>
-													{employee.expirationStatus &&
-														employee.expirationStatus.type !== 'valid' && (
-															<StatusBadge
-																variant={
-																	employee.expirationStatus.type === 'expiring'
-																		? 'expiring'
-																		: 'expired'
-																}
-															>
-																{employee.expirationStatus.type === 'expiring'
-																	? `Expires in ${employee.expirationStatus.daysUntilExpiration} day${employee.expirationStatus.daysUntilExpiration !== 1 ? 's' : ''}`
-																	: `Expired ${employee.expirationStatus.daysSinceExpiration} day${employee.expirationStatus.daysSinceExpiration !== 1 ? 's' : ''} ago`}
-															</StatusBadge>
-														)}
-												</div>
-											</td>
-											<td className="p-2">
-												<Link
-													to={`/admin/employees/${employee.id}/photo`}
-													className="text-foreground hover:underline"
-												>
-													{employee.employeeId?.photoUrl ? (
-														<span className="text-green-600 dark:text-green-400">
-															✓ Has photo
-														</span>
-													) : (
-														<span className="text-muted-foreground">
-															No photo
-														</span>
-													)}
-												</Link>
-											</td>
-											<td className="p-2">
-												<Form method="post" className="inline">
-													<input
-														type="hidden"
-														name="intent"
-														value="recheck-facts-photo"
-													/>
-													<input
-														type="hidden"
-														name="employeeId"
-														value={employee.id}
-													/>
-													<StatusButton
-														type="submit"
-														variant="outline"
-														size="sm"
-														status={
-															navigation.state === 'submitting' &&
-															navigation.formData?.get('employeeId') ===
-																employee.id
-																? 'pending'
-																: 'idle'
-														}
-														disabled={
-															navigation.state === 'submitting' &&
-															navigation.formData?.get('employeeId') ===
-																employee.id
+												</td>
+												<td className="p-2">{employee.jobTitle}</td>
+												<td className="p-2">{employee.email}</td>
+												<td className="p-2">
+													<StatusBadge
+														variant={
+															employee.status === 'active'
+																? 'active'
+																: 'inactive'
 														}
 													>
-														<Icon name="update" className="scale-75">
-															Recheck
-														</Icon>
-													</StatusButton>
-												</Form>
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
+														{employee.status}
+													</StatusBadge>
+												</td>
+												<td className="p-2">
+													<div className="flex flex-col gap-1">
+														<Link
+															to={`/admin/employees/${employee.id}/expiration`}
+															className="text-foreground hover:underline"
+														>
+															{employee.employeeId?.expirationDate
+																? new Date(
+																		employee.employeeId.expirationDate,
+																	).toLocaleDateString()
+																: 'Not set'}
+														</Link>
+														{employee.expirationStatus &&
+															employee.expirationStatus.type !== 'valid' && (
+																<StatusBadge
+																	variant={
+																		employee.expirationStatus.type ===
+																		'expiring'
+																			? 'expiring'
+																			: 'expired'
+																	}
+																>
+																	{employee.expirationStatus.type === 'expiring'
+																		? `Expires in ${employee.expirationStatus.daysUntilExpiration} day${employee.expirationStatus.daysUntilExpiration !== 1 ? 's' : ''}`
+																		: `Expired ${employee.expirationStatus.daysSinceExpiration} day${employee.expirationStatus.daysSinceExpiration !== 1 ? 's' : ''} ago`}
+																</StatusBadge>
+															)}
+													</div>
+												</td>
+												<td className="p-2">
+													<Link
+														to={`/admin/employees/${employee.id}/photo`}
+														className="text-foreground hover:underline"
+													>
+														{employee.employeeId?.photoUrl ? (
+															<span className="text-green-600 dark:text-green-400">
+																✓ Has photo
+															</span>
+														) : (
+															<span className="text-muted-foreground">
+																No photo
+															</span>
+														)}
+													</Link>
+												</td>
+												<td className="p-2">
+													<Form method="post" className="inline">
+														<input
+															type="hidden"
+															name="intent"
+															value="recheck-facts-photo"
+														/>
+														<input
+															type="hidden"
+															name="employeeId"
+															value={employee.id}
+														/>
+														<StatusButton
+															type="submit"
+															variant="outline"
+															size="sm"
+															status={
+																navigation.state === 'submitting' &&
+																navigation.formData?.get('employeeId') ===
+																	employee.id
+																	? 'pending'
+																	: 'idle'
+															}
+															disabled={
+																navigation.state === 'submitting' &&
+																navigation.formData?.get('employeeId') ===
+																	employee.id
+															}
+														>
+															<Icon name="update" className="scale-75">
+																Recheck
+															</Icon>
+														</StatusButton>
+													</Form>
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						</>
 					) : (
 						<p className="text-muted-foreground">No employees found</p>
 					)}

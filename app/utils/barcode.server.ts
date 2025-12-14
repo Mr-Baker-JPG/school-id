@@ -2,7 +2,7 @@
  * Barcode generation utility for ID cards
  */
 
-import * as JsBarcode from 'jsbarcode'
+import JsBarcode from 'jsbarcode'
 import { createCanvas } from 'canvas'
 
 /**
@@ -30,6 +30,10 @@ export async function generateBarcodeDataURL(
 	// Create a canvas for barcode generation
 	const canvas = createCanvas(200, height + (displayValue ? 20 : 0))
 
+	// Clear canvas and set transparent background
+	const ctx = canvas.getContext('2d')
+	ctx.clearRect(0, 0, canvas.width, canvas.height)
+
 	// Generate the barcode
 	JsBarcode(canvas, value, {
 		format,
@@ -39,11 +43,11 @@ export async function generateBarcodeDataURL(
 		font: 'Arial',
 		fontSize: 12,
 		margin: 10,
+		background: 'transparent',
 	})
 
-	// Convert canvas to buffer, then to base64 data URL
+	// Convert canvas to buffer with transparency support, then to base64 data URL
 	const buffer = canvas.toBuffer('image/png')
 	const base64 = buffer.toString('base64')
 	return `data:image/png;base64,${base64}`
 }
-

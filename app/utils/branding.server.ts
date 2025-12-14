@@ -3,7 +3,7 @@
  * Used for PDF ID generation and verification pages
  */
 
-import { SCHOOL_NAME } from '#app/ui/brand.ts'
+import { SCHOOL_NAME, LOGO_SRC } from '#app/ui/brand.ts'
 
 export interface BrandingConfig {
 	/**
@@ -35,9 +35,8 @@ export function getBrandingConfig(): BrandingConfig {
 			process.env.SCHOOL_BRAND_NAME ||
 			SCHOOL_NAME ||
 			'School',
-		logoUrl: process.env.SCHOOL_LOGO_URL,
+		logoUrl: process.env.SCHOOL_LOGO_URL || LOGO_SRC,
 		primaryColor: process.env.SCHOOL_PRIMARY_COLOR || '#1a1a1a',
 		secondaryColor: process.env.SCHOOL_SECONDARY_COLOR || '#ffffff',
 	}
 }
-

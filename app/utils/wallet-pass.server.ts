@@ -9,11 +9,9 @@
 
 import { PKPass } from 'passkit-generator'
 import { type EmployeePDFData } from '#app/components/employee-id-card.tsx'
+import { getDomainUrl, getFirstAndLastName } from './misc.tsx'
 import { generateEmployeeQRCodeBuffer } from './qr-code.server.ts'
 import { getSignedGetRequestInfo } from './storage.server.ts'
-import { getDomainUrl } from './misc.tsx'
-import { createHash } from 'crypto'
-import { format } from 'date-fns'
 
 /**
  * Fetches an image and returns it as a Buffer
@@ -66,14 +64,24 @@ async function getEmployeePhotoBuffer(
 /**
  * Gets the school logo as a Buffer
  * Returns null if no logo is configured
+ * Handles both absolute URLs and relative paths (converts relative paths to full URLs)
  */
-async function getSchoolLogoBuffer(logoUrl?: string): Promise<Buffer | null> {
+async function getSchoolLogoBuffer(
+	logoUrl: string | undefined,
+	request: Request,
+): Promise<Buffer | null> {
 	if (!logoUrl) {
 		return null
 	}
 
 	try {
-		return await fetchImageAsBuffer(logoUrl)
+		// If logoUrl is a relative path, convert it to a full URL
+		let fullLogoUrl = logoUrl
+		if (logoUrl.startsWith('/')) {
+			const domainUrl = getDomainUrl(request)
+			fullLogoUrl = `${domainUrl}${logoUrl}`
+		}
+		return await fetchImageAsBuffer(fullLogoUrl)
 	} catch (error) {
 		console.warn(
 			`Error fetching school logo: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -154,7 +162,7 @@ export async function generateAppleWalletPass(
 		const photoBuffer = await getEmployeePhotoBuffer(employee.photoUrl)
 
 		// Fetch school logo
-		const logoBuffer = await getSchoolLogoBuffer(branding.logoUrl)
+		const logoBuffer = await getSchoolLogoBuffer(branding.logoUrl, request)
 
 		// Generate QR code
 		const qrCodeBuffer = await generateEmployeeQRCodeBuffer(
@@ -171,9 +179,12 @@ export async function generateAppleWalletPass(
 			.toISOString()
 			.replace(/\.\d{3}Z$/, 'Z')
 
+		// Get first and last name only
+		const displayName = getFirstAndLastName(employee.fullName)
+
 		// Create pass data structure
 		const passData = {
-			description: `Employee ID for ${employee.fullName}`,
+			description: `Employee ID for ${displayName}`,
 			formatVersion: 1,
 			organizationName: branding.schoolName,
 			passTypeIdentifier,
@@ -188,7 +199,7 @@ export async function generateAppleWalletPass(
 					{
 						key: 'name',
 						label: 'Name',
-						value: employee.fullName,
+						value: displayName,
 					},
 				],
 				secondaryFields: [
@@ -290,9 +301,6 @@ export async function generateGooglePayPass(
 		const baseUrl = getDomainUrl(request)
 		const verificationUrl = `${baseUrl}/verify/${employee.id}`
 
-		// Format expiration date
-		const expirationDate = employee.expirationDate.toISOString()
-
 		// Create Google Wallet pass object
 		// This follows Google Wallet's Generic Object format
 		const passObject = {
@@ -311,7 +319,7 @@ export async function generateGooglePayPass(
 				cardTitle: {
 					defaultValue: {
 						language: 'en-US',
-						value: employee.fullName,
+						value: getFirstAndLastName(employee.fullName),
 					},
 				},
 				subheader: {

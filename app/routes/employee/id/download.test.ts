@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { getSessionExpirationDate, sessionKey } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { authSessionStorage } from '#app/utils/session.server.ts'
-import { loader } from './download.tsx'
+import { loader } from '../../resources/employee-pdf.tsx'
 
 // Mock console.warn to avoid test failures when photo fetching fails
 const originalWarn = console.warn
@@ -115,7 +115,7 @@ test('Employee can download their own PDF ID', async () => {
 
 	const request = await createRequestWithSession(
 		user.id,
-		'/employee/id/download',
+		'/resources/employee-pdf',
 	)
 	const response = await loader({ request, params: {}, context: {} })
 
@@ -154,7 +154,7 @@ test('Employee cannot download other employees PDFs', async () => {
 	// User tries to access download (but loader matches by email, so they get their own)
 	const request = await createRequestWithSession(
 		user.id,
-		'/employee/id/download',
+		'/resources/employee-pdf',
 	)
 	const response = await loader({ request, params: {}, context: {} })
 
@@ -179,7 +179,7 @@ test('PDF is generated and streamed correctly', async () => {
 
 	const request = await createRequestWithSession(
 		user.id,
-		'/employee/id/download',
+		'/resources/employee-pdf',
 	)
 	const response = await loader({ request, params: {}, context: {} })
 
@@ -197,7 +197,7 @@ test('Content-Type header is set to application/pdf', async () => {
 
 	const request = await createRequestWithSession(
 		user.id,
-		'/employee/id/download',
+		'/resources/employee-pdf',
 	)
 	const response = await loader({ request, params: {}, context: {} })
 
@@ -209,7 +209,7 @@ test('Download works with valid authentication', async () => {
 
 	const request = await createRequestWithSession(
 		user.id,
-		'/employee/id/download',
+		'/resources/employee-pdf',
 	)
 	const response = await loader({ request, params: {}, context: {} })
 
@@ -241,7 +241,7 @@ test('Returns 404 when employee record not found', async () => {
 
 	const request = await createRequestWithSession(
 		user.id,
-		'/employee/id/download',
+		'/resources/employee-pdf',
 	)
 
 	await expect(loader({ request, params: {}, context: {} })).rejects.toThrow()
@@ -263,7 +263,7 @@ test('Creates EmployeeID record if missing', async () => {
 
 	const request = await createRequestWithSession(
 		user.id,
-		'/employee/id/download',
+		'/resources/employee-pdf',
 	)
 	const response = await loader({ request, params: {}, context: {} })
 

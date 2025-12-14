@@ -1,29 +1,29 @@
 import { invariantResponse } from '@epic-web/invariant'
-import { Img } from 'openimg/react'
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
-import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
-import { Button } from '#app/components/ui/button.tsx'
-import { Icon } from '#app/components/ui/icon.tsx'
+import { Img } from 'openimg/react'
 import {
 	IDCardFrontPreview,
 	IDCardBackPreview,
 } from '#app/components/employee-id-card.tsx'
-import { PageTitle } from '#app/ui/components/PageTitle.tsx'
+import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
+import { Button } from '#app/components/ui/button.tsx'
+import { Icon } from '#app/components/ui/icon.tsx'
 import { CardSection } from '#app/ui/components/CardSection.tsx'
-import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
 import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
-import { prisma } from '#app/utils/db.server.ts'
+import { PageTitle } from '#app/ui/components/PageTitle.tsx'
+import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
 import { requireUserId } from '#app/utils/auth.server.ts'
+import { generateBarcodeDataURL } from '#app/utils/barcode.server.ts'
+import { getBrandingConfig } from '#app/utils/branding.server.ts'
+import { prisma } from '#app/utils/db.server.ts'
 import {
 	getDefaultExpirationDate,
 	fetchAndCacheFactsProfilePicture,
 	getExpirationStatus,
 	getCurrentAcademicYear,
 } from '#app/utils/employee.server.ts'
-import { getBrandingConfig } from '#app/utils/branding.server.ts'
-import { generateEmployeeQRCodeDataURL } from '#app/utils/qr-code.server.ts'
-import { generateBarcodeDataURL } from '#app/utils/barcode.server.ts'
 import { cn, getEmployeePhotoSrc } from '#app/utils/misc.tsx'
+import { generateEmployeeQRCodeDataURL } from '#app/utils/qr-code.server.ts'
 import { type Route } from './+types/id.ts'
 
 export const handle: SEOHandle = {
@@ -180,7 +180,7 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 
 	const downloadButton = (
 		<Button size="lg" asChild>
-			<a href="/employee/id/download">
+			<a href="/resources/employee-pdf">
 				<Icon name="download">Download ID Card (PDF)</Icon>
 			</a>
 		</Button>

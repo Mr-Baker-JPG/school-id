@@ -1,7 +1,7 @@
 import * as React from 'react'
+import { type IconName } from '#app/components/ui/icon.tsx'
 import { BrandHeader } from '../components/BrandHeader.tsx'
 import { SidebarNav } from '../components/SidebarNav.tsx'
-import { IconName } from '#app/components/ui/icon.tsx'
 
 interface AdminShellProps {
 	children: React.ReactNode
@@ -16,6 +16,7 @@ interface NavItem {
 
 const adminNavItems: NavItem[] = [
 	{ to: '/admin/employees', label: 'Employees', icon: 'user' },
+	{ to: '/admin/users', label: 'Users', icon: 'user' },
 	{ to: '/admin/sync-status', label: 'Sync Status', icon: 'cloud-sync' },
 	{ to: '/admin/cache', label: 'Cache', icon: 'settings' },
 ]

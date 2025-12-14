@@ -21,6 +21,45 @@ export function getEmployeePhotoSrc(objectKey?: string | null) {
 		: '/img/user.png'
 }
 
+/**
+ * Extracts first and last name from a full name string
+ * Handles names with middle names, suffixes, and comma-separated formats
+ * @param fullName - The full name string (e.g., "John Michael Smith Jr." or "Smith, John Michael")
+ * @returns First and last name (e.g., "John Smith")
+ */
+export function getFirstAndLastName(fullName: string): string {
+	const trimmed = fullName.trim()
+	if (!trimmed) {
+		return trimmed
+	}
+
+	// Handle comma-separated format: "Last, First Middle" -> "First Last"
+	if (trimmed.includes(',')) {
+		const parts = trimmed.split(',').map((p) => p.trim())
+		if (parts.length >= 2) {
+			// Last name is before comma, first name(s) are after comma
+			const lastName = parts[0]
+			const firstParts = parts[1]?.split(/\s+/).filter(Boolean) ?? []
+			if (firstParts.length > 0) {
+				// Take the first word after the comma as the first name
+				const firstName = firstParts[0]
+				return `${firstName} ${lastName}`
+			}
+		}
+	}
+
+	// Handle space-separated format: "First Middle Last" -> "First Last"
+	const nameParts = trimmed.split(/\s+/).filter(Boolean)
+	if (nameParts.length === 0) {
+		return trimmed
+	}
+	if (nameParts.length === 1) {
+		return nameParts[0] ?? ''
+	}
+	// Return first and last name only (skip middle names)
+	return `${nameParts[0]} ${nameParts[nameParts.length - 1]}`
+}
+
 export function getImgSrc({
 	height,
 	optimizerEndpoint,

@@ -18,6 +18,13 @@ export interface QRCodeOptions {
 	 * Margin in QR code modules. Default: 4
 	 */
 	margin?: number
+	/**
+	 * Color options for QR code. If not specified, uses default (black on transparent)
+	 */
+	color?: {
+		dark?: string // Color of QR code modules (default: '#000000')
+		light?: string // Background color (default: '#FFFFFF', use '#0000' for transparent)
+	}
 }
 
 /**
@@ -53,6 +60,10 @@ export async function generateEmployeeQRCodeDataURL(
 		type: 'image/png',
 		width: options?.size ?? 200,
 		margin: options?.margin ?? 4,
+		color: options?.color ?? {
+			dark: '#000000',
+			light: '#0000', // Transparent background
+		},
 	}
 
 	try {
@@ -97,6 +108,10 @@ export async function generateEmployeeQRCodeBuffer(
 		type: 'png',
 		width: options?.size ?? 200,
 		margin: options?.margin ?? 4,
+		color: options?.color ?? {
+			dark: '#000000',
+			light: '#0000', // Transparent background
+		},
 	}
 
 	try {
@@ -107,4 +122,3 @@ export async function generateEmployeeQRCodeBuffer(
 		)
 	}
 }
-

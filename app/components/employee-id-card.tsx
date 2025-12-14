@@ -6,16 +6,9 @@
  * browser preview.
  */
 
-import {
-	Document,
-	Page,
-	Text,
-	View,
-	Image,
-	StyleSheet,
-} from '@react-pdf/renderer'
-import { format } from 'date-fns'
+import { Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer'
 import { type BrandingConfig } from '#app/utils/branding.server.ts'
+import { getFirstAndLastName } from '#app/utils/misc.tsx'
 
 /**
  * Employee data required for ID card generation
@@ -96,9 +89,9 @@ function formatSchoolName(schoolName: string): string[] {
 /**
  * Creates PDF styles matching the reference design
  */
-export function createIDCardPDFStyles(branding: BrandingConfig) {
+export function createIDCardPDFStyles(_branding: BrandingConfig) {
 	// Reference colors: light blue-grey background, black text, dark red separator
-	const bgColor = '#e8eaed' // Light blue-grey
+	const bgColor = '#d0e0e3' // Light blue-grey
 	const textColor = '#000000' // Black
 	const separatorColor = '#8B0000' // Dark red
 
@@ -229,7 +222,7 @@ export function createIDCardPDFStyles(branding: BrandingConfig) {
 			width: '100%',
 			height: 3,
 			backgroundColor: separatorColor,
-			marginBottom: 6,
+			marginBottom: 8,
 		},
 		// Bottom section: barcode + ID number
 		bottomSection: {
@@ -237,6 +230,7 @@ export function createIDCardPDFStyles(branding: BrandingConfig) {
 			flexDirection: 'row',
 			justifyContent: 'space-between',
 			alignItems: 'flex-end',
+			marginTop: 4,
 		},
 		barcodeContainer: {
 			display: 'flex',
@@ -277,12 +271,12 @@ export function createIDCardPDFStyles(branding: BrandingConfig) {
 			display: 'flex',
 			alignItems: 'center',
 			justifyContent: 'center',
-			width: 120,
-			height: 120,
+			width: 100,
+			height: 100,
 		},
 		qrCode: {
-			width: 120,
-			height: 120,
+			width: 100,
+			height: 100,
 		},
 		verificationText: {
 			fontSize: 8,
@@ -292,6 +286,76 @@ export function createIDCardPDFStyles(branding: BrandingConfig) {
 			fontFamily: 'Times-Roman',
 		},
 	})
+}
+
+/**
+ * PDF version: React PDF component for ID card front content (View only, no Page wrapper)
+ * Used for bulk printing where multiple cards are placed on a single page
+ */
+export function IDCardFrontContentView({
+	employee,
+	photoDataURL,
+	logoDataURL,
+	branding,
+	academicYear,
+	barcodeDataURL,
+}: IDCardFrontPDFProps) {
+	const styles = createIDCardPDFStyles(branding)
+	const schoolNameLines = formatSchoolName(branding.schoolName)
+
+	return (
+		<View style={styles.frontPage}>
+			{/* Top Section: Logo + School Name + Photo */}
+			<View style={styles.topSection}>
+				<View style={styles.logoAndNameContainer}>
+					{logoDataURL ? (
+						<View style={styles.logoContainer}>
+							<Image src={logoDataURL} style={styles.logo} />
+						</View>
+					) : null}
+					<View style={styles.schoolNameContainer}>
+						<Text style={styles.schoolNameLine1}>{schoolNameLines[0]}</Text>
+						<Text style={styles.schoolNameLine2}>{schoolNameLines[1]}</Text>
+					</View>
+				</View>
+				{/* Photo */}
+				<View style={styles.photoContainer}>
+					{photoDataURL ? (
+						<Image src={photoDataURL} style={styles.photo} />
+					) : (
+						<View style={styles.photoPlaceholder}>
+							<Text style={{ fontSize: 6, color: '#999999' }}>No Photo</Text>
+						</View>
+					)}
+				</View>
+			</View>
+
+			{/* Middle Section: Name, Role, Academic Year */}
+			<View style={styles.middleSection}>
+				<Text style={styles.name}>
+					{getFirstAndLastName(employee.fullName).toUpperCase()}
+				</Text>
+				<Text style={styles.role}>{employee.jobTitle.toUpperCase()}</Text>
+				<Text style={styles.academicYear}>{academicYear}</Text>
+			</View>
+
+			{/* Red Separator Line */}
+			<View style={styles.separator} />
+
+			{/* Bottom Section: Barcode + ID Number */}
+			<View style={styles.bottomSection}>
+				{barcodeDataURL && (
+					<View style={styles.barcodeContainer}>
+						<Image src={barcodeDataURL} style={styles.barcode} />
+					</View>
+				)}
+				<View style={styles.idNumberContainer}>
+					<Text style={styles.idNumberLabel}>ID NUMBER:</Text>
+					<Text style={styles.idNumber}>{employee.sisEmployeeId}</Text>
+				</View>
+			</View>
+		</View>
+	)
 }
 
 /**
@@ -306,63 +370,42 @@ export function IDCardFrontPDF({
 	barcodeDataURL,
 }: IDCardFrontPDFProps) {
 	const styles = createIDCardPDFStyles(branding)
-	const schoolNameLines = formatSchoolName(branding.schoolName)
 
 	return (
 		<Page size={[ID_WIDTH, ID_HEIGHT]} style={styles.page}>
-			<View style={styles.frontPage}>
-				{/* Top Section: Logo + School Name + Photo */}
-				<View style={styles.topSection}>
-					<View style={styles.logoAndNameContainer}>
-						{logoDataURL && (
-							<View style={styles.logoContainer}>
-								<Image src={logoDataURL} style={styles.logo} />
-							</View>
-						)}
-						<View style={styles.schoolNameContainer}>
-							<Text style={styles.schoolNameLine1}>{schoolNameLines[0]}</Text>
-							<Text style={styles.schoolNameLine2}>{schoolNameLines[1]}</Text>
-						</View>
-					</View>
-					{/* Photo */}
-					<View style={styles.photoContainer}>
-						{photoDataURL ? (
-							<Image src={photoDataURL} style={styles.photo} />
-						) : (
-							<View style={styles.photoPlaceholder}>
-								<Text style={{ fontSize: 6, color: '#999999' }}>No Photo</Text>
-							</View>
-						)}
-					</View>
-				</View>
-
-				{/* Middle Section: Name, Role, Academic Year */}
-				<View style={styles.middleSection}>
-					<Text style={styles.name}>{employee.fullName.toUpperCase()}</Text>
-					<Text style={styles.role}>{employee.jobTitle.toUpperCase()}</Text>
-					<Text style={styles.academicYear}>{academicYear}</Text>
-				</View>
-
-				{/* Red Separator Line */}
-				<View style={styles.separator} />
-
-				{/* Bottom Section: Barcode + ID Number */}
-				<View style={styles.bottomSection}>
-					{barcodeDataURL && (
-						<View style={styles.barcodeContainer}>
-							<Image src={barcodeDataURL} style={styles.barcode} />
-							<Text style={styles.barcodeNumber}>
-								*{employee.sisEmployeeId}*
-							</Text>
-						</View>
-					)}
-					<View style={styles.idNumberContainer}>
-						<Text style={styles.idNumberLabel}>ID NUMBER:</Text>
-						<Text style={styles.idNumber}>{employee.sisEmployeeId}</Text>
-					</View>
-				</View>
-			</View>
+			<IDCardFrontContentView
+				employee={employee}
+				photoDataURL={photoDataURL}
+				logoDataURL={logoDataURL}
+				branding={branding}
+				academicYear={academicYear}
+				barcodeDataURL={barcodeDataURL}
+			/>
 		</Page>
+	)
+}
+
+/**
+ * PDF version: React PDF component for ID card back content (View only, no Page wrapper)
+ * Used for bulk printing where multiple cards are placed on a single page
+ */
+export function IDCardBackContentView({
+	qrCodeDataURL,
+	branding,
+}: IDCardBackProps) {
+	const styles = createIDCardPDFStyles(branding)
+	return (
+		<View style={styles.backPage}>
+			<View style={styles.qrCodeContainer}>
+				<Image src={qrCodeDataURL} style={styles.qrCode} />
+			</View>
+			<Text style={styles.verificationText}>
+				Scan to verify employee status
+			</Text>
+			<Text style={{ fontSize: 10, fontWeight: 'bold', color: '#000000' }}>
+				{branding.schoolName.toUpperCase()}
+			</Text>
+		</View>
 	)
 }
 
@@ -373,17 +416,10 @@ export function IDCardBackPDF({ qrCodeDataURL, branding }: IDCardBackProps) {
 	const styles = createIDCardPDFStyles(branding)
 	return (
 		<Page size={[ID_WIDTH, ID_HEIGHT]} style={styles.page}>
-			<View style={styles.backPage}>
-				<View style={styles.qrCodeContainer}>
-					<Image src={qrCodeDataURL} style={styles.qrCode} />
-				</View>
-				<Text style={styles.verificationText}>
-					Scan to verify employee status
-				</Text>
-				<Text style={{ fontSize: 10, fontWeight: 'bold', color: '#000000' }}>
-					{branding.schoolName.toUpperCase()}
-				</Text>
-			</View>
+			<IDCardBackContentView
+				qrCodeDataURL={qrCodeDataURL}
+				branding={branding}
+			/>
 		</Page>
 	)
 }
@@ -404,9 +440,8 @@ export function IDCardFrontPreview({
 	// Convert points to pixels (assuming 72 DPI: 1 point = 1 pixel)
 	const widthPx = ID_WIDTH
 	const heightPx = ID_HEIGHT
-	const bgColor = '#e8eaed'
+	const bgColor = '#d0e0e3'
 	const textColor = '#000000'
-	const separatorColor = '#8B0000'
 	const schoolNameLines = formatSchoolName(branding.schoolName)
 
 	return (
@@ -421,12 +456,32 @@ export function IDCardFrontPreview({
 			}}
 		>
 			{/* Top Section: Logo + School Name + Photo */}
-			<div className="mb-2 flex items-start" style={{ gap: '6px' }}>
-				<div className="flex flex-1 items-start" style={{ gap: '6px' }}>
+			<div
+				style={{
+					display: 'flex',
+					flexDirection: 'row',
+					alignItems: 'flex-start',
+					marginBottom: '8px',
+				}}
+			>
+				<div
+					style={{
+						flex: 1,
+						display: 'flex',
+						flexDirection: 'row',
+						alignItems: 'flex-start',
+						gap: '6px',
+					}}
+				>
 					{logoUrl && (
 						<div
-							className="flex items-center justify-center"
-							style={{ width: '35px', height: '35px' }}
+							style={{
+								width: '35px',
+								height: '35px',
+								display: 'flex',
+								alignItems: 'center',
+								justifyContent: 'center',
+							}}
 						>
 							<img
 								src={logoUrl}
@@ -435,11 +490,20 @@ export function IDCardFrontPreview({
 							/>
 						</div>
 					)}
-					<div className="flex flex-col">
+					<div
+						style={{
+							flex: 1,
+							display: 'flex',
+							flexDirection: 'column',
+							justifyContent: 'flex-start',
+						}}
+					>
 						<div
 							style={{
 								fontSize: '8px',
+								fontWeight: 'normal',
 								color: textColor,
+								fontFamily: 'Times, "Times New Roman", serif',
 								lineHeight: 1.2,
 							}}
 						>
@@ -448,7 +512,9 @@ export function IDCardFrontPreview({
 						<div
 							style={{
 								fontSize: '8px',
+								fontWeight: 'normal',
 								color: textColor,
+								fontFamily: 'Times, "Times New Roman", serif',
 								lineHeight: 1.2,
 							}}
 						>
@@ -458,10 +524,14 @@ export function IDCardFrontPreview({
 				</div>
 				{/* Photo */}
 				<div
-					className="flex items-center justify-center overflow-hidden bg-white"
 					style={{
 						width: '70px',
 						height: '85px',
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+						backgroundColor: '#ffffff',
+						overflow: 'hidden',
 					}}
 				>
 					{photoUrl ? (
@@ -476,10 +546,12 @@ export function IDCardFrontPreview({
 						/>
 					) : (
 						<div
-							className="flex items-center justify-center"
 							style={{
 								width: '70px',
 								height: '85px',
+								display: 'flex',
+								alignItems: 'center',
+								justifyContent: 'center',
 								backgroundColor: '#e0e0e0',
 								fontSize: '6px',
 								color: '#999999',
@@ -492,21 +564,33 @@ export function IDCardFrontPreview({
 			</div>
 
 			{/* Middle Section: Name, Role, Academic Year */}
-			<div className="mb-1 flex flex-col" style={{ gap: '2px' }}>
+			<div
+				style={{
+					display: 'flex',
+					flexDirection: 'column',
+					gap: '2px',
+					marginBottom: '4px',
+					marginTop: '-35px',
+					borderBottom: '3px solid #8B0000',
+				}}
+			>
 				<div
 					style={{
 						fontSize: '14px',
 						fontWeight: 'bold',
 						color: textColor,
+						fontFamily: 'Times, "Times New Roman", serif',
 						lineHeight: 1.3,
 					}}
 				>
-					{employee.fullName.toUpperCase()}
+					{getFirstAndLastName(employee.fullName).toUpperCase()}
 				</div>
 				<div
 					style={{
 						fontSize: '9px',
+						fontWeight: 'normal',
 						color: textColor,
+						fontFamily: 'Times, "Times New Roman", serif',
 						lineHeight: 1.2,
 					}}
 				>
@@ -515,7 +599,9 @@ export function IDCardFrontPreview({
 				<div
 					style={{
 						fontSize: '9px',
+						fontWeight: 'normal',
 						color: textColor,
+						fontFamily: 'Times, "Times New Roman", serif',
 						lineHeight: 1.2,
 					}}
 				>
@@ -524,22 +610,34 @@ export function IDCardFrontPreview({
 			</div>
 
 			{/* Red Separator Line */}
-			<div
+			{/* <div
 				style={{
 					width: '100%',
 					height: '3px',
 					backgroundColor: separatorColor,
-					marginBottom: '6px',
+					marginBottom: '8px',
 				}}
-			/>
+			/> */}
 
 			{/* Bottom Section: Barcode + ID Number */}
 			<div
-				className="flex items-end justify-between"
-				style={{ marginTop: 'auto' }}
+				style={{
+					display: 'flex',
+					flexDirection: 'row',
+					justifyContent: 'space-between',
+					alignItems: 'flex-end',
+					marginTop: '0px',
+				}}
 			>
 				{barcodeDataURL && (
-					<div className="flex flex-col items-start" style={{ gap: '2px' }}>
+					<div
+						style={{
+							display: 'flex',
+							flexDirection: 'column',
+							alignItems: 'flex-start',
+							gap: '2px',
+						}}
+					>
 						<img
 							src={barcodeDataURL}
 							alt="Barcode"
@@ -549,21 +647,22 @@ export function IDCardFrontPreview({
 								objectFit: 'contain',
 							}}
 						/>
-						<div
-							style={{
-								fontSize: '7px',
-								color: textColor,
-							}}
-						>
-							*{employee.sisEmployeeId}*
-						</div>
 					</div>
 				)}
-				<div className="flex flex-col items-end" style={{ gap: '2px' }}>
+				<div
+					style={{
+						display: 'flex',
+						flexDirection: 'column',
+						alignItems: 'flex-end',
+						gap: '2px',
+					}}
+				>
 					<div
 						style={{
 							fontSize: '7px',
+							fontWeight: 'normal',
 							color: textColor,
+							fontFamily: 'Times, "Times New Roman", serif',
 						}}
 					>
 						ID NUMBER:
@@ -573,6 +672,7 @@ export function IDCardFrontPreview({
 							fontSize: '12px',
 							fontWeight: 'bold',
 							color: textColor,
+							fontFamily: 'Times, "Times New Roman", serif',
 						}}
 					>
 						{employee.sisEmployeeId}
@@ -595,7 +695,7 @@ export function IDCardBackPreview({
 	// Convert points to pixels (assuming 72 DPI: 1 point = 1 pixel)
 	const widthPx = ID_WIDTH
 	const heightPx = ID_HEIGHT
-	const bgColor = '#e8eaed'
+	const bgColor = '#d0e0e3'
 
 	return (
 		<div
@@ -611,7 +711,7 @@ export function IDCardBackPreview({
 				<img
 					src={qrCodeDataURL}
 					alt="QR Code"
-					style={{ width: '120px', height: '120px' }}
+					style={{ width: '100px', height: '100px' }}
 				/>
 			</div>
 			<div

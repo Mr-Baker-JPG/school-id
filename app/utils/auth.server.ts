@@ -96,6 +96,25 @@ export async function requireAdmin(request: Request) {
 	return false
 }
 
+export async function requireSuperAdmin(request: Request) {
+	const userId = await requireUserId(request)
+	const user = await prisma.user.findUnique({
+		where: { id: userId },
+		select: { email: true },
+	})
+	if (!user || user.email.toLowerCase() !== 'cbaker@jpgacademy.org') {
+		const { data } = await import('react-router')
+		throw data(
+			{
+				error: 'Unauthorized',
+				message: 'Unauthorized: This action requires super admin access',
+			},
+			{ status: 403 },
+		)
+	}
+	return userId
+}
+
 export async function requireAnonymous(request: Request) {
 	const userId = await getUserId(request)
 	if (userId) {
