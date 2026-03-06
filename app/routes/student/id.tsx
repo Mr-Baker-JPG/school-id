@@ -150,11 +150,11 @@ export default function StudentIdRoute({ loaderData }: Route.ComponentProps) {
 		: 'Not set'
 
 	// Prepare student data for ID card component
-	// We use "STUDENT" as the jobTitle since students don't have job titles
+	// Students use "STUDENT" as their personType label
 	const studentCardData = {
 		id: student.id,
 		fullName: student.fullName,
-		jobTitle: 'STUDENT', // Displayed as role on ID card
+		personType: 'STUDENT' as const,
 		email: student.email,
 		status: student.status,
 		sisEmployeeId: student.sisStudentId, // Using sisEmployeeId field name for component compatibility

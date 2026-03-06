@@ -79,6 +79,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		id: employee.id,
 		fullName: employee.fullName,
 		jobTitle: employee.jobTitle,
+		personType: 'FACULTY',
 		email: employee.email,
 		status: employee.status,
 		sisEmployeeId: employee.sisEmployeeId,

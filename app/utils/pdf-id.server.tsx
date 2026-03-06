@@ -132,9 +132,9 @@ export async function generateEmployeeIDPDF(
 ): Promise<Buffer> {
 	try {
 		// Validate required fields
-		if (!employee.id || !employee.fullName || !employee.jobTitle) {
+		if (!employee.id || !employee.fullName || !employee.personType) {
 			throw new Error(
-				'Missing required employee data: id, fullName, and jobTitle are required',
+				'Missing required employee data: id, fullName, and personType are required',
 			)
 		}
 
@@ -316,9 +316,9 @@ export async function generateBulkEmployeeIDPDF(
 
 		// Validate all employees have required fields
 		for (const employee of employees) {
-			if (!employee.id || !employee.fullName || !employee.jobTitle) {
+			if (!employee.id || !employee.fullName || !employee.personType) {
 				throw new Error(
-					`Missing required employee data for ${employee.fullName || employee.id}: id, fullName, and jobTitle are required`,
+					`Missing required employee data for ${employee.fullName || employee.id}: id, fullName, and personType are required`,
 				)
 			}
 		}

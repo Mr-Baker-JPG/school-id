@@ -73,11 +73,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		}
 
 		// Prepare student data for PDF generation
-		// Students use "STUDENT" as jobTitle
 		const studentPDFData = {
 			id: student.id,
 			fullName: student.fullName,
-			jobTitle: 'STUDENT',
+			personType: 'STUDENT' as const,
 			email: student.email,
 			status: student.status,
 			sisEmployeeId: student.sisStudentId,
@@ -86,7 +85,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		}
 
 		// Validate required fields before PDF generation
-		if (!studentPDFData.id || !studentPDFData.fullName) {
+		if (!studentPDFData.id || !studentPDFData.fullName || !studentPDFData.personType) {
 			const error = new Error(
 				'Missing required student data for PDF generation',
 			)

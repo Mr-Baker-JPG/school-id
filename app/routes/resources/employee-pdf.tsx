@@ -85,6 +85,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 			id: employee.id,
 			fullName: employee.fullName,
 			jobTitle: employee.jobTitle,
+			personType: 'FACULTY' as const,
 			email: employee.email,
 			status: employee.status,
 			sisEmployeeId: employee.sisEmployeeId,
@@ -96,7 +97,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		if (
 			!employeePDFData.id ||
 			!employeePDFData.fullName ||
-			!employeePDFData.jobTitle
+			!employeePDFData.personType
 		) {
 			const error = new Error(
 				'Missing required employee data for PDF generation',

@@ -11,12 +11,18 @@ import { type BrandingConfig } from '#app/utils/branding.server.ts'
 import { getFirstAndLastName } from '#app/utils/misc.tsx'
 
 /**
+ * Person type for ID card display
+ */
+export type PersonType = 'FACULTY' | 'STUDENT'
+
+/**
  * Employee data required for ID card generation
  */
 export interface EmployeePDFData {
 	id: string
 	fullName: string
-	jobTitle: string
+	jobTitle?: string // Kept for backward compatibility, but personType takes precedence
+	personType: PersonType
 	email: string
 	status: string
 	sisEmployeeId: string
@@ -335,7 +341,7 @@ export function IDCardFrontContentView({
 				<Text style={styles.name}>
 					{getFirstAndLastName(employee.fullName).toUpperCase()}
 				</Text>
-				<Text style={styles.role}>{employee.jobTitle.toUpperCase()}</Text>
+				<Text style={styles.role}>{employee.personType.toUpperCase()}</Text>
 				<Text style={styles.academicYear}>{academicYear}</Text>
 			</View>
 
@@ -400,7 +406,7 @@ export function IDCardBackContentView({
 				<Image src={qrCodeDataURL} style={styles.qrCode} />
 			</View>
 			<Text style={styles.verificationText}>
-				Scan to verify employee status
+				Scan to verify ID status
 			</Text>
 			<Text style={{ fontSize: 10, fontWeight: 'bold', color: '#000000' }}>
 				{branding.schoolName.toUpperCase()}
@@ -594,7 +600,7 @@ export function IDCardFrontPreview({
 						lineHeight: 1.2,
 					}}
 				>
-					{employee.jobTitle.toUpperCase()}
+					{employee.personType.toUpperCase()}
 				</div>
 				<div
 					style={{
@@ -721,7 +727,7 @@ export function IDCardBackPreview({
 					textAlign: 'center',
 				}}
 			>
-				Scan to verify employee status
+				Scan to verify ID status
 			</div>
 			<div
 				style={{

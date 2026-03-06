@@ -172,6 +172,7 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 		id: employee.id,
 		fullName: employee.fullName,
 		jobTitle: employee.jobTitle,
+		personType: 'FACULTY' as const,
 		email: employee.email,
 		status: employee.status,
 		sisEmployeeId: employee.sisEmployeeId,
