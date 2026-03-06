@@ -166,9 +166,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		)
 	}
 
-	// For Google OAuth: Check if employee exists in SIS (local Employee table)
+	// For Google OAuth: Check if employee or student exists in SIS (local Employee/Student table)
 	// If they do, automatically create User record and log them in
 	if (providerName === GOOGLE_PROVIDER_NAME) {
+		// First check if employee exists
 		const employee = await prisma.employee.findUnique({
 			where: { email: profile.email.toLowerCase() },
 			select: { id: true },
@@ -221,6 +222,67 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 							title: 'Welcome!',
 							description:
 								'Your account has been created and linked to your employee record.',
+							type: 'success',
+						}),
+						destroyRedirectTo,
+					),
+				},
+			)
+		}
+
+		// Check if student exists
+		const student = await prisma.student.findUnique({
+			where: { email: profile.email.toLowerCase() },
+			select: { id: true },
+		})
+
+		if (student) {
+			// Student exists in SIS, create User record automatically
+			const sessionData = await signupWithConnection({
+				email: profile.email,
+				username: (profile.username ?? profile.email.split('@')[0]) as string,
+				name: (profile.name ?? profile.email.split('@')[0]) as string,
+				providerId: String(profile.id),
+				providerName,
+				imageUrl: profile.imageUrl,
+			})
+
+			// Ensure StudentID record exists (create if missing)
+			await prisma.studentID.upsert({
+				where: { studentId: student.id },
+				create: {
+					studentId: student.id,
+					expirationDate: getDefaultExpirationDate(),
+				},
+				update: {},
+			})
+
+			// Get the user ID from the connection we just created
+			const user = await prisma.user.findUnique({
+				where: { email: profile.email.toLowerCase() },
+				select: { id: true },
+			})
+
+			if (!user) {
+				throw new Error('Failed to create user')
+			}
+
+			const session = {
+				id: sessionData.id,
+				userId: user.id,
+				expirationDate: sessionData.expirationDate,
+			}
+
+			const redirectPath = redirectTo ?? (await getRedirectPathForUser(user.id))
+
+			return handleNewSession(
+				{ request, session, redirectTo: redirectPath, remember: true },
+				{
+					headers: combineHeaders(
+						await createToastHeaders({
+							title: 'Welcome!',
+							description:
+								'Your account has been created and linked to your student record.',
 							type: 'success',
 						}),
 						destroyRedirectTo,

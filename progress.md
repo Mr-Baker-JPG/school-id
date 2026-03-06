@@ -794,3 +794,68 @@ Let me just run the commit directly:
 **Status:** Active version still NOT complete. 4 features remaining.
 
 **Next Feature to Implement:** F038 - Google OAuth Integration for Students
+
+---
+
+## 2026-03-06 – F038
+
+**Feature:** Google OAuth Integration for Students
+
+**Implementation:**
+
+- Updated OAuth callback handler (`app/routes/_auth/auth.$provider/callback.ts`) to:
+  - Check for both Employee and Student records when processing Google OAuth
+  - Create User account and StudentID record automatically for students on first login
+  - Set default July 1 expiration date for new StudentID records
+  - Preserve existing StudentID records on subsequent logins
+
+- Updated `getRedirectPathForUser()` function (`app/utils/auth.server.ts`) to:
+  - Check for Student records in addition to Employee records
+  - Redirect students to `/student/id` instead of `/employee/id`
+  - Prioritize: Admin role > Employee > Student > fallback to /
+
+- **Authentication Flow for Students:**
+  1. User authenticates with Google OAuth using @jpgacademy.org email
+  2. Callback handler checks if email matches an Employee record (first priority)
+  3. If not an employee, checks if email matches a Student record
+  4. If student exists in SIS, creates User account and StudentID automatically
+  5. Creates session and redirects to `/student/id`
+  6. If student not in SIS, redirects to onboarding
+
+**Tests:**
+
+- Created comprehensive test suite with 21 tests (11 callback + 10 auth.server tests)
+- ✅ Student can authenticate with Google OAuth using @jpgacademy.org email
+- ✅ First-time student login creates Student record if in SIS
+- ✅ Returning students can log in successfully
+- ✅ Session is created and maintained correctly for students
+- ✅ Students are distinguished from employees in the system
+- ✅ Student is redirected to student ID page, not employee ID page
+- ✅ Student without existing StudentID gets one created automatically
+- ✅ Existing StudentID is preserved on subsequent logins
+- ✅ Student with inactive status can still authenticate
+- ✅ Student not in SIS goes to onboarding
+- ✅ Admin student goes to admin dashboard, not student ID page
+- ✅ All 21 tests pass
+
+**Files Created:**
+
+- `app/routes/_auth/auth.$provider/callback.student.test.ts` - Student OAuth callback tests (11 tests)
+- `app/utils/auth.server.student.test.ts` - getRedirectPathForUser tests for students (10 tests)
+
+**Files Modified:**
+
+- `app/routes/_auth/auth.$provider/callback.ts` - Added student OAuth handling
+- `app/utils/auth.server.ts` - Updated getRedirectPathForUser to handle students
+
+---
+
+## PHASE 5 – Post-Feature Version Check
+
+**Active Version:** 1.1.0 (Student Support)
+**Completed Features:** F029, F030, F031, F032, F033, F034, F035, F036, F037, F038 (10 of 13)
+**Remaining Features:** F039-F041 (3 features)
+
+**Status:** Active version still NOT complete. 3 features remaining.
+
+**Next Feature to Implement:** F039 - Update ID Card Layout for Person Type Display

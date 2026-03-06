@@ -560,8 +560,8 @@
 			"Session is created and maintained correctly",
 			"Students are distinguished from employees in the system"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F039",
