@@ -627,3 +627,65 @@ Let me just run the commit directly:
 **Status:** Active version still NOT complete. 6 features remaining.
 
 **Next Feature to Implement:** F036 - Student ID Route (Own ID View)
+
+---
+
+## 2026-03-06 – F036
+
+**Feature:** Student ID Route (Own ID View)
+
+**Implementation:**
+
+- Created student ID view route at `/student/id`:
+  - `app/routes/student/id.tsx` - Main ID view component
+  - `app/routes/student/id.test.ts` - Comprehensive test suite (5 tests)
+
+- **Key Features:**
+  - Displays student photo (with placeholder if none)
+  - Shows student name, "STUDENT" label, and email
+  - Expiration date display with status badge (valid/expiring/expired)
+  - QR code for verification page
+  - Barcode for ID card
+  - Download PDF button (links to admin student PDF endpoint)
+  - Add to Wallet button
+  - Mobile-responsive design with sticky action buttons
+  - Auto-creates StudentID record if missing with default July 1 expiration
+
+- **Loader Logic:**
+  1. Authenticates user via session
+  2. Finds student by matching user email
+  3. Creates StudentID record if missing (with default expiration)
+  4. Generates QR code for verification
+  5. Generates barcode for ID card
+  6. Calculates expiration status
+
+- **ID Card Display:**
+  - Uses `IDCardFrontPreview` and `IDCardBackPreview` components
+  - Passes `jobTitle: "STUDENT"` for student cards
+  - Uses `sisStudentId` as the barcode ID
+
+**Tests:**
+
+- ✅ Student can view their own ID page
+- ✅ Student cannot view other students' IDs (loader matches by email)
+- ✅ Page displays student name, "STUDENT" label, photo, and expiration date
+- ✅ Download button is visible and functional (loader returns student data)
+- ✅ Unauthenticated users are redirected to login
+- ✅ All 5 unit tests pass
+
+**Files Modified:**
+
+- `app/routes/student/id.tsx` - Rewrote student ID view with proper component integration
+- `app/routes/student/id.test.ts` - Added comprehensive tests
+
+---
+
+## PHASE 5 – Post-Feature Version Check
+
+**Active Version:** 1.1.0 (Student Support)
+**Completed Features:** F029, F030, F031, F032, F033, F034, F035, F036 (8 of 13)
+**Remaining Features:** F037-F041 (5 features)
+
+**Status:** Active version still NOT complete. 5 features remaining.
+
+**Next Feature to Implement:** F037 - Student PDF Download Endpoint

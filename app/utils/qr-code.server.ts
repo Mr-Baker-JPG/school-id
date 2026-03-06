@@ -123,3 +123,48 @@ export async function generateEmployeeQRCodeBuffer(
 	}
 }
 
+
+/**
+ * Generates a QR code as a data URL for a student ID card
+ * @param studentId - The student's unique identifier
+ * @param request - The request object for generating the base URL
+ * @param options - Optional QR code generation options
+ * @returns A data URL string that can be used as an image src
+ */
+export async function generateStudentQRCodeDataURL(
+	studentId: string,
+	request: Request,
+	options?: QRCodeOptions,
+): Promise<string> {
+	if (
+		!studentId ||
+		typeof studentId !== 'string' ||
+		studentId.trim().length === 0
+	) {
+		throw new Error(
+			'Invalid student ID: studentId must be a non-empty string',
+		)
+	}
+
+	const baseUrl = getDomainUrl(request)
+	const verificationUrl = `${baseUrl}/verify/${studentId}`
+
+	const qrOptions: QRCode.QRCodeToDataURLOptions = {
+		errorCorrectionLevel: options?.errorCorrectionLevel ?? 'M',
+		type: 'image/png',
+		width: options?.size ?? 200,
+		margin: options?.margin ?? 4,
+		color: options?.color ?? {
+			dark: '#000000',
+			light: '#0000', // Transparent background
+		},
+	}
+
+	try {
+		return await QRCode.toDataURL(verificationUrl, qrOptions)
+	} catch (error) {
+		throw new Error(
+			`Failed to generate QR code for student ID ${studentId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+		)
+	}
+}
