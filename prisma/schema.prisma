@@ -237,6 +237,7 @@ model Student {
   fullName      String
   email         String @unique
   status        String // 'active' or 'inactive'
+  isNameEdited  Boolean @default(false) // Tracks if admin edited the name
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

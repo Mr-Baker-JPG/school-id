@@ -455,8 +455,8 @@
 			"Inactive students have status updated correctly",
 			"Job handles failures without crashing"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F032",
