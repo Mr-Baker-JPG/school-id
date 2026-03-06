@@ -6,11 +6,6 @@ import { getNextJuly1ExpirationDate } from '#app/utils/student.server.ts'
 import { authSessionStorage } from '#app/utils/session.server.ts'
 import { loader, action } from './expiration.tsx'
 
-import { type } StaticHandlerContext } from 'react-router'
-
-// Note: The actual route doesn't use StaticHandlerContext directly,
-// but we need to access the route's loader and action functions
-
 async function createAdminUser() {
 	const adminRole = await prisma.role.findUnique({
 		where: { name: 'admin' },
@@ -92,57 +87,43 @@ async function createRequestWithSession(userId: string, path: string) {
 	})
 }
 
-test('Default expiration date is set to July 1 of current school year', async () => {
+test('loader requires admin role', async () => {
 	const student = await createStudent()
+	const userRole = await prisma.role.findUnique({ where: { name: 'user' } })
+	if (!userRole) throw new Error('User role not found')
 
-	// Verify no StudentID exists yet
-	const beforeStudentId = await prisma.studentID.findUnique({
-		where: { studentId: student.id },
+	const nonAdminUser = await prisma.user.create({
+		data: {
+			email: faker.internet.email(),
+			username: faker.internet.username(),
+			name: faker.person.fullName(),
+			roles: { connect: { id: userRole.id } },
+		},
+		select: { id: true },
 	})
-	expect(beforeStudentId).toBeNull()
-
-	const adminUser = await createAdminUser()
-
-	const formData = new FormData()
-	formData.append('expirationDate', getNextJuly1ExpirationDate().toISOString().split('T')[0])
 
 	const request = await createRequestWithSession(
-		adminUser.id,
+		nonAdminUser.id,
 		`/admin/students/${student.id}/expiration`,
 	)
 
-	const result = await action({
-		request: new Request(request.url, {
-			method: 'POST',
-			body: formData,
-		}),
-		params: { studentId: student.id },
-		context: {},
-	} as any)
-
-	expect((result as Response).status).toBe(302) // Redirect (success)
-
-	// Verify StudentID was created with default expiration
-	const afterStudentId = await prisma.studentID.findUnique({
-		where: { studentId: student.id },
-		select: { expirationDate: true },
-	})
-	expect(afterStudentId).toBeDefined()
-	const expectedExpiration = getNextJuly1ExpirationDate()
-	const actualExpiration = new Date(afterStudentId!.expirationDate)
-	expect(actualExpiration.getFullYear()).toBe(expectedExpiration.getFullYear())
-	expect(actualExpiration.getMonth()).toBe(expectedExpiration.getMonth()) // July = 6
-	expect(actualExpiration.getDate()).toBe(expectedExpiration.getDate()) // 1st
+	await expect(
+		loader({
+			request,
+			params: { studentId: student.id },
+			context: {},
+		} as any),
+	).rejects.toThrow()
 
 	// Cleanup
 	await prisma.student.delete({ where: { id: student.id } })
-	await prisma.user.delete({ where: { id: adminUser.id } })
+	await prisma.user.delete({ where: { id: nonAdminUser.id } })
 })
 
-test('Admin can view expiration date for any student', async () => {
+test('loader returns student data with expiration date', async () => {
+	const adminUser = await createAdminUser()
 	const expirationDate = new Date('2025-12-31')
 	const student = await createStudent({ expirationDate })
-	const adminUser = await createAdminUser()
 
 	const request = await createRequestWithSession(
 		adminUser.id,
@@ -154,118 +135,66 @@ test('Admin can view expiration date for any student', async () => {
 		params: { studentId: student.id },
 		context: {},
 	} as any)
-	expect(result.student).toBeDefined()
+
 	expect(result.student.id).toBe(student.id)
-	expect(result.student.studentId?.expirationDate).toBeTruthy()
-	const loadedExpiration = new Date(result.student.studentId!.expirationDate)
-	expect(loadedExpiration.getFullYear()).toBe(2025)
+	expect(result.student.fullName).toBe(student.fullName)
+	expect(result.student.email).toBe(student.email)
+	expect(result.student.studentId?.expirationDate).toBeDefined()
+
 	// Cleanup
 	await prisma.student.delete({ where: { id: student.id } })
 	await prisma.user.delete({ where: { id: adminUser.id } })
 })
-test('Admin can update expiration date', async () => {
-	const student = await createStudent({ expirationDate: new Date('2024-12-31') })
+
+test('loader returns student without StudentID record', async () => {
 	const adminUser = await createAdminUser()
-
-	const newExpirationDate = '2026-12-31'
-	const formData = new FormData()
-	formData.append('expirationDate', newExpirationDate)
-
-	const request = await createRequestWithSession(
-		adminUser.id,
-		`/admin/students/${student.id}/expiration`,
-	)
-
-	const result = await action({
-		request: new Request(request.url, {
-			method: 'POST',
-			body: formData,
-		}),
-		params: { studentId: student.id },
-		context: {},
-	} as any)
-	expect((result as Response).status).toBe(302) // Redirect (success)
-	// Verify expiration date was updated
-	const updatedStudent = await prisma.student.findUnique({
-		where: { id: student.id },
-		select: {
-			studentId: {
-				select: {
-					expirationDate: true,
-				},
-			},
-		},
-	})
-	expect(updatedStudent?.studentId?.expirationDate).toBeDefined()
-	const updatedDate = new Date(updatedStudent!.studentId!.expirationDate)
-	expect(updatedDate.getFullYear()).toBe(2026)
-	// Cleanup
-	await prisma.student.delete({ where: { id: student.id } })
-	await prisma.user.delete({ where: { id: adminUser.id } })
-})
-test('Expiration date is stored correctly in database', async () => {
 	const student = await createStudent()
-	const adminUser = await createAdminUser()
-
-	const testDate = '2025-07-01'
-	const formData = new FormData()
-	formData.append('expirationDate', testDate)
 
 	const request = await createRequestWithSession(
 		adminUser.id,
 		`/admin/students/${student.id}/expiration`,
 	)
-	await action({
-		request: new Request(request.url, {
-			method: 'POST',
-			body: formData,
-		}),
+
+	const result = await loader({
+		request,
 		params: { studentId: student.id },
 		context: {},
 	} as any)
-	// Verify exact date is stored
-	const studentIdRecord = await prisma.studentID.findUnique({
-		where: { studentId: student.id },
-		select: { expirationDate: true },
-	})
-	expect(studentIdRecord).toBeDefined()
-	const storedDate = new Date(studentIdRecord!.expirationDate)
-	expect(storedDate.getFullYear()).toBe(2025)
-	expect(storedDate.getMonth()).toBe(6) // July = 6
-	expect(storedDate.getDate()).toBe(1) // 1st
+
+	expect(result.student.id).toBe(student.id)
+	expect(result.student.studentId).toBeNull()
+
 	// Cleanup
 	await prisma.student.delete({ where: { id: student.id } })
 	await prisma.user.delete({ where: { id: adminUser.id } })
 })
-test('Date validation prevents invalid dates', async () => {
+
+test('loader returns 404 for non-existent student', async () => {
+	const adminUser = await createAdminUser()
+	const fakeStudentId = faker.string.uuid()
+
+	const request = await createRequestWithSession(
+		adminUser.id,
+		`/admin/students/${fakeStudentId}/expiration`,
+	)
+
+	await expect(
+		loader({
+			request,
+			params: { studentId: fakeStudentId },
+			context: {},
+		} as any),
+	).rejects.toThrow()
+
+	// Cleanup
+	await prisma.user.delete({ where: { id: adminUser.id } })
+})
+
+test('action requires admin role', async () => {
 	const student = await createStudent()
-	const adminUser = await createAdminUser()
-
-	// Empty date should be rejected
-	const formData = new FormData()
-	formData.append('expirationDate', '')
-
-	const request = await createRequestWithSession(
-		adminUser.id,
-		`/admin/students/${student.id}/expiration`,
-	)
-
-	const result = await action({
-		request: new Request(request.url, {
-			method: 'POST',
-			body: formData,
-		}),
-		params: { studentId: student.id },
-		context: {},
-	} as any)
-	expect((result as Response).status).toBe(200) // Form error
-	// Cleanup
-	await prisma.student.delete({ where: { id: student.id } })
-	await prisma.user.delete({ where: { id: adminUser.id } })
-})
-test('Non-admin users cannot access this route', async () => {
 	const userRole = await prisma.role.findUnique({ where: { name: 'user' } })
 	if (!userRole) throw new Error('User role not found')
+
 	const nonAdminUser = await prisma.user.create({
 		data: {
 			email: faker.internet.email(),
@@ -275,7 +204,6 @@ test('Non-admin users cannot access this route', async () => {
 		},
 		select: { id: true },
 	})
-	const student = await createStudent()
 
 	const formData = new FormData()
 	formData.append('expirationDate', '2025-12-31')
@@ -290,28 +218,26 @@ test('Non-admin users cannot access this route', async () => {
 			request: new Request(request.url, {
 				method: 'POST',
 				body: formData,
+				headers: request.headers,
 			}),
 			params: { studentId: student.id },
 			context: {},
 		} as any),
 	).rejects.toThrow()
+
 	// Cleanup
 	await prisma.student.delete({ where: { id: student.id } })
 	await prisma.user.delete({ where: { id: nonAdminUser.id } })
 })
-test('Action creates StudentID if missing', async () => {
-	const student = await createStudent()
 
-	// Verify no StudentID exists yet
-	const beforeStudentId = await prisma.studentID.findUnique({
-		where: { studentId: student.id },
-	})
-	expect(beforeStudentId).toBeNull()
-
+test('action updates expiration date for existing StudentID', async () => {
 	const adminUser = await createAdminUser()
+	const oldExpirationDate = new Date('2024-12-31')
+	const student = await createStudent({ expirationDate: oldExpirationDate })
 
+	const newExpirationDate = '2026-12-31'
 	const formData = new FormData()
-	formData.append('expirationDate', '2025-12-31')
+	formData.append('expirationDate', newExpirationDate)
 
 	const request = await createRequestWithSession(
 		adminUser.id,
@@ -322,16 +248,272 @@ test('Action creates StudentID if missing', async () => {
 		request: new Request(request.url, {
 			method: 'POST',
 			body: formData,
+			headers: request.headers,
 		}),
 		params: { studentId: student.id },
 		context: {},
 	} as any)
-	expect((result as Response).status).toBe(302) // Redirect (success)
-	// Verify StudentID was created
-	const afterStudentId = await prisma.studentID.findUnique({
+
+	// Should redirect
+	expect(result).toBeInstanceOf(Response)
+	expect(result.status).toBe(302)
+
+	// Verify expiration date was updated
+	const updatedStudent = await prisma.student.findUnique({
+		where: { id: student.id },
+		select: {
+			studentId: {
+				select: {
+					expirationDate: true,
+				},
+			},
+		},
+	})
+
+	expect(updatedStudent?.studentId?.expirationDate).toBeDefined()
+	const updatedDate = new Date(updatedStudent!.studentId!.expirationDate)
+	expect(updatedDate.toISOString().split('T')[0]).toBe(newExpirationDate)
+
+	// Cleanup
+	await prisma.student.delete({ where: { id: student.id } })
+	await prisma.user.delete({ where: { id: adminUser.id } })
+})
+
+test('action creates StudentID record if it does not exist', async () => {
+	const adminUser = await createAdminUser()
+	const student = await createStudent() // No StudentID record
+
+	const newExpirationDate = '2026-12-31'
+	const formData = new FormData()
+	formData.append('expirationDate', newExpirationDate)
+
+	const request = await createRequestWithSession(
+		adminUser.id,
+		`/admin/students/${student.id}/expiration`,
+	)
+
+	const result = await action({
+		request: new Request(request.url, {
+			method: 'POST',
+			body: formData,
+			headers: request.headers,
+		}),
+		params: { studentId: student.id },
+		context: {},
+	} as any)
+
+	// Should redirect
+	expect(result).toBeInstanceOf(Response)
+	expect(result.status).toBe(302)
+
+	// Verify StudentID record was created
+	const updatedStudent = await prisma.student.findUnique({
+		where: { id: student.id },
+		select: {
+			studentId: {
+				select: {
+					expirationDate: true,
+				},
+			},
+		},
+	})
+
+	expect(updatedStudent?.studentId).toBeDefined()
+	expect(updatedStudent?.studentId?.expirationDate).toBeDefined()
+	const updatedDate = new Date(updatedStudent!.studentId!.expirationDate)
+	expect(updatedDate.toISOString().split('T')[0]).toBe(newExpirationDate)
+
+	// Cleanup
+	await prisma.student.delete({ where: { id: student.id } })
+	await prisma.user.delete({ where: { id: adminUser.id } })
+})
+
+test('action validates expiration date format', async () => {
+	const adminUser = await createAdminUser()
+	const student = await createStudent()
+
+	const formData = new FormData()
+	formData.append('expirationDate', 'invalid-date')
+
+	const request = await createRequestWithSession(
+		adminUser.id,
+		`/admin/students/${student.id}/expiration`,
+	)
+
+	const result = await action({
+		request: new Request(request.url, {
+			method: 'POST',
+			body: formData,
+			headers: request.headers,
+		}),
+		params: { studentId: student.id },
+		context: {},
+	} as any)
+
+	// Should return form error (not redirect)
+	// Note: data() returns DataWithResponseInit with init.status property
+	const resultAny = result as any
+	expect(resultAny.init?.status).toBe(400)
+	expect(resultAny.data?.result?.status).toBe('error')
+
+	// Cleanup
+	await prisma.student.delete({ where: { id: student.id } })
+	await prisma.user.delete({ where: { id: adminUser.id } })
+})
+
+test('action requires expiration date', async () => {
+	const adminUser = await createAdminUser()
+	const student = await createStudent()
+
+	const formData = new FormData()
+	// No expirationDate field
+
+	const request = await createRequestWithSession(
+		adminUser.id,
+		`/admin/students/${student.id}/expiration`,
+	)
+
+	const result = await action({
+		request: new Request(request.url, {
+			method: 'POST',
+			body: formData,
+			headers: request.headers,
+		}),
+		params: { studentId: student.id },
+		context: {},
+	} as any)
+
+	// Should return form error (not redirect)
+	// Note: data() returns DataWithResponseInit with init.status property
+	const resultAny = result as any
+	expect(resultAny.init?.status).toBe(400)
+	expect(resultAny.data?.result?.status).toBe('error')
+
+	// Cleanup
+	await prisma.student.delete({ where: { id: student.id } })
+	await prisma.user.delete({ where: { id: adminUser.id } })
+})
+
+test('action returns 404 for non-existent student', async () => {
+	const adminUser = await createAdminUser()
+	const fakeStudentId = faker.string.uuid()
+
+	const formData = new FormData()
+	formData.append('expirationDate', '2026-12-31')
+
+	const request = await createRequestWithSession(
+		adminUser.id,
+		`/admin/students/${fakeStudentId}/expiration`,
+	)
+
+	await expect(
+		action({
+			request: new Request(request.url, {
+				method: 'POST',
+				body: formData,
+				headers: request.headers,
+			}),
+			params: { studentId: fakeStudentId },
+			context: {},
+		} as any),
+	).rejects.toThrow()
+
+	// Cleanup
+	await prisma.user.delete({ where: { id: adminUser.id } })
+})
+
+test('action accepts past dates (for expired IDs)', async () => {
+	const adminUser = await createAdminUser()
+	const student = await createStudent()
+
+	// Set expiration date to a past date
+	const pastDate = '2020-01-01'
+	const formData = new FormData()
+	formData.append('expirationDate', pastDate)
+
+	const request = await createRequestWithSession(
+		adminUser.id,
+		`/admin/students/${student.id}/expiration`,
+	)
+
+	const result = await action({
+		request: new Request(request.url, {
+			method: 'POST',
+			body: formData,
+			headers: request.headers,
+		}),
+		params: { studentId: student.id },
+		context: {},
+	} as any)
+
+	// Should redirect (success)
+	expect(result).toBeInstanceOf(Response)
+	expect(result.status).toBe(302)
+
+	// Verify expiration date was set
+	const updatedStudent = await prisma.student.findUnique({
+		where: { id: student.id },
+		select: {
+			studentId: {
+				select: {
+					expirationDate: true,
+				},
+			},
+		},
+	})
+
+	expect(updatedStudent?.studentId?.expirationDate).toBeDefined()
+	const updatedDate = new Date(updatedStudent!.studentId!.expirationDate)
+	expect(updatedDate.toISOString().split('T')[0]).toBe(pastDate)
+
+	// Cleanup
+	await prisma.student.delete({ where: { id: student.id } })
+	await prisma.user.delete({ where: { id: adminUser.id } })
+})
+
+test('default expiration date is set to July 1 of current school year', async () => {
+	const adminUser = await createAdminUser()
+	const student = await createStudent()
+
+	// Verify no StudentID exists yet
+	const beforeStudentId = await prisma.studentID.findUnique({
 		where: { studentId: student.id },
 	})
+	expect(beforeStudentId).toBeNull()
+
+	const formData = new FormData()
+	formData.append('expirationDate', getNextJuly1ExpirationDate().toISOString().split('T')[0])
+
+	const request = await createRequestWithSession(
+		adminUser.id,
+		`/admin/students/${student.id}/expiration`,
+	)
+
+	const result = await action({
+		request: new Request(request.url, {
+			method: 'POST',
+			body: formData,
+			headers: request.headers,
+		}),
+		params: { studentId: student.id },
+		context: {},
+	} as any)
+
+	// Should redirect (success)
+	expect(result).toBeInstanceOf(Response)
+	expect(result.status).toBe(302)
+
+	// Verify StudentID was created with default expiration
+	const afterStudentId = await prisma.studentID.findUnique({
+		where: { studentId: student.id },
+		select: { expirationDate: true },
+	})
 	expect(afterStudentId).toBeDefined()
+	const expectedExpiration = getNextJuly1ExpirationDate()
+	const actualExpiration = new Date(afterStudentId!.expirationDate)
+	// Compare ISO date strings to avoid timezone issues
+	expect(actualExpiration.toISOString().split('T')[0]).toBe(expectedExpiration.toISOString().split('T')[0])
+
 	// Cleanup
 	await prisma.student.delete({ where: { id: student.id } })
 	await prisma.user.delete({ where: { id: adminUser.id } })

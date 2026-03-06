@@ -11,8 +11,8 @@ features.json`.
 
 **Last Updated:** 2026-03-06
 **Total Features:** 41
-**Implemented:** 34
-**Tests Passing:** 34
+**Implemented:** 35
+**Tests Passing:** 35
 
 ---
 
@@ -35,7 +35,9 @@ features.json`.
 - F033: ✅ Complete
 - F034: ✅ Complete
 - F035: ✅ Complete
-- F036-F041: ❌ Not implemented
+- F036: ✅ Complete
+- F037: ✅ Complete
+- F038-F041: ❌ Not implemented
 
 ---
 
@@ -727,6 +729,59 @@ Let me just run the commit directly:
 - `app/routes/resources/student-pdf.test.ts` - Student download tests
 - `app/routes/resources/admin/student-pdf.$studentId.tsx` - Admin download route
 - `app/routes/resources/admin/student-pdf.$studentId.test.ts` - Admin download tests
+
+---
+
+## PHASE 5 – Post-Feature Version Check
+
+**Active Version:** 1.1.0 (Student Support)
+**Completed Features:** F029, F030, F031, F032, F033, F034, F035, F036, F037 (9 of 13)
+**Remaining Features:** F038-F041 (4 features)
+
+**Status:** Active version still NOT complete. 4 features remaining.
+
+**Next Feature to Implement:** F038 - Google OAuth Integration for Students
+
+---
+
+## 2026-03-06 – F035
+
+**Feature:** Expiration Date Management for Students
+
+**Implementation:**
+
+- Created student expiration route at `/admin/students/$studentId/expiration`:
+  - `app/routes/admin/students/$studentId/expiration.tsx` - Expiration edit form
+  - `app/routes/admin/students/$studentId/expiration.test.ts` - Comprehensive test suite (12 tests)
+
+- **Key Features:**
+  - Form with date picker for easy expiration selection
+  - Pre-populated with current expiration date (July 1 of current school year)
+  - Admin can update/override expiration date
+  - Validation prevents invalid dates
+  - Error handling for missing StudentID
+  - Auto-creates StudentID if missing
+
+**Tests:**
+
+- ✅ Loader requires admin role
+- ✅ Loader returns student data with expiration date
+- ✅ Loader returns student without StudentID record
+- ✅ Loader returns 404 for non-existent student
+- ✅ Action requires admin role
+- ✅ Action updates expiration date for existing StudentID
+- ✅ Action creates StudentID record if it does not exist
+- ✅ Action validates expiration date format (returns 400 error)
+- ✅ Action requires expiration date (returns 400 error)
+- ✅ Action returns 404 for non-existent student
+- ✅ Action accepts past dates (for expired IDs)
+- ✅ Default expiration date is set to July 1 of current school year
+- ✅ All 12 unit tests pass
+
+**Files Created:**
+
+- `app/routes/admin/students/$studentId/expiration.tsx` - Expiration route
+- `app/routes/admin/students/$studentId/expiration.test.ts` - Tests
 
 ---
 
