@@ -227,7 +227,7 @@ export const handlers: Array<HttpHandler> = [
 
 			// Validate authentication headers
 			const subscriptionKey = request.headers.get('Ocp-Apim-Subscription-Key')
-			const apiKey = request.headers.get('Ocp-Apim-Api-Key')
+			const apiKey = request.headers.get('Facts-Api-Key')
 
 			if (!subscriptionKey && !apiKey) {
 				return json(

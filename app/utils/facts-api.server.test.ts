@@ -542,7 +542,8 @@ describe('FACTS SIS Employee Sync Service', () => {
 	describe('Fetch Profile Picture', () => {
 		test('Service function fetches profile picture from FACTS API using correct personId', async () => {
 			const personId = 123
-			const mockImageData = Buffer.from('fake-image-data')
+			// Create a longer base64 string that passes the minimum length validation (100+ chars)
+			const mockImageData = Buffer.from('fake-image-data-that-is-long-enough-to-pass-the-minimum-length-validation-check')
 			const base64String = mockImageData.toString('base64')
 
 			server.use(
@@ -563,7 +564,7 @@ describe('FACTS SIS Employee Sync Service', () => {
 
 			expect(result).not.toBeNull()
 			expect(result).toBeInstanceOf(Buffer)
-			expect(result?.toString()).toBe('fake-image-data')
+			expect(result?.toString()).toBe('fake-image-data-that-is-long-enough-to-pass-the-minimum-length-validation-check')
 		})
 
 		test('Service function handles FACTS API errors (404) gracefully and returns null', async () => {

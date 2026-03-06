@@ -11,8 +11,8 @@ features.json`.
 
 **Last Updated:** 2026-03-06
 **Total Features:** 41
-**Implemented:** 29
-**Tests Passing:** 29
+**Implemented:** 30
+**Tests Passing:** 30
 
 ---
 
@@ -29,7 +29,9 @@ features.json`.
 **Features:** F029-F041 (13 features)
 **Completion status:**
 - F029: ✅ Complete
-- F030-F041: ❌ not implemented
+- F030: ✅ Complete
+- F031: ✅ Complete
+- F032-F041: ❌ Not implemented
 
 ---
 
@@ -331,4 +333,50 @@ Let me just run the commit directly:
 - ✅ Test coverage: Schedule sync, create/update students, preserve admin edits, status updates, error handling
 
 **Git commit:** Ready to create
+
+---
+
+## 2026-03-06 – F030 (Test Fixes)
+
+**Feature:** FACTS SIS Student Sync Service
+
+**Issue:** F030 was implemented but had 3 failing tests and the features.json metadata was not updated.
+
+**Test Fixes Applied:**
+
+1. **Whitespace trimming fix** (`facts-api.server.ts`):
+   - Fixed `transformStudentToStudent()` to normalize multiple spaces to single space
+   - Applied `.replace(/\s+/g, ' ')` to `fullName` regardless of source (name field or built from parts)
+
+2. **API key authentication fix** (`tests/mocks/facts.ts`):
+   - Fixed mock server to check for `Facts-Api-Key` header instead of `Ocp-Apim-Api-Key`
+   - This matches the actual service implementation which sends `Facts-Api-Key`
+
+3. **Profile picture test fix** (`facts-api.server.test.ts`):
+   - Updated test to use a longer base64 string (108+ chars) that passes the minimum length validation
+   - The code checks for `base64Data.length < 100` and calls console.warn if too short
+
+**Tests:**
+
+- ✅ All 48 FACTS API tests pass
+- ✅ All 13 student-sync tests pass
+- ✅ Total: 61 tests pass for F030
+
+**Files Modified:**
+
+- `app/utils/facts-api.server.ts` - Fixed whitespace normalization
+- `app/utils/facts-api.server.test.ts` - Fixed profile picture test data
+- `tests/mocks/facts.ts` - Fixed API key header name
+
+---
+
+## PHASE 5 – Post-Feature Version Check
+
+**Active Version:** 1.1.0 (Student Support)
+**Completed Features:** F029, F030, F031
+**Remaining Features:** F032-F041 (10 features)
+
+**Status:** Active version still NOT complete. 10 features remaining.
+
+**Next Feature to Implement:** F032 - Admin Student List View
 

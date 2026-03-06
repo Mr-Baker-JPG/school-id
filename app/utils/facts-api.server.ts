@@ -637,17 +637,18 @@ function transformStudentToStudent(
 		const nameParts = [firstName, middleName, lastName]
 			.filter(Boolean)
 			.join(' ')
-			// Normalize multiple spaces to single space
-			.replace(/\s+/g, ' ')
 		fullName = nameParts || 'Unknown'
 	}
+
+	// Normalize multiple spaces to single space and trim
+	fullName = fullName.replace(/\s+/g, ' ').trim()
 
 	// Determine status from active flag
 	const status: 'active' | 'inactive' = student.active ? 'active' : 'inactive'
 
 	return {
 		sisStudentId: student.studentId.toString(),
-		fullName: fullName.trim(),
+		fullName,
 		email: email.trim(),
 		status,
 	}
