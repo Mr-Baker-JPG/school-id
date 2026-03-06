@@ -34,6 +34,17 @@ export interface FactsStaffVmOutV1_1 {
 	demographics?: FactsDemographicsModel
 }
 
+export interface FactsStudentVmOutV1_1 {
+	studentId: number
+	name?: string
+	firstName?: string
+	lastName?: string
+	middleName?: string
+	active: boolean
+	grade?: string
+	demographics?: FactsDemographicsModel
+}
+
 export interface FactsPagedResult<T> {
 	results: T[]
 	currentPage: number
@@ -47,6 +58,13 @@ export interface FactsEmployeeData {
 	sisEmployeeId: string
 	fullName: string
 	jobTitle: string
+	email: string
+	status: 'active' | 'inactive'
+}
+
+export interface FactsStudentData {
+	sisStudentId: string
+	fullName: string
 	email: string
 	status: 'active' | 'inactive'
 }
@@ -507,4 +525,245 @@ export async function fetchProfilePicture(
 		)
 		return null
 	}
+}
+
+/**
+ * Fetch student data from FACTS API with pagination, filtering, and sorting support
+ */
+async function fetchStudentPage(
+	page: number = 1,
+	pageSize: number = 100,
+	options?: {
+		includes?: string
+		filters?: string
+		sorts?: string
+		bypassCache?: boolean
+	},
+): Promise<FactsPagedResult<FactsStudentVmOutV1_1>> {
+	const config = getFactsConfig()
+
+	invariantResponse(
+		config.subscriptionKey || config.apiKey,
+		'FACTS API credentials not configured. Set FACTS_SUBSCRIPTION_KEY or FACTS_API_KEY environment variables.',
+		{ status: 500 },
+	)
+
+	const url = new URL(`${config.baseUrl}/Students`)
+	url.searchParams.set('api-version', '1.1')
+	url.searchParams.set('Page', page.toString())
+	url.searchParams.set('PageSize', pageSize.toString())
+
+	if (options?.includes) {
+		url.searchParams.set('includes', options.includes)
+	}
+
+	if (options?.filters) {
+		url.searchParams.set('Filters', options.filters)
+	}
+
+	if (options?.sorts) {
+		url.searchParams.set('Sorts', options.sorts)
+	}
+
+	const response = await fetch(url.toString(), {
+		method: 'GET',
+		headers: createAuthHeaders(options?.bypassCache),
+	})
+
+	// Handle rate limiting (429 Too Many Requests)
+	if (response.status === 429) {
+		throw new FactsApiError(
+			'FACTS API rate limit exceeded. Please retry after the rate limit window.',
+			429,
+		)
+	}
+
+	if (!response.ok) {
+		let errorMessage = `FACTS API request failed with status ${response.status}`
+		let errorData: unknown
+
+		try {
+			errorData = await response.json()
+			if (
+				typeof errorData === 'object' &&
+				errorData !== null &&
+				'detail' in errorData &&
+				typeof errorData.detail === 'string'
+			) {
+				errorMessage = errorData.detail
+			}
+		} catch {
+			// If JSON parsing fails, use the status text
+			errorMessage = `${errorMessage}: ${response.statusText}`
+		}
+
+		throw new FactsApiError(errorMessage, response.status, errorData)
+	}
+
+	const data = await response.json()
+	return data as FactsPagedResult<FactsStudentVmOutV1_1>
+}
+
+/**
+ * Transform FACTS API student data to Student schema format
+ */
+function transformStudentToStudent(
+	student: FactsStudentVmOutV1_1,
+): FactsStudentData | null {
+	// Validate required fields
+	if (!student.studentId) {
+		return null
+	}
+
+	// Get email from demographics.person.email or fallback
+	const email =
+		student.demographics?.person?.email ||
+		student.demographics?.person?.email2 ||
+		''
+
+	if (!email) {
+		// Email is required in our schema
+		return null
+	}
+
+	// Build full name from available fields
+	const firstName = (student.firstName || '').trim()
+	const lastName = (student.lastName || '').trim()
+	const middleName = (student.middleName || '').trim()
+	const name = (student.name || '').trim()
+
+	let fullName = name
+	if (!fullName) {
+		const nameParts = [firstName, middleName, lastName]
+			.filter(Boolean)
+			.join(' ')
+			// Normalize multiple spaces to single space
+			.replace(/\s+/g, ' ')
+		fullName = nameParts || 'Unknown'
+	}
+
+	// Determine status from active flag
+	const status: 'active' | 'inactive' = student.active ? 'active' : 'inactive'
+
+	return {
+		sisStudentId: student.studentId.toString(),
+		fullName: fullName.trim(),
+		email: email.trim(),
+		status,
+	}
+}
+
+/**
+ * Fetch all students from FACTS API with automatic pagination
+ * Supports filtering, sorting, and cache bypass options
+ */
+export async function fetchAllStudents(options?: {
+	includes?: string
+	filters?: string
+	sorts?: string
+	bypassCache?: boolean
+}): Promise<FactsStudentData[]> {
+	const pageSize = 100
+	let currentPage = 1
+	let hasMorePages = true
+	const allStudents: FactsStudentData[] = []
+
+	while (hasMorePages) {
+		try {
+			const pageResult = await fetchStudentPage(currentPage, pageSize, options)
+
+			// Transform and filter valid students
+			for (const student of pageResult.results) {
+				const studentData = transformStudentToStudent(student)
+				if (studentData) {
+					allStudents.push(studentData)
+				}
+			}
+
+			// Check if there are more pages
+			hasMorePages =
+				currentPage < pageResult.pageCount && pageResult.nextPage !== undefined
+
+			if (hasMorePages) {
+				currentPage++
+			}
+		} catch (error) {
+			if (error instanceof FactsApiError) {
+				throw error
+			}
+			throw new FactsApiError(
+				`Failed to fetch students page ${currentPage}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+			)
+		}
+	}
+
+	return allStudents
+}
+
+/**
+ * Fetch a single student by ID from FACTS API
+ * Supports includes and cache bypass options
+ */
+export async function fetchStudentById(
+	studentId: number,
+	options?: {
+		includes?: string
+		bypassCache?: boolean
+	},
+): Promise<FactsStudentData | null> {
+	const config = getFactsConfig()
+
+	invariantResponse(
+		config.subscriptionKey || config.apiKey,
+		'FACTS API credentials not configured. Set FACTS_SUBSCRIPTION_KEY or FACTS_API_KEY environment variables.',
+		{ status: 500 },
+	)
+
+	const url = new URL(`${config.baseUrl}/Students/${studentId}`)
+	url.searchParams.set('api-version', '1.1')
+
+	if (options?.includes) {
+		url.searchParams.set('includes', options.includes)
+	}
+
+	const response = await fetch(url.toString(), {
+		method: 'GET',
+		headers: createAuthHeaders(options?.bypassCache),
+	})
+
+	if (response.status === 404) {
+		return null
+	}
+
+	// Handle rate limiting (429 Too Many Requests)
+	if (response.status === 429) {
+		throw new FactsApiError(
+			'FACTS API rate limit exceeded. Please retry after the rate limit window.',
+			429,
+		)
+	}
+
+	if (!response.ok) {
+		let errorMessage = `FACTS API request failed with status ${response.status}`
+		let errorData: unknown
+
+		try {
+			errorData = await response.json()
+			if (
+				typeof errorData === 'object' &&
+				errorData !== null &&
+				'detail' in errorData &&
+				typeof errorData.detail === 'string'
+			) {
+				errorMessage = errorData.detail
+			}
+		} catch {
+			errorMessage = `${errorMessage}: ${response.statusText}`
+		}
+
+		throw new FactsApiError(errorMessage, response.status, errorData)
+	}
+
+	const student = (await response.json()) as FactsStudentVmOutV1_1
+	return transformStudentToStudent(student)
 }

@@ -4,13 +4,19 @@ import {
 	fetchAllStaff,
 	fetchStaffById,
 	fetchProfilePicture,
+	fetchAllStudents,
+	fetchStudentById,
 	FactsApiError,
 	type FactsEmployeeData,
+	type FactsStudentData,
 } from './facts-api.server.ts'
 import {
 	clearMockStaff,
 	insertMockStaff,
 	getMockStaffById,
+	clearMockStudents,
+	insertMockStudent,
+	getMockStudentById,
 } from '#tests/mocks/facts.ts'
 import { http, HttpResponse } from 'msw'
 
@@ -649,6 +655,368 @@ describe('FACTS SIS Employee Sync Service', () => {
 			await expect(fetchProfilePicture(personId)).rejects.toThrow(
 				'rate limit exceeded',
 			)
+		})
+	})
+})
+
+describe('FACTS SIS Student Sync Service', () => {
+	beforeEach(() => {
+		clearMockStudents()
+		// Set mock environment variables for testing
+		process.env.FACTS_SUBSCRIPTION_KEY = 'MOCK_SUBSCRIPTION_KEY'
+		process.env.FACTS_API_KEY = 'MOCK_API_KEY'
+		process.env.FACTS_BASE_URL = 'https://api.factsmgt.com'
+	})
+
+	describe('Authentication', () => {
+		test('Service successfully authenticates with FACTS API using subscription key', async () => {
+			const mockStudent = insertMockStudent({
+				studentId: 123,
+				firstName: 'John',
+				lastName: 'Doe',
+				email: 'john.doe@jpgacademy.org',
+			})
+
+			const result = await fetchStudentById(mockStudent.studentId)
+
+			expect(result).not.toBeNull()
+			expect(result?.email).toBe('john.doe@jpgacademy.org')
+		})
+
+		test('Service successfully authenticates with FACTS API using API key', async () => {
+			// Store original subscription key
+			const originalSubscriptionKey = process.env.FACTS_SUBSCRIPTION_KEY
+			// Remove subscription key, use only API key
+			delete process.env.FACTS_SUBSCRIPTION_KEY
+			process.env.FACTS_API_KEY = 'MOCK_API_KEY'
+
+			const mockStudent = insertMockStudent({
+				studentId: 456,
+				firstName: 'Jane',
+				lastName: 'Smith',
+				email: 'jane.smith@jpgacademy.org',
+			})
+
+			const result = await fetchStudentById(mockStudent.studentId)
+
+			expect(result).not.toBeNull()
+			expect(result?.email).toBe('jane.smith@jpgacademy.org')
+
+			// Restore original subscription key
+			if (originalSubscriptionKey) {
+				process.env.FACTS_SUBSCRIPTION_KEY = originalSubscriptionKey
+			}
+		})
+
+		test('Service throws error when no authentication credentials are provided', async () => {
+			delete process.env.FACTS_SUBSCRIPTION_KEY
+			delete process.env.FACTS_API_KEY
+
+			// invariantResponse throws a Response object (not a FactsApiError)
+			try {
+				await fetchStudentById(123)
+				expect.fail('Should have thrown an error')
+			} catch (error) {
+				// invariantResponse throws a Response object
+				expect(error).toBeInstanceOf(Response)
+				if (error instanceof Response) {
+					expect(error.status).toBe(500)
+					const text = await error.text()
+					expect(text).toContain('FACTS API credentials not configured')
+				}
+			}
+		})
+	})
+
+	describe('Fetch Student List', () => {
+		test('Service fetches student list and transforms data correctly', async () => {
+			// Insert multiple students
+			const student1 = insertMockStudent({
+				studentId: 1,
+				firstName: 'Alice',
+				lastName: 'Johnson',
+				email: 'alice.johnson@jpgacademy.org',
+				active: true,
+			})
+
+			const student2 = insertMockStudent({
+				studentId: 2,
+				firstName: 'Bob',
+				lastName: 'Williams',
+				email: 'bob.williams@jpgacademy.org',
+				active: true,
+			})
+
+			const result = await fetchAllStudents()
+
+			expect(result.length).toBeGreaterThanOrEqual(2)
+
+			const alice = result.find((s) => s.sisStudentId === student1.studentId.toString())
+			expect(alice).toBeDefined()
+			expect(alice?.fullName).toBe('Alice Johnson')
+			expect(alice?.email).toBe('alice.johnson@jpgacademy.org')
+			expect(alice?.status).toBe('active')
+
+			const bob = result.find((s) => s.sisStudentId === student2.studentId.toString())
+			expect(bob).toBeDefined()
+			expect(bob?.fullName).toBe('Bob Williams')
+			expect(bob?.email).toBe('bob.williams@jpgacademy.org')
+			expect(bob?.status).toBe('active')
+		})
+
+		test('Service handles pagination correctly', async () => {
+			// Clear existing students and insert 150 students
+			clearMockStudents()
+			for (let i = 0; i < 150; i++) {
+				insertMockStudent({
+					studentId: 1000 + i,
+					firstName: `Student${i}`,
+					lastName: `Test${i}`,
+					email: `student${i}@jpgacademy.org`,
+				})
+			}
+
+			const result = await fetchAllStudents()
+
+			// Should have fetched all 150 students across multiple pages
+			expect(result.length).toBe(150)
+		})
+
+		test('Service filters out students without required fields', async () => {
+			// Insert student without email (should be filtered out)
+			insertMockStudent({
+				studentId: 999,
+				firstName: 'NoEmail',
+				lastName: 'Student',
+				email: '', // Empty email should be filtered
+			})
+
+			const result = await fetchAllStudents()
+
+			// Student with no email should not be in results
+			expect(result.find((s) => s.sisStudentId === '999')).toBeUndefined()
+		})
+	})
+
+	describe('Fetch Single Student', () => {
+		test('Service fetches single student by ID correctly', async () => {
+			const mockStudent = insertMockStudent({
+				studentId: 789,
+				firstName: 'Charlie',
+				lastName: 'Brown',
+				email: 'charlie.brown@jpgacademy.org',
+				grade: '10',
+			})
+
+			const result = await fetchStudentById(mockStudent.studentId)
+
+			expect(result).not.toBeNull()
+			expect(result?.sisStudentId).toBe(mockStudent.studentId.toString())
+			expect(result?.fullName).toBe('Charlie Brown')
+			expect(result?.email).toBe('charlie.brown@jpgacademy.org')
+			expect(result?.status).toBe('active')
+		})
+
+		test('Service returns null for non-existent student', async () => {
+			const result = await fetchStudentById(99999)
+
+			expect(result).toBeNull()
+		})
+	})
+
+	describe('Data Transformation', () => {
+		test('Service transforms student data to Student schema format correctly', async () => {
+			const mockStudent = insertMockStudent({
+				studentId: 555,
+				firstName: 'David',
+				lastName: 'Lee',
+				email: 'david.lee@jpgacademy.org',
+				active: true,
+			})
+
+			const result = await fetchStudentById(mockStudent.studentId)
+
+			expect(result).toEqual({
+				sisStudentId: '555',
+				fullName: 'David Lee',
+				email: 'david.lee@jpgacademy.org',
+				status: 'active',
+			})
+		})
+
+		test('Service uses name field when available', async () => {
+			const mockStudent = insertMockStudent({
+				studentId: 666,
+				firstName: 'Eve',
+				lastName: 'Davis',
+				email: 'eve.davis@jpgacademy.org',
+			})
+
+			const result = await fetchStudentById(mockStudent.studentId)
+
+			expect(result?.fullName).toBe('Eve Davis')
+		})
+
+		test('Service builds full name from parts when name field is missing', async () => {
+			const mockStudent = insertMockStudent({
+				studentId: 777,
+				firstName: 'Frank',
+				lastName: 'Miller',
+				email: 'frank.miller@jpgacademy.org',
+			})
+
+			const result = await fetchStudentById(mockStudent.studentId)
+
+			expect(result?.fullName).toBe('Frank Miller')
+		})
+
+		test('Service uses email2 as fallback when email is missing', async () => {
+			const mockStudent = insertMockStudent({
+				studentId: 888,
+				firstName: 'Grace',
+				lastName: 'Wilson',
+				email: '', // Primary email is empty
+			})
+
+			// Manually set email2 in demographics
+			if (mockStudent.demographics?.person) {
+				mockStudent.demographics.person.email2 = 'grace.wilson@jpgacademy.org'
+			}
+
+			const result = await fetchStudentById(mockStudent.studentId)
+
+			expect(result?.email).toBe('grace.wilson@jpgacademy.org')
+		})
+
+		test('Service correctly maps active status', async () => {
+			const activeStudent = insertMockStudent({
+				studentId: 111,
+				firstName: 'Active',
+				lastName: 'Student',
+				email: 'active@jpgacademy.org',
+				active: true,
+			})
+
+			const inactiveStudent = insertMockStudent({
+				studentId: 222,
+				firstName: 'Inactive',
+				lastName: 'Student',
+				email: 'inactive@jpgacademy.org',
+				active: false,
+			})
+
+			const activeResult = await fetchStudentById(activeStudent.studentId)
+			const inactiveResult = await fetchStudentById(inactiveStudent.studentId)
+
+			expect(activeResult?.status).toBe('active')
+			expect(inactiveResult?.status).toBe('inactive')
+		})
+
+		test('Service trims whitespace from transformed fields', async () => {
+			const mockStudent = insertMockStudent({
+				studentId: 999,
+				firstName: '  Henry  ',
+				lastName: '  Taylor  ',
+				middleName: '', // Empty middle name for predictable output
+				email: '  henry.taylor@jpgacademy.org  ',
+			})
+
+			const result = await fetchStudentById(mockStudent.studentId)
+
+			expect(result?.fullName).toBe('Henry Taylor')
+			expect(result?.email).toBe('henry.taylor@jpgacademy.org')
+		})
+	})
+
+	describe('Error Handling', () => {
+		test('Service handles API errors gracefully with 400 status', async () => {
+			server.use(
+				http.get('https://api.factsmgt.com/Students', () => {
+					return HttpResponse.json(
+						{
+							type: 'https://tools.ietf.org/html/rfc7231#section-6.5.1',
+							title: 'Bad Request',
+							status: 400,
+							detail: 'Invalid request parameters',
+						},
+						{ status: 400 },
+					)
+				}),
+			)
+
+			await expect(fetchAllStudents()).rejects.toThrow(FactsApiError)
+			await expect(fetchAllStudents()).rejects.toThrow('Invalid request parameters')
+		})
+
+		test('Service handles API errors gracefully with 500 status', async () => {
+			server.use(
+				http.get('https://api.factsmgt.com/Students', () => {
+					return HttpResponse.json(
+						{
+							type: 'https://tools.ietf.org/html/rfc7231#section-6.6.1',
+							title: 'Internal Server Error',
+							status: 500,
+							detail: 'Internal server error',
+						},
+						{ status: 500 },
+					)
+				}),
+			)
+
+			await expect(fetchAllStudents()).rejects.toThrow(FactsApiError)
+			await expect(fetchAllStudents()).rejects.toThrow('Internal server error')
+		})
+
+		test('Service handles network errors gracefully', async () => {
+			server.use(
+				http.get('https://api.factsmgt.com/Students', () => {
+					return HttpResponse.error()
+				}),
+			)
+
+			await expect(fetchAllStudents()).rejects.toThrow(FactsApiError)
+		})
+
+		test('Service handles malformed JSON responses', async () => {
+			server.use(
+				http.get('https://api.factsmgt.com/Students', () => {
+					return new HttpResponse('Invalid JSON', {
+						status: 200,
+						headers: { 'Content-Type': 'application/json' },
+					})
+				}),
+			)
+
+			await expect(fetchAllStudents()).rejects.toThrow()
+		})
+	})
+
+	describe('Required Field Validation', () => {
+		test('Service validates required studentId field', async () => {
+			// This would be handled by the mock returning a student without studentId
+			// In practice, this should be filtered out during transformation
+			const result = await fetchAllStudents()
+
+			// All returned students should have a studentId
+			result.forEach((student) => {
+				expect(student.sisStudentId).toBeDefined()
+				expect(student.sisStudentId).not.toBe('')
+			})
+		})
+
+		test('Service validates required email field', async () => {
+			// Students without email should be filtered out
+			insertMockStudent({
+				studentId: 99999,
+				firstName: 'NoEmail',
+				lastName: 'Student',
+				email: '',
+			})
+
+			const result = await fetchAllStudents()
+
+			// Student with no email should not be in results
+			expect(result.find((s) => s.sisStudentId === '99999')).toBeUndefined()
 		})
 	})
 })

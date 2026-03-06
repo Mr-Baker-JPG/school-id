@@ -60,12 +60,68 @@ function createMockStaff(overrides?: {
 	}
 }
 
+// Mock student data generator
+function createMockStudent(overrides?: {
+	studentId?: number
+	firstName?: string
+	lastName?: string
+	middleName?: string
+	email?: string
+	active?: boolean
+	grade?: string
+}) {
+	const studentId = overrides?.studentId ?? faker.number.int({ min: 1, max: 10000 })
+	const firstName = overrides?.firstName ?? faker.person.firstName()
+	const lastName = overrides?.lastName ?? faker.person.lastName()
+	const middleName = overrides?.middleName !== undefined ? overrides.middleName : faker.person.middleName()
+	// Use empty string if explicitly passed, otherwise generate random email
+	const email = overrides?.email !== undefined ? overrides.email : faker.internet.email()
+	// If email is explicitly empty, also make email2 empty for proper testing
+	const email2 = overrides?.email === '' ? '' : faker.internet.email()
+
+	return {
+		studentId,
+		name: `${firstName} ${lastName}`,
+		firstName,
+		lastName,
+		middleName,
+		active: overrides?.active ?? true,
+		grade: overrides?.grade ?? '9',
+		demographics: {
+			person: {
+				personId: faker.number.int({ min: 1, max: 100000 }),
+				firstName,
+				lastName,
+				email,
+				email2,
+				homePhone: faker.phone.number(),
+				cellPhone: faker.phone.number(),
+			},
+			address: {
+				addressID: faker.number.int(),
+				address1: faker.location.streetAddress(),
+				city: faker.location.city(),
+				state: faker.location.state({ abbreviated: true }),
+				zip: faker.location.zipCode(),
+			},
+		},
+	}
+}
+
 // In-memory store for mock staff
 const mockStaffStore: Array<ReturnType<typeof createMockStaff>> = []
+
+// In-memory store for mock students
+const mockStudentStore: Array<ReturnType<typeof createMockStudent>> = []
 
 // Initialize with some default staff
 for (let i = 0; i < 5; i++) {
 	mockStaffStore.push(createMockStaff())
+}
+
+// Initialize with some default students
+for (let i = 0; i < 5; i++) {
+	mockStudentStore.push(createMockStudent())
 }
 
 export function insertMockStaff(
@@ -76,12 +132,28 @@ export function insertMockStaff(
 	return staff
 }
 
+export function insertMockStudent(
+	overrides?: Parameters<typeof createMockStudent>[0],
+) {
+	const student = createMockStudent(overrides)
+	mockStudentStore.push(student)
+	return student
+}
+
 export function clearMockStaff() {
 	mockStaffStore.length = 0
 }
 
+export function clearMockStudents() {
+	mockStudentStore.length = 0
+}
+
 export function getMockStaffById(staffId: number) {
 	return mockStaffStore.find((s) => s.staffId === staffId)
+}
+
+export function getMockStudentById(studentId: number) {
+	return mockStudentStore.find((s) => s.studentId === studentId)
 }
 
 const passthroughFacts =
@@ -260,6 +332,102 @@ export const handlers: Array<HttpHandler> = [
 					},
 				},
 			)
+		},
+	),
+
+	// GET /Students - List all students with pagination
+	http.get('https://api.factsmgt.com/Students', async ({ request }) => {
+		if (passthroughFacts) return passthrough()
+
+		const url = new URL(request.url)
+		const page = parseInt(url.searchParams.get('Page') || '1', 10)
+		const pageSize = parseInt(url.searchParams.get('PageSize') || '100', 10)
+		const includes = url.searchParams.get('includes')
+
+		// Validate authentication headers
+		const subscriptionKey = request.headers.get('Ocp-Apim-Subscription-Key')
+		const apiKey =
+			request.headers.get('Facts-Api-Key') ||
+			request.headers.get('Ocp-Apim-Api-Key')
+
+		if (!subscriptionKey && !apiKey) {
+			return json(
+				{
+					type: 'https://tools.ietf.org/html/rfc7231#section-6.5.1',
+					title: 'Unauthorized',
+					status: 401,
+					detail: 'Authentication required',
+				},
+				{ status: 401 },
+			)
+		}
+
+		// Pagination logic
+		const startIndex = (page - 1) * pageSize
+		const endIndex = startIndex + pageSize
+		const allStudents = mockStudentStore.slice(startIndex, endIndex)
+		const totalCount = mockStudentStore.length
+		const pageCount = Math.ceil(totalCount / pageSize)
+
+		// Transform students based on includes parameter
+		let results = allStudents
+		if (includes && includes.includes('demographics')) {
+			// Already included in our mock data
+			results = allStudents
+		}
+
+		return json({
+			results,
+			currentPage: page,
+			pageCount,
+			pageSize,
+			rowCount: totalCount,
+			nextPage:
+				page < pageCount
+					? `${request.url.split('?')[0]}?Page=${page + 1}`
+					: undefined,
+		})
+	}),
+
+	// GET /Students/{studentId} - Get single student
+	http.get(
+		'https://api.factsmgt.com/Students/:studentId',
+		async ({ request, params }) => {
+			if (passthroughFacts) return passthrough()
+
+			const studentId = parseInt(params.studentId as string, 10)
+
+			// Validate authentication headers
+			const subscriptionKey = request.headers.get('Ocp-Apim-Subscription-Key')
+			const apiKey = request.headers.get('Facts-Api-Key')
+
+			if (!subscriptionKey && !apiKey) {
+				return json(
+					{
+						type: 'https://tools.ietf.org/html/rfc7231#section-6.5.1',
+						title: 'Unauthorized',
+						status: 401,
+						detail: 'Authentication required',
+					},
+					{ status: 401 },
+				)
+			}
+
+			const student = getMockStudentById(studentId)
+
+			if (!student) {
+				return json(
+					{
+						type: 'https://tools.ietf.org/html/rfc7231#section-6.5.4',
+						title: 'Not Found',
+						status: 404,
+						detail: `Student with ID ${studentId} not found`,
+					},
+					{ status: 404 },
+				)
+			}
+
+			return json(student)
 		},
 	),
 ]
