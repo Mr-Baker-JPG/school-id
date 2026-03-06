@@ -32,6 +32,7 @@ export function AdminShell({ children, headerActions }: AdminShellProps) {
 	const adminNavItems: NavItem[] = isAdmin
 		? [
 				{ to: '/admin/employees', label: 'Employees', icon: 'user' },
+				{ to: '/admin/students', label: 'Students', icon: 'student' },
 				{ to: '/admin/users', label: 'Users', icon: 'user' },
 				{ to: '/admin/sync-status', label: 'Sync Status', icon: 'cloud-sync' },
 				{ to: '/admin/cache', label: 'Cache', icon: 'settings' },

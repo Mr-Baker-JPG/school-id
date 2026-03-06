@@ -11,8 +11,8 @@ features.json`.
 
 **Last Updated:** 2026-03-06
 **Total Features:** 41
-**Implemented:** 30
-**Tests Passing:** 30
+**Implemented:** 31
+**Tests Passing:** 31
 
 ---
 
@@ -31,7 +31,8 @@ features.json`.
 - F029: ✅ Complete
 - F030: ✅ Complete
 - F031: ✅ Complete
-- F032-F041: ❌ Not implemented
+- F032: ✅ Complete
+- F033-F041: ❌ Not implemented
 
 ---
 
@@ -380,3 +381,64 @@ Let me just run the commit directly:
 
 **Next Feature to Implement:** F032 - Admin Student List View
 
+
+---
+
+## 2026-03-06 – F032
+
+**Feature:** Admin Student List View
+
+**Implementation:**
+
+- Created \`app/utils/student.server.ts\` with shared student utilities:
+  - \`getExpirationStatus()\` - calculates if student ID is valid, expiring, or expired
+  - \`getExpiringStudents()\` - fetches students with expiring/expired IDs
+  - \`getNextJuly1ExpirationDate()\` - calculates next July 1 expiration
+- Created \`/admin/students\` route with full list view:
+  - Student name and email display
+  - Status badges (active/inactive)
+  - Expiration date with expiring/expired warnings
+  - Photo status indicator
+  - Actions dropdown for each student (view details, manage photo, update expiration)
+  - Bulk selection support with bulk action bar
+  - Mobile-responsive card view and desktop table view
+  - Sync from FACTS button to trigger student data sync
+  - Search by name or email
+  - Filter by status (all/active/inactive)
+- Added "Students" navigation link to admin sidebar in \`AdminShell.tsx\`
+
+**Tests:**
+
+- ✅ Admin can view list of all students
+- ✅ List displays student name, status, and expiration date
+- ✅ Search filters students by name
+- ✅ Search filters students by email
+- ✅ Filter by status (active) works correctly
+- ✅ Filter by status (inactive) works correctly
+- ✅ Non-admin users cannot access this route
+- ✅ Unauthenticated users cannot access this route
+- ✅ All 8 unit tests pass
+
+**Files Created:**
+
+- \`app/utils/student.server.ts\` - Student server utilities
+- \`app/routes/admin/students/index.tsx\` - Main list view
+- \`app/routes/admin/students/index.test.ts\` - Tests
+- \`app/routes/admin/students/columns.tsx\` - Table columns definition
+- \`app/routes/admin/students/data-table.tsx\` - Data table component
+
+**Files Modified:**
+
+- \`app/ui/shells/AdminShell.tsx\` - Added Students navigation link
+
+---
+
+## PHASE 5 – Post-Feature Version Check
+
+**Active Version:** 1.1.0 (Student Support)
+**Completed Features:** F029, F030, F031, F032 (4 of 13)
+**Remaining Features:** F033-F041 (9 features)
+
+**Status:** Active version still NOT complete. 9 features remaining.
+
+**Next Feature to Implement:** F033 - Admin Student Detail View with Name Editing
