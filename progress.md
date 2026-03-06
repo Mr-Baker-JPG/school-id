@@ -922,3 +922,64 @@ Let me just run the commit directly:
 **Status:** Active version still NOT complete. 2 features remaining.
 
 **Next Feature to Implement:** F040 - Public Verification Route for Students
+
+---
+
+## 2026-03-06 – F040
+
+**Feature:** Public Verification Route for Students
+
+**Implementation:**
+
+- Rewrote `/app/routes/verify/$id.tsx` to support both employees and students:
+  - Loader checks for employee first, then student
+  - Returns `personType` ('employee' or 'student')
+  - Displays appropriate person type label ('Faculty' or 'Student')
+  - Fetches FACTS profile picture for employees without uploaded photo
+  - Handles missing EmployeeID/StudentID records gracefully
+
+- **Key Features:**
+  - Auto-detects person type (employee vs student)
+  - Displays 'Faculty' label for employees
+  - Displays 'Student' label for students
+  - Shows verification status with valid/invalid badge
+  - Displays photo (uploaded or FACTS profile picture for employees)
+  - Shows expiration date and status
+  - Publicly accessible (no authentication required)
+  - Comprehensive error handling (404 for not found, 400 for missing ID)
+
+- **SEO Metadata:**
+  - Title includes person name, type (Employee/Student), and status (Valid/Invalid)
+  - Meta description includes verification details
+  - Proper fallback metadata for error states
+
+**Tests:**
+
+- ✅ Verification page works for both employees and students
+- ✅ Page displays correct person type label (Student/Faculty)
+- ✅ Page shows active/inactive status correctly for students
+- ✅ Page displays expiration date for students
+- ✅ Page shows valid/invalid badge based on status and expiration
+- ✅ Invalid IDs show appropriate error message
+- ✅ Handles employee without EmployeeID record
+- ✅ Handles student without StudentID record
+- ✅ SEO metadata for employees
+- ✅ SEO metadata for students
+- ✅ All 20 unit tests pass
+- ✅ Build succeeds
+
+**Files Modified:**
+
+- `app/routes/verify/$id.tsx` - Rewrote verification route to support both employees and students
+
+---
+
+## PHASE 5 – Post-Feature Version Check
+
+**Active Version:** 1.1.0 (Student Support)
+**Completed Features:** F029, F030, F031, F032, F033, F034, F035, F036, F037, F038, F039, F040 (12 of 13)
+**Remaining Features:** F041 (1 feature)
+
+**Status:** Active version still NOT complete. 1 feature remaining.
+
+**Next Feature to Implement:** F041 - Student ID Expiration Notifications

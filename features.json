@@ -590,8 +590,8 @@
 			"Page shows valid/invalid badge based on status and expiration",
 			"Invalid IDs show appropriate error message"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F041",
