@@ -269,3 +269,4 @@ describe('QR Code Generation Service', () => {
 	})
 })
 
+

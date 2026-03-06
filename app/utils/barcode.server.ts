@@ -51,3 +51,4 @@ export async function generateBarcodeDataURL(
 	const base64 = buffer.toString('base64')
 	return `data:image/png;base64,${base64}`
 }
+

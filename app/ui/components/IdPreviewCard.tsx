@@ -78,13 +78,18 @@ export function IdPreviewCard({
 			</div>
 
 			<Dialog open={isOpen} onOpenChange={setIsOpen}>
-				<DialogContent className="flex max-h-[95vh] min-h-[45vh] max-w-4xl flex-col overflow-hidden">
+				<DialogContent className="flex max-h-[95vh] min-h-[45vh] w-[95vw] max-w-none flex-col overflow-hidden md:max-w-4xl">
 					<DialogHeader className="flex-shrink-0">
 						<DialogTitle>{title}</DialogTitle>
 					</DialogHeader>
-					<div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto p-6">
-						<div className="max-h-[90vh] origin-center scale-[2]">
-							{previewContent}
+					<div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-4 md:p-6">
+						<div className="flex max-h-[70vh] w-full items-center justify-center md:max-h-[90vh]">
+							<div
+								className="h-full w-full md:origin-center md:scale-[2]"
+								style={{ objectFit: 'contain' }}
+							>
+								{previewContent}
+							</div>
 						</div>
 					</div>
 				</DialogContent>

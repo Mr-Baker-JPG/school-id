@@ -124,7 +124,7 @@ export async function requireAnonymous(request: Request) {
 
 /**
  * Determines the appropriate redirect path for a user after authentication.
- * Admin users go to /admin/employees, regular users go to /employee/{employeeId}.
+ * Admin users go to /admin/employees, regular users go to /employee/id.
  */
 export async function getRedirectPathForUser(userId: string): Promise<string> {
 	// Check if user is admin
@@ -148,7 +148,7 @@ export async function getRedirectPathForUser(userId: string): Promise<string> {
 		return '/admin/employees'
 	}
 
-	// For regular users, find their employee record and redirect to their ID page
+	// For regular users, verify they have an employee record and redirect to their ID page
 	const employee = await prisma.employee.findUnique({
 		where: { email: user.email },
 		select: { id: true },
@@ -158,7 +158,7 @@ export async function getRedirectPathForUser(userId: string): Promise<string> {
 		return '/'
 	}
 
-	return `/employee/${employee.id}`
+	return '/employee/id'
 }
 
 export async function login({

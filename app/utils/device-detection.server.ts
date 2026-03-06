@@ -44,3 +44,4 @@ export function getDeviceTypeFromRequest(
 	return getDeviceType(userAgent)
 }
 
+

@@ -13,7 +13,7 @@ import {
 import { Icon } from '#app/components/ui/icon.tsx'
 import { cn } from '#app/utils/misc.tsx'
 import { useOptionalUser } from '#app/utils/user.ts'
-import { APP_NAME, HEADER_LOGO_SRC, headerAccent } from '../brand.ts'
+import { APP_NAME, HEADER_LOGO_SRC, headerAccent, LOGO_SRC } from '../brand.ts'
 
 interface BrandHeaderProps {
 	variant?: 'marketing' | 'app' | 'admin'
@@ -36,11 +36,18 @@ export function BrandHeader({
 					<Img
 						src={HEADER_LOGO_SRC}
 						alt={APP_NAME}
-						className="h-8 w-auto object-contain"
+						className="hidden h-8 w-auto object-contain md:block"
 						width={128}
 						height={32}
 					/>
-					<span className="text-h4 font-semibold">{APP_NAME}</span>
+					<Img
+						src={LOGO_SRC}
+						alt={APP_NAME}
+						className="block h-6 w-auto object-contain md:hidden"
+						width={64}
+						height={64}
+					/>
+					<span className="md:text-h4 text-lg font-semibold">{APP_NAME}</span>
 				</Link>
 
 				<div className="flex items-center gap-4">
@@ -97,7 +104,12 @@ export function BrandHeader({
 									<span className="sr-only">User menu</span>
 								</Button>
 							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
+							<DropdownMenuContent
+								align="end"
+								side="left"
+								sideOffset={98}
+								avoidCollisions={false}
+							>
 								<DropdownMenuLabel>{user.name || 'User'}</DropdownMenuLabel>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem asChild>

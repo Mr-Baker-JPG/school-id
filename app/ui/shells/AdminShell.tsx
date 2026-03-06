@@ -55,7 +55,7 @@ export function AdminShell({ children, headerActions }: AdminShellProps) {
 				}
 			/>
 			<div className="flex flex-1">
-				<SidebarNav groups={navGroups} />
+				{/* <SidebarNav groups={navGroups} /> */}
 				<main className="flex-1 px-6 py-6">{children}</main>
 			</div>
 		</div>

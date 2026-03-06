@@ -1,28 +1,21 @@
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
 import { useState, useMemo, useCallback } from 'react'
-import {
-	redirect,
-	Form,
-	Link,
-	useSearchParams,
-	useSubmit,
-	useNavigation,
-} from 'react-router'
+import { redirect, Form, Link, useSearchParams, useSubmit } from 'react-router'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Field } from '#app/components/forms.tsx'
+import { Button } from '#app/components/ui/button.tsx'
 import { Card } from '#app/components/ui/card.tsx'
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '#app/components/ui/dropdown-menu.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from '#app/components/ui/tooltip.tsx'
 import { BulkActionsBar } from '#app/ui/components/BulkActionsBar.tsx'
 import { CardSection } from '#app/ui/components/CardSection.tsx'
 import { EmployeeQuickViewDrawer } from '#app/ui/components/EmployeeQuickViewDrawer.tsx'
-import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
 import { PageTitle } from '#app/ui/components/PageTitle.tsx'
 import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
 import { prisma } from '#app/utils/db.server.ts'
@@ -327,7 +320,6 @@ export default function AdminEmployeesRoute({
 	})
 
 	const syncPending = useIsPending({ formAction: '/admin/employees' })
-	const navigation = useNavigation()
 
 	const handleFormChange = useDebounce(async (form: HTMLFormElement) => {
 		await submit(form)
@@ -552,162 +544,128 @@ export default function AdminEmployeesRoute({
 					{loaderData.employees.length > 0 ? (
 						<>
 							{/* Mobile Card View */}
-							<div className="flex flex-col gap-4 md:hidden">
+							<div className="flex flex-col gap-3 md:hidden">
 								{loaderData.employees.map((employee) => (
 									<Card
 										key={employee.id}
 										className="border-muted/50 hover:bg-muted/50 shadow-sm"
 									>
 										<CardSection>
-											<div className="flex flex-col gap-4">
-												<div className="flex items-start gap-2">
+											<div className="flex flex-col gap-2.5">
+												<div className="flex items-start gap-2.5">
 													<input
 														type="checkbox"
 														checked={selectedEmployees.has(employee.id)}
 														onChange={() => handleSelectEmployee(employee.id)}
-														className="mt-1 h-4 w-4 rounded border-gray-300"
+														className="mt-0.5 h-4 w-4 rounded border-gray-300"
 													/>
-													<div className="flex-1">
-														<div>
-															<Link
-																to={`/admin/employees/${employee.id}`}
-																className="text-h4 text-foreground hover:underline"
+													<div className="min-w-0 flex-1">
+														<Link
+															to={`/admin/employees/${employee.id}`}
+															className="text-foreground block truncate text-base font-semibold hover:underline"
+														>
+															{employee.fullName}
+														</Link>
+														<div className="text-muted-foreground mt-0.5 truncate text-xs">
+															{employee.email}
+														</div>
+														<div className="mt-1.5 flex flex-wrap items-center gap-2">
+															<span className="text-muted-foreground text-xs">
+																{employee.jobTitle}
+															</span>
+															<span className="text-muted-foreground">·</span>
+															<StatusBadge
+																variant={
+																	employee.status === 'active'
+																		? 'active'
+																		: 'inactive'
+																}
+																className="text-xs"
 															>
-																{employee.fullName}
-															</Link>
+																{employee.status}
+															</StatusBadge>
+															{employee.expirationStatus &&
+																employee.expirationStatus.type !== 'valid' && (
+																	<>
+																		<span className="text-muted-foreground">
+																			·
+																		</span>
+																		<StatusBadge
+																			variant={
+																				employee.expirationStatus.type ===
+																				'expiring'
+																					? 'expiring'
+																					: 'expired'
+																			}
+																			className="text-xs"
+																		>
+																			{employee.expirationStatus.type ===
+																			'expiring'
+																				? `Expires in ${employee.expirationStatus.daysUntilExpiration}d`
+																				: `Expired ${employee.expirationStatus.daysSinceExpiration}d ago`}
+																		</StatusBadge>
+																	</>
+																)}
 														</div>
 													</div>
-												</div>
-												<KeyValueList
-													items={[
-														{ key: 'Job Title', value: employee.jobTitle },
-														{ key: 'Email', value: employee.email },
-														{
-															key: 'Status',
-															value: (
-																<StatusBadge
-																	variant={
-																		employee.status === 'active'
-																			? 'active'
-																			: 'inactive'
-																	}
+													<DropdownMenu>
+														<DropdownMenuTrigger asChild>
+															<Button
+																variant="ghost"
+																size="icon"
+																className="h-8 w-8"
+															>
+																<Icon
+																	name="dots-horizontal"
+																	className="size-4"
+																/>
+																<span className="sr-only">More actions</span>
+															</Button>
+														</DropdownMenuTrigger>
+														<DropdownMenuContent align="end">
+															<DropdownMenuItem asChild>
+																<Link to={`/admin/employees/${employee.id}`}>
+																	View Details
+																</Link>
+															</DropdownMenuItem>
+															<DropdownMenuItem asChild>
+																<Link
+																	to={`/admin/employees/${employee.id}/expiration`}
 																>
-																	{employee.status}
-																</StatusBadge>
-															),
-														},
-														{
-															key: 'Expiration Date',
-															value: (
-																<div className="flex flex-col gap-1">
-																	<Link
-																		to={`/admin/employees/${employee.id}/expiration`}
-																		className="text-foreground hover:underline"
-																	>
-																		{employee.employeeId?.expirationDate
-																			? new Date(
-																					employee.employeeId.expirationDate,
-																				).toLocaleDateString()
-																			: 'Not set'}
-																	</Link>
-																	{employee.expirationStatus &&
-																		employee.expirationStatus.type !==
-																			'valid' && (
-																			<StatusBadge
-																				variant={
-																					employee.expirationStatus.type ===
-																					'expiring'
-																						? 'expiring'
-																						: 'expired'
-																				}
-																			>
-																				{employee.expirationStatus.type ===
-																				'expiring'
-																					? `Expires in ${employee.expirationStatus.daysUntilExpiration} day${employee.expirationStatus.daysUntilExpiration !== 1 ? 's' : ''}`
-																					: `Expired ${employee.expirationStatus.daysSinceExpiration} day${employee.expirationStatus.daysSinceExpiration !== 1 ? 's' : ''} ago`}
-																			</StatusBadge>
-																		)}
-																</div>
-															),
-														},
-														{
-															key: 'Photo',
-															value: (
+																	Expiration
+																</Link>
+															</DropdownMenuItem>
+															<DropdownMenuItem asChild>
 																<Link
 																	to={`/admin/employees/${employee.id}/photo`}
-																	className="text-foreground flex items-center gap-1.5 text-sm hover:underline"
 																>
-																	{employee.employeeId?.photoUrl ? (
-																		<>
-																			<Icon
-																				name="check"
-																				className="size-4 text-green-600 dark:text-green-400"
-																			/>
-																			<span>Has photo</span>
-																		</>
-																	) : (
-																		<>
-																			<Icon
-																				name="cross-1"
-																				className="text-muted-foreground size-4"
-																			/>
-																			<span className="text-muted-foreground">
-																				No photo
-																			</span>
-																		</>
-																	)}
+																	{employee.employeeId?.photoUrl
+																		? 'Update Photo'
+																		: 'Add Photo'}
 																</Link>
-															),
-														},
-													]}
-												/>
-												<div className="pt-2">
-													<Form method="post" className="inline">
-														<input
-															type="hidden"
-															name="intent"
-															value="recheck-facts-photo"
-														/>
-														<input
-															type="hidden"
-															name="employeeId"
-															value={employee.id}
-														/>
-														<TooltipProvider>
-															<Tooltip>
-																<TooltipTrigger asChild>
-																	<div>
-																		<StatusButton
-																			type="submit"
-																			variant="outline"
-																			size="sm"
-																			status={
-																				navigation.state === 'submitting' &&
-																				navigation.formData?.get(
-																					'employeeId',
-																				) === employee.id
-																					? 'pending'
-																					: 'idle'
-																			}
-																			disabled={
-																				navigation.state === 'submitting' &&
-																				navigation.formData?.get(
-																					'employeeId',
-																				) === employee.id
-																			}
-																		>
-																			<Icon name="update" className="scale-75">
-																				Re-verify
-																			</Icon>
-																		</StatusButton>
-																	</div>
-																</TooltipTrigger>
-																<TooltipContent>
-																	Re-sync employee record from FACTS SIS
-																</TooltipContent>
-															</Tooltip>
-														</TooltipProvider>
-													</Form>
+															</DropdownMenuItem>
+															<Form method="post">
+																<input
+																	type="hidden"
+																	name="intent"
+																	value="recheck-facts-photo"
+																/>
+																<input
+																	type="hidden"
+																	name="employeeId"
+																	value={employee.id}
+																/>
+																<DropdownMenuItem asChild>
+																	<button
+																		type="submit"
+																		className="w-full text-left"
+																	>
+																		Re-verify from FACTS
+																	</button>
+																</DropdownMenuItem>
+															</Form>
+														</DropdownMenuContent>
+													</DropdownMenu>
 												</div>
 											</div>
 										</CardSection>

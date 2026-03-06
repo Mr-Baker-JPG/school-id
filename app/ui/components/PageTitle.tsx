@@ -17,13 +17,13 @@ export function PageTitle({
 	return (
 		<div
 			className={cn(
-				'flex items-start justify-between gap-4',
+				'flex items-start justify-between gap-4 py-2 md:py-4',
 				subtitle && 'flex-col sm:flex-row',
 				className,
 			)}
 		>
 			<div className="flex-1">
-				<h1 className="text-h1">{title}</h1>
+				<h1 className="md:text-h1 text-base font-semibold">{title}</h1>
 				{subtitle && (
 					<p className="text-body-md text-muted-foreground mt-2">{subtitle}</p>
 				)}

@@ -17,6 +17,7 @@ interface PrimaryActionBarProps {
 		onClick?: () => void
 		href?: string
 		asChild?: boolean
+		loading?: boolean
 	}>
 	className?: string
 }
@@ -51,7 +52,13 @@ export function PrimaryActionBar({
 				{secondaryActions.map((action, index) => {
 					if (action.asChild && action.href) {
 						return (
-							<Button key={index} variant="outline" size="lg" asChild>
+							<Button
+								key={index}
+								variant="outline"
+								size="lg"
+								asChild
+								disabled={action.loading}
+							>
 								<a href={action.href}>
 									{action.icon && <Icon name={action.icon as any} />}
 									{action.label}
@@ -65,6 +72,7 @@ export function PrimaryActionBar({
 							variant="outline"
 							size="lg"
 							onClick={action.onClick}
+							disabled={action.loading}
 						>
 							{action.icon && <Icon name={action.icon as any} />}
 							{action.label}
@@ -94,6 +102,7 @@ export function PrimaryActionBar({
 									setIsOpen(false)
 								}}
 								asChild={action.asChild}
+								disabled={action.loading}
 							>
 								{action.asChild && action.href ? (
 									<a href={action.href}>

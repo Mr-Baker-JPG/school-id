@@ -1,12 +1,13 @@
 import { invariantResponse } from '@epic-web/invariant'
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
+import { useNavigation } from 'react-router'
 import {
 	IDCardFrontPreview,
 	IDCardBackPreview,
 } from '#app/components/employee-id-card.tsx'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
-import { Button } from '#app/components/ui/button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
+import { StatusButton } from '#app/components/ui/status-button.tsx'
 import { CardSection } from '#app/ui/components/CardSection.tsx'
 import { IdPreviewCard } from '#app/ui/components/IdPreviewCard.tsx'
 import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
@@ -161,6 +162,7 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 		defaultExpirationDate,
 		expirationStatus,
 	} = loaderData
+	const navigation = useNavigation()
 	const expirationDate = employee.employeeId?.expirationDate
 		? new Date(employee.employeeId.expirationDate).toLocaleDateString()
 		: 'Not set'
@@ -179,12 +181,26 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 			: new Date(defaultExpirationDate),
 	}
 
+	// Check if navigating to wallet route
+	const isAddingToWallet =
+		navigation.state === 'loading' &&
+		navigation.location?.pathname === '/employee/id/wallet'
+
+	// Check if downloading PDF
+	const isDownloadingPDF =
+		navigation.state === 'loading' &&
+		navigation.location?.pathname === '/resources/employee-pdf'
+
 	const primaryAction = (
-		<Button size="lg" asChild>
-			<a href="/employee/id/wallet">
+		<a href="/employee/id/wallet">
+			<StatusButton
+				size="lg"
+				status={isAddingToWallet ? 'pending' : 'idle'}
+				disabled={isAddingToWallet}
+			>
 				<Icon name="plus">Add to Wallet</Icon>
-			</a>
-		</Button>
+			</StatusButton>
+		</a>
 	)
 
 	const secondaryActions = [
@@ -193,6 +209,7 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 			icon: 'download',
 			href: '/resources/employee-pdf',
 			asChild: true,
+			loading: isDownloadingPDF,
 		},
 	]
 
@@ -200,8 +217,8 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 		<div className="pb-20 md:pb-8">
 			<PageTitle title="My Employee ID" />
 
-			{/* Actions Section */}
-			<div className="mt-6">
+			{/* Actions Section - Hidden on mobile, shown on desktop */}
+			<div className="mt-6 hidden md:block">
 				<PrimaryActionBar
 					primaryAction={primaryAction}
 					secondaryActions={secondaryActions}
@@ -259,7 +276,41 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 
 				{/* Right Column: Status and Info */}
 				<div className="space-y-6">
-					<CardSection title="Status" className="border-muted/50 shadow-sm">
+					{/* Mobile: Compact Status + Expiration Card */}
+					<CardSection className="border-muted/50 shadow-sm md:hidden">
+						<div className="flex flex-col gap-3">
+							{expirationStatus && (
+								<div className="flex items-center gap-2">
+									<StatusBadge
+										variant={
+											expirationStatus.type === 'valid'
+												? 'valid'
+												: expirationStatus.type === 'expiring'
+													? 'expiring'
+													: 'expired'
+										}
+									>
+										{expirationStatus.type === 'valid'
+											? '✓ Valid'
+											: expirationStatus.type === 'expiring'
+												? `Expiring in ${expirationStatus.daysUntilExpiration} days`
+												: 'Expired'}
+									</StatusBadge>
+									<span className="text-muted-foreground">·</span>
+									<div className="flex items-center gap-1.5">
+										<Icon name="calendar" className="size-4" />
+										<span className="text-sm">Expires {expirationDate}</span>
+									</div>
+								</div>
+							)}
+						</div>
+					</CardSection>
+
+					{/* Desktop: Separate Status Card */}
+					<CardSection
+						title="Status"
+						className="border-muted/50 hidden shadow-sm md:block"
+					>
 						<div className="flex flex-col gap-4">
 							{expirationStatus && (
 								<div>
@@ -283,7 +334,11 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 						</div>
 					</CardSection>
 
-					<CardSection title="Expiration" className="border-muted/50 shadow-sm">
+					{/* Desktop: Separate Expiration Card */}
+					<CardSection
+						title="Expiration"
+						className="border-muted/50 hidden shadow-sm md:block"
+					>
 						<div className="flex flex-col gap-2">
 							<div className="flex items-center gap-2">
 								<Icon name="calendar" className="size-5" />
@@ -319,7 +374,10 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 			</div>
 
 			{/* Mobile Sticky Action Buttons */}
-			<div className="bg-background/95 fixed inset-x-0 bottom-0 border-t p-3 backdrop-blur md:hidden">
+			<div
+				className="bg-background/95 fixed inset-x-0 bottom-0 z-50 border-t p-3 shadow-lg backdrop-blur md:hidden"
+				style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+			>
 				<PrimaryActionBar
 					primaryAction={primaryAction}
 					secondaryActions={secondaryActions}

@@ -416,5 +416,195 @@
 		],
 		"implemented": true,
 		"tests_passed": true
+	},
+	{
+		"id": "F029",
+		"title": "Student Prisma Schema Models",
+		"description": "Create Prisma schema models for Student and StudentID. Student mirrors SIS data (sisStudentId, fullName, email, status) with an additional editable fullName field that admins can modify. StudentID stores local metadata (photoUrl, expirationDate, createdAt, updatedAt).",
+		"tests": [
+			"Schema file validates with Prisma",
+			"Migration creates tables correctly",
+			"Relations between Student and StudentID are properly defined",
+			"Required fields have appropriate constraints"
+		],
+		"implemented": true,
+		"tests_passed": true
+	},
+	{
+		"id": "F030",
+		"title": "FACTS SIS Student Sync Service",
+		"description": "Create a service module to fetch student data from FACTS SIS REST API /Students endpoint. Includes authentication, error handling, and data transformation to match Student schema.",
+		"tests": [
+			"Service successfully authenticates with FACTS API",
+			"Service fetches student list and transforms data correctly",
+			"Service handles API errors gracefully",
+			"Service validates required fields from SIS response"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F031",
+		"title": "Student Sync Background Job",
+		"description": "Extend the scheduled background job to also sync student data from FACTS SIS to local database. Creates new students, updates existing students with latest SIS data, but preserves admin-edited names.",
+		"tests": [
+			"Job successfully syncs students on schedule",
+			"New students from SIS are created in database",
+			"Existing students are updated with latest SIS data",
+			"Admin-edited names are preserved during sync",
+			"Inactive students have status updated correctly",
+			"Job handles failures without crashing"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F032",
+		"title": "Admin Student List View",
+		"description": "Create a separate admin route at /admin/students that displays a list of all students with their status, expiration dates, and photo status. Includes search/filter capabilities.",
+		"tests": [
+			"Admin can view list of all students",
+			"List displays student name, status, and expiration date",
+			"Search filters students by name or email",
+			"Filter by status (active/inactive) works correctly",
+			"Non-admin users cannot access this route"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F033",
+		"title": "Admin Student Detail View with Name Editing",
+		"description": "Create admin route at /admin/students/$studentId to view individual student details including photo, expiration date, and actions. Includes ability for admins to edit and save student name (unlike employees which are read-only from SIS).",
+		"tests": [
+			"Admin can view student detail page",
+			"Page displays all student information",
+			"Admin can edit student name and save changes",
+			"Edited name persists across SIS syncs",
+			"Page shows photo upload interface",
+			"Page shows expiration date editing",
+			"Page includes download/view ID button",
+			"Non-admin users cannot access student detail pages"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F034",
+		"title": "Admin Photo Upload for Students",
+		"description": "Implement photo upload functionality for students (similar to employees). Admins can upload/replace student photos. Photos are stored in file storage and URLs saved to StudentID record.",
+		"tests": [
+			"Admin can upload photo for any student",
+			"Uploaded photo replaces existing photo if present",
+			"Photo is validated (format, size)",
+			"Photo URL is saved to StudentID record",
+			"Non-admin users cannot upload photos",
+			"Error handling for invalid files works correctly"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F035",
+		"title": "Expiration Date Management for Students",
+		"description": "Implement expiration date management for students. Default expiration is July 1 of current school year (same as employees). Admins can view and override expiration dates for any student.",
+		"tests": [
+			"Default expiration date is set to July 1 of current school year",
+			"Admin can view expiration date for any student",
+			"Admin can update expiration date",
+			"Expiration date is stored correctly in database",
+			"Date validation prevents invalid dates",
+			"Students can see their own expiration date"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F036",
+		"title": "Student ID Route (Own ID View)",
+		"description": "Create a route at /student/id for students to view their own ID. Displays student information with \"STUDENT\" label instead of job title. Provides download button. Students can only access their own ID.",
+		"tests": [
+			"Student can view their own ID page",
+			"Student cannot view other students' IDs",
+			"Page displays student name, \"STUDENT\" label, photo, and expiration date",
+			"Download button is visible and functional",
+			"Unauthenticated users are redirected to login"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F037",
+		"title": "Student PDF Download Endpoint",
+		"description": "Create server endpoint/loader that generates and streams PDF ID card for student download. Students can download their own PDF, admins can download any student's PDF. PDF shows \"STUDENT\" instead of job title.",
+		"tests": [
+			"Student can download their own PDF ID",
+			"Student cannot download other students' PDFs",
+			"Admin can download any student's PDF",
+			"PDF is generated and streamed correctly",
+			"PDF displays \"STUDENT\" label instead of job title",
+			"Content-Type header is set to application/pdf",
+			"Download works with valid authentication"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F038",
+		"title": "Google OAuth Integration for Students",
+		"description": "Extend Google OAuth authentication to recognize students. Students with @jpgacademy.org email addresses can authenticate. On first login, create Student record if user exists in SIS.",
+		"tests": [
+			"Students can authenticate with Google OAuth using @jpgacademy.org email",
+			"First-time student login creates Student record if in SIS",
+			"Returning students can log in successfully",
+			"Session is created and maintained correctly",
+			"Students are distinguished from employees in the system"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F039",
+		"title": "Update ID Card Layout for Person Type Display",
+		"description": "Update the ID card component to display \"FACULTY\" for employees and \"STUDENT\" for students instead of using job title. This ensures consistent labeling across all ID cards while maintaining the academic year display.",
+		"tests": [
+			"Employee ID cards display \"FACULTY\" label",
+			"Student ID cards display \"STUDENT\" label",
+			"Academic year displays correctly for both types",
+			"PDF generation works for both employees and students",
+			"Preview components work for both types",
+			"Branding is applied consistently"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F040",
+		"title": "Public Verification Route for Students",
+		"description": "Extend the public verification route at /verify/:id to support both employees and students. Route auto-detects person type and displays appropriate verification information with \"Student\" or \"Faculty\" label.",
+		"tests": [
+			"Verification page works for both employees and students",
+			"Page displays correct person type label (Student/Faculty)",
+			"Page shows active/inactive status correctly for students",
+			"Page displays expiration date for students",
+			"Page shows valid/invalid badge based on status and expiration",
+			"Invalid IDs show appropriate error message"
+		],
+		"implemented": false,
+		"tests_passed": false
+	},
+	{
+		"id": "F041",
+		"title": "Student ID Expiration Notifications",
+		"description": "Extend the expiration notification system to include student IDs. Display warnings in admin interface for students with expiring IDs (within 30 days).",
+		"tests": [
+			"System identifies student IDs expiring within 30 days",
+			"Expiring student IDs are displayed in admin interface",
+			"Warning messages are clear and actionable",
+			"Already expired student IDs are identified separately",
+			"Notifications work for both employees and students"
+		],
+		"implemented": false,
+		"tests_passed": false
 	}
 ]

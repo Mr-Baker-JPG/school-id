@@ -42,7 +42,7 @@ export function SidebarNav({
 				>
 					{groups.map((group, groupIndex) => (
 						<div key={group.label}>
-							<div className="text-muted-foreground mb-2 px-3 text-xs font-semibold tracking-wider uppercase">
+							<div className="text-muted-foreground mb-2 px-3 text-xs font-medium tracking-widest uppercase md:font-semibold md:tracking-wider">
 								{group.label}
 							</div>
 							<div className="flex flex-col gap-1">
@@ -118,7 +118,7 @@ export function SidebarNav({
 			<Sheet>
 				<SheetTrigger asChild>
 					<Button variant="ghost" size="icon" className="md:hidden">
-						<Icon name="hamburger" />
+						<Icon name="menu" />
 						<span className="sr-only">{mobileTriggerLabel}</span>
 					</Button>
 				</SheetTrigger>

@@ -157,3 +157,4 @@ test('Footer does not display theme switcher', async ({ page }) => {
 	await expect(themeSwitch).not.toBeVisible()
 })
 
+

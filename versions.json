@@ -2,7 +2,7 @@
 	{
 		"label": "1.0.0",
 		"name": "Initial Release",
-		"status": "active",
+		"status": "implemented",
 		"notes": "Baseline implementation. All existing features belong to this version unless otherwise specified.",
 		"features": [
 			"F001",
@@ -33,6 +33,28 @@
 			"F026",
 			"F027",
 			"F028"
+		],
+		"deferred_features": []
+	},
+	{
+		"label": "1.1.0",
+		"name": "Student Support",
+		"status": "active",
+		"notes": "Add student ID support with separate admin interface, editable names, and student authentication. Students use same email domain (@jpgacademy.org) and July 1 expiration as employees.",
+		"features": [
+			"F029",
+			"F030",
+			"F031",
+			"F032",
+			"F033",
+			"F034",
+			"F035",
+			"F036",
+			"F037",
+			"F038",
+			"F039",
+			"F040",
+			"F041"
 		],
 		"deferred_features": []
 	}
