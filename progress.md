@@ -11,8 +11,8 @@ features.json`.
 
 **Last Updated:** 2026-03-06
 **Total Features:** 41
-**Implemented:** 31
-**Tests Passing:** 31
+**Implemented:** 32
+**Tests Passing:** 32
 
 ---
 
@@ -32,7 +32,8 @@ features.json`.
 - F030: ✅ Complete
 - F031: ✅ Complete
 - F032: ✅ Complete
-- F033-F041: ❌ Not implemented
+- F033: ✅ Complete
+- F034-F041: ❌ Not implemented
 
 ---
 
@@ -442,3 +443,73 @@ Let me just run the commit directly:
 **Status:** Active version still NOT complete. 9 features remaining.
 
 **Next Feature to Implement:** F033 - Admin Student Detail View with Name Editing
+
+---
+
+## 2026-03-06 – F033
+
+**Feature:** Admin Student Detail View with Name Editing
+
+**Implementation:**
+
+- Created student detail view at `/admin/students/$studentId`:
+  - `app/routes/admin/students/$studentId.tsx` - Main detail view component
+  - `app/routes/admin/students/$studentId.test.ts` - Comprehensive test suite (15 tests)
+
+- **Key Features:**
+  - Displays student photo (with placeholder if none)
+  - Shows all student information (name, email, SIS ID, status)
+  - **Name editing capability** - Admins can edit student name
+  - `isNameEdited` flag is set when name is edited
+  - Edited names persist across SIS syncs (unlike employees which are read-only)
+  - Expiration date display with link to edit
+  - Photo upload interface with link
+  - Download ID Card button
+  - SIS sync status (last updated, name protection status)
+
+- Added `getStudentPhotoSrc()` helper function to `misc.tsx`
+
+- **Name Editing Flow:**
+  1. Admin edits name in the form
+  2. On save, `isNameEdited` flag is set to `true`
+  3. During SIS sync, if `isNameEdited=true`, the name is preserved
+  4. Sync only updates email and status, not the name
+
+**Tests:**
+
+- ✅ Admin can view student detail page
+- ✅ Page displays all student information
+- ✅ Admin can edit student name and save changes
+- ✅ Edited name persists across SIS syncs (isNameEdited flag set)
+- ✅ Page shows photo upload interface
+- ✅ Page shows expiration date editing
+- ✅ Page includes download/view ID button
+- ✅ Non-admin users cannot access student detail pages
+- ✅ Returns 404 for non-existent student
+- ✅ Creates StudentID record if missing
+- ✅ Shows SIS sync status (last updated time)
+- ✅ Shows student with/without photo
+- ✅ Shows name edited status
+- ✅ Empty name is rejected
+- ✅ All 15 unit tests pass
+
+**Files Created:**
+
+- `app/routes/admin/students/$studentId.tsx` - Student detail view
+- `app/routes/admin/students/$studentId.test.ts` - Tests
+
+**Files Modified:**
+
+- `app/utils/misc.tsx` - Added `getStudentPhotoSrc()` helper
+
+---
+
+## PHASE 5 – Post-Feature Version Check
+
+**Active Version:** 1.1.0 (Student Support)
+**Completed Features:** F029, F030, F031, F032, F033 (5 of 13)
+**Remaining Features:** F034-F041 (8 features)
+
+**Status:** Active version still NOT complete. 8 features remaining.
+
+**Next Feature to Implement:** F034 - Admin Photo Upload for Students

@@ -486,8 +486,8 @@
 			"Page includes download/view ID button",
 			"Non-admin users cannot access student detail pages"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F034",

@@ -21,6 +21,12 @@ export function getEmployeePhotoSrc(objectKey?: string | null) {
 		: '/img/user.png'
 }
 
+export function getStudentPhotoSrc(objectKey?: string | null) {
+	return objectKey
+		? `/resources/images?objectKey=${encodeURIComponent(objectKey)}`
+		: '/img/user.png'
+}
+
 /**
  * Extracts first and last name from a full name string
  * Handles names with middle names, suffixes, and comma-separated formats
