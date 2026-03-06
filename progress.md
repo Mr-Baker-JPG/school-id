@@ -11,8 +11,8 @@ features.json`.
 
 **Last Updated:** 2026-03-06
 **Total Features:** 41
-**Implemented:** 33
-**Tests Passing:** 33
+**Implemented:** 34
+**Tests Passing:** 34
 
 ---
 
@@ -34,7 +34,8 @@ features.json`.
 - F032: ✅ Complete
 - F033: ✅ Complete
 - F034: ✅ Complete
-- F035-F041: ❌ Not implemented
+- F035: ✅ Complete
+- F036-F041: ❌ Not implemented
 
 ---
 
@@ -576,3 +577,53 @@ Let me just run the commit directly:
 **Status:** Active version still NOT complete. 7 features remaining.
 
 **Next Feature to Implement:** F035 - Expiration Date Management for Students
+
+---
+
+## 2026-03-06 – F035
+
+**Feature:** Expiration Date Management for Students
+
+**Implementation:**
+
+- Created student expiration route at `/admin/students/$studentId/expiration`:
+  - `app/routes/admin/students/$studentId/expiration.tsx` - Expiration edit form
+  - `app/routes/admin/students/$studentId/expiration.test.ts` - Test suite
+
+- **Key Features:**
+  - Form with date picker for easy expiration selection
+  - Pre-populated with current expiration date (July 1 of current school year)
+  - Admin can update/override expiration date
+  - Validation prevents invalid dates
+  - Error handling for missing StudentID
+
+  - Auto-creates StudentID if missing
+
+**Tests:**
+
+- ✅ Loader requires admin role
+- ✅ Non-admin users cannot access this route
+- ✅ Action returns 404 for non-existent student
+- ✅ Action creates StudentID if missing
+- ✅ Default expiration date is set to July 1 of current school year
+- ✅ Action updates expiration date for existing StudentID
+- ✅ Action accepts past dates (for expired IDs)
+- ✅ Date validation prevents invalid dates
+- ✅ All 6 unit tests pass
+
+**Files Created:**
+
+- `app/routes/admin/students/$studentId/expiration.tsx` - Expiration route
+- `app/routes/admin/students/$studentId/expiration.test.ts` - Tests
+
+---
+
+## PHASE 5 – Post-Feature Version Check
+
+**Active Version:** 1.1.0 (Student Support)
+**Completed Features:** F029, F030, F031, F032, F033, F034, F035 (7 of 13)
+**Remaining Features:** F036-F041 (6 features)
+
+**Status:** Active version still NOT complete. 6 features remaining.
+
+**Next Feature to Implement:** F036 - Student ID Route (Own ID View)
