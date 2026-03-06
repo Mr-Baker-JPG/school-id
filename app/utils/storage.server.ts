@@ -313,6 +313,32 @@ export async function uploadEmployeePhoto(
 	return uploadToStorage(file, key, contentType)
 }
 
+export async function uploadStudentPhoto(
+	studentId: string,
+	file: File | FileUpload | Buffer,
+	contentType: string = 'image/jpeg',
+) {
+	const fileId = createId()
+	let fileExtension = 'jpg'
+
+	if (Buffer.isBuffer(file)) {
+		// For Buffer, use the provided contentType to determine extension
+		if (contentType.includes('jpeg') || contentType.includes('jpg')) {
+			fileExtension = 'jpg'
+		} else if (contentType.includes('png')) {
+			fileExtension = 'png'
+		} else if (contentType.includes('gif')) {
+			fileExtension = 'gif'
+		}
+	} else {
+		fileExtension = file.name.split('.').pop() || 'jpg'
+	}
+
+	const timestamp = Date.now()
+	const key = `students/${studentId}/photos/${timestamp}-${fileId}.${fileExtension}`
+	return uploadToStorage(file, key, contentType)
+}
+
 function hmacSha256(key: string | Buffer, message: string) {
 	const hmac = createHmac('sha256', key)
 	hmac.update(message)
