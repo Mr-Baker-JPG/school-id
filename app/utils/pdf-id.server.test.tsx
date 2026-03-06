@@ -3,11 +3,13 @@ import { generateEmployeeIDPDF } from './pdf-id.server.tsx'
 import { generateEmployeeQRCodeBuffer } from './qr-code.server.ts'
 import { getSignedGetRequestInfo } from './storage.server.ts'
 import { getBrandingConfig } from './branding.server.ts'
+import { generateBarcodeDataURL } from './barcode.server.ts'
 
 // Mock dependencies
 vi.mock('./qr-code.server.ts')
 vi.mock('./storage.server.ts')
 vi.mock('./branding.server.ts')
+vi.mock('./barcode.server.ts')
 vi.mock('./misc.tsx', () => ({
 	getDomainUrl: (request: Request) => {
 		const url = new URL(request.url)
@@ -23,6 +25,7 @@ describe('generateEmployeeIDPDF', () => {
 		id: 'emp-123',
 		fullName: 'John Doe',
 		jobTitle: 'Teacher',
+		personType: 'FACULTY' as const,
 		email: 'john.doe@school.edu',
 		status: 'active',
 		sisEmployeeId: 'SIS-12345',
@@ -60,6 +63,11 @@ describe('generateEmployeeIDPDF', () => {
 
 		// Mock QR code generation with valid PNG
 		vi.mocked(generateEmployeeQRCodeBuffer).mockResolvedValue(minimalPNG)
+
+		// Mock barcode generation with valid data URL
+		vi.mocked(generateBarcodeDataURL).mockResolvedValue(
+			'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+		)
 
 		// Mock signed URL for photo
 		vi.mocked(getSignedGetRequestInfo).mockReturnValue({
@@ -279,10 +287,10 @@ describe('generateEmployeeIDPDF', () => {
 		).rejects.toThrow('Missing required employee data')
 	})
 
-	it('throws error for missing job title', async () => {
+	it('throws error for missing personType', async () => {
 		const invalidEmployee = {
 			...mockEmployee,
-			jobTitle: '',
+			personType: '' as any,
 		}
 
 		await expect(

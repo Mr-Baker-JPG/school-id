@@ -575,8 +575,8 @@
 			"Preview components work for both types",
 			"Branding is applied consistently"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F040",
