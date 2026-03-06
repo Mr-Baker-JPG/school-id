@@ -546,8 +546,8 @@
 			"Content-Type header is set to application/pdf",
 			"Download works with valid authentication"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F038",

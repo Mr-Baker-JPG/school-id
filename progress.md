@@ -680,12 +680,62 @@ Let me just run the commit directly:
 
 ---
 
+## 2026-03-06 – F037
+
+**Feature:** Student PDF Download Endpoint
+
+**Implementation:**
+
+- Created student PDF download routes following the employee PDF pattern:
+  - `app/routes/resources/student-pdf.tsx` - Students download their own PDF
+  - `app/routes/resources/student-pdf.test.ts` - Tests for student download (8 tests)
+  - `app/routes/resources/admin/student-pdf.$studentId.tsx` - Admins download any student's PDF
+  - `app/routes/resources/admin/student-pdf.$studentId.test.ts` - Tests for admin download (9 tests)
+
+- **Key Features:**
+  - Students can download their own PDF ID card (email-based matching)
+  - Admins can download any student's PDF ID card
+  - PDFs display "STUDENT" label instead of job title (passed to PDF generator as `jobTitle: "STUDENT"`)
+  - Auto-creates StudentID record with default July 1 expiration if missing
+  - Proper PDF headers (Content-Type, Content-Disposition, Content-Length)
+  - Comprehensive error handling with Sentry capture
+  - File naming: `student-id-{sisStudentId}.pdf`
+
+- **Authentication & Authorization:**
+  - Student route: requires authenticated user with matching email
+  - Admin route: requires admin role
+  - Non-admin/non-student users receive 403/404 responses
+
+**Tests:**
+
+- ✅ Student can download their own PDF ID
+- ✅ Student cannot download other students' PDFs (email matching)
+- ✅ Admin can download any student's PDF
+- ✅ PDF is generated and streamed correctly
+- ✅ PDF displays "STUDENT" label instead of job title
+- ✅ Content-Type header is set to application/pdf
+- ✅ Download works with valid authentication
+- ✅ Unauthenticated users are redirected to login
+- ✅ Returns 404 when student not found
+- ✅ Creates StudentID record if missing
+- ✅ Non-admin users are denied access to admin route
+- ✅ All 17 tests pass
+
+**Files Created:**
+
+- `app/routes/resources/student-pdf.tsx` - Student download route
+- `app/routes/resources/student-pdf.test.ts` - Student download tests
+- `app/routes/resources/admin/student-pdf.$studentId.tsx` - Admin download route
+- `app/routes/resources/admin/student-pdf.$studentId.test.ts` - Admin download tests
+
+---
+
 ## PHASE 5 – Post-Feature Version Check
 
 **Active Version:** 1.1.0 (Student Support)
-**Completed Features:** F029, F030, F031, F032, F033, F034, F035, F036 (8 of 13)
-**Remaining Features:** F037-F041 (5 features)
+**Completed Features:** F029, F030, F031, F032, F033, F034, F035, F036, F037 (9 of 13)
+**Remaining Features:** F038-F041 (4 features)
 
-**Status:** Active version still NOT complete. 5 features remaining.
+**Status:** Active version still NOT complete. 4 features remaining.
 
-**Next Feature to Implement:** F037 - Student PDF Download Endpoint
+**Next Feature to Implement:** F038 - Google OAuth Integration for Students
