@@ -1,8 +1,8 @@
 /**
- * Brand configuration for Employee ID System
+ * Brand configuration for JPG ID System
  */
 
-export const APP_NAME = 'Employee ID System'
+export const APP_NAME = 'JPG ID System'
 export const SCHOOL_NAME = 'John Paul the Great Academy'
 export const LOGO_SRC = '/img/jpg-logo.png'
 export const HEADER_LOGO_SRC = '/img/jpg-logo.svg'

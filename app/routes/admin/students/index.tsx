@@ -80,6 +80,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 			sisStudentId: true,
 			fullName: true,
 			email: true,
+			grade: true,
 			status: true,
 			studentId: {
 				select: {
@@ -251,10 +252,6 @@ export default function AdminStudentsRoute({
 				status={syncPending ? 'pending' : 'idle'}
 				disabled={syncPending}
 			>
-				<Icon
-					name="update"
-					className={cn('mr-4', syncPending && 'animate-spin')}
-				/>
 				Sync from FACTS
 			</StatusButton>
 		</Form>
@@ -365,6 +362,11 @@ export default function AdminStudentsRoute({
 														<div className="text-muted-foreground mt-0.5 truncate text-xs">
 															{student.email}
 														</div>
+														{student.grade && (
+															<div className="text-muted-foreground text-xs">
+																Grade {student.grade}
+															</div>
+														)}
 														<div className="mt-1.5 flex flex-wrap items-center gap-2">
 															<StatusBadge
 																variant={

@@ -19,6 +19,7 @@ export type Student = {
 	sisStudentId: string
 	fullName: string
 	email: string
+	grade: string | null
 	status: string
 	studentId: {
 		expirationDate: Date | null
@@ -91,6 +92,42 @@ export function createColumns<TStudent extends Student>(
 						</div>
 					</div>
 				)
+			},
+		},
+		{
+			accessorKey: 'grade',
+			header: ({ column }) => {
+				return (
+					<Button
+						variant="ghost"
+						onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+						className="-ml-4"
+					>
+						Grade
+						<Icon
+							name="arrow-right"
+							className={`ml-2 size-4 transition-transform ${
+								column.getIsSorted() === 'asc'
+									? '-rotate-90'
+									: column.getIsSorted() === 'desc'
+										? 'rotate-90'
+										: 'opacity-0'
+							}`}
+						/>
+					</Button>
+				)
+			},
+			cell: ({ row }) => {
+				const student = row.original
+				return <span className="font-medium">{student.grade || '-'}</span>
+			},
+			sortingFn: (rowA, rowB) => {
+				const gradeA = rowA.original.grade || ''
+				const gradeB = rowB.original.grade || ''
+				// Sort numerically (grades are strings like "7", "8", "9", "10", "11", "12")
+				const numA = parseInt(gradeA, 10) || 0
+				const numB = parseInt(gradeB, 10) || 0
+				return numA - numB
 			},
 		},
 		{

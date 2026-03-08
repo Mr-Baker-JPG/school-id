@@ -1,8 +1,8 @@
-# School Employee ID System — Project Overview
+# JPG ID System — Project Overview
 
 ## Project Overview
 
-**Project Name:** School Employee ID System
+**Project Name:** JPG ID System
 
 **Description:**  
 A secure internal web application that allows school employees to view and
@@ -124,7 +124,7 @@ Manual checks must be recorded in `progress.md`.
 
 - Feature commits: `feat: F00X short description`
 - Bug fixes: `fix: F00X short description`
-- Chores/setup: `chore: initialize employee ID system`
+- Chores/setup: `chore: initialize JPG ID system`
 
 ### Commit Guidelines
 

@@ -432,10 +432,6 @@ export default function AdminEmployeesRoute({
 				status={syncPending ? 'pending' : 'idle'}
 				disabled={syncPending}
 			>
-				<Icon
-					name="update"
-					className={cn('mr-4', syncPending && 'animate-spin')}
-				/>
 				Sync from FACTS
 			</StatusButton>
 		</Form>

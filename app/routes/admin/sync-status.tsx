@@ -17,6 +17,7 @@ import { CardSection } from '#app/ui/components/CardSection.tsx'
 import { PageTitle } from '#app/ui/components/PageTitle.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { syncEmployeesFromFacts } from '#app/utils/employee-sync.server.ts'
+import { syncStudentsFromFacts } from '#app/utils/student-sync.server.ts'
 import { useIsPending } from '#app/utils/misc.tsx'
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
@@ -29,34 +30,59 @@ export const handle: SEOHandle = {
 export async function loader({ request }: Route.LoaderArgs) {
 	await requireUserWithRole(request, 'admin')
 
-	// Get the most recent sync history entry
-	const lastSync = await prisma.syncHistory.findFirst({
+	// Get the most recent staff sync history entry
+	const lastStaffSync = await prisma.syncHistory.findFirst({
+		where: { syncType: 'staff' },
 		orderBy: { createdAt: 'desc' },
 	})
 
-	// Get sync statistics
-	const totalEmployees = await prisma.employee.count()
-	const activeEmployees = await prisma.employee.count({
+	// Get the most recent student sync history entry
+	const lastStudentSync = await prisma.syncHistory.findFirst({
+		where: { syncType: 'student' },
+		orderBy: { createdAt: 'desc' },
+	})
+
+	// Get staff statistics
+	const totalStaff = await prisma.employee.count()
+	const activeStaff = await prisma.employee.count({
 		where: { status: 'active' },
 	})
-	const inactiveEmployees = await prisma.employee.count({
+	const inactiveStaff = await prisma.employee.count({
 		where: { status: 'inactive' },
 	})
 
-	// Get recent sync errors (last 10 syncs with errors)
-	const recentErrors = await prisma.syncHistory.findMany({
+	// Get student statistics
+	const totalStudents = await prisma.student.count()
+	const activeStudents = await prisma.student.count({
+		where: { status: 'active' },
+	})
+	const inactiveStudents = await prisma.student.count({
+		where: { status: 'inactive' },
+	})
+
+	// Get recent sync errors (last 10 syncs with errors for each type)
+	const recentStaffErrors = await prisma.syncHistory.findMany({
 		where: {
+			syncType: 'staff',
 			OR: [{ success: false }, { errors: { gt: 0 } }],
 		},
 		orderBy: { createdAt: 'desc' },
 		take: 10,
 	})
 
-	// Get employees that haven't been updated recently (more than 7 days ago)
-	// These might be pending sync issues
+	const recentStudentErrors = await prisma.syncHistory.findMany({
+		where: {
+			syncType: 'student',
+			OR: [{ success: false }, { errors: { gt: 0 } }],
+		},
+		orderBy: { createdAt: 'desc' },
+		take: 10,
+	})
+
+	// Get staff that haven't been updated recently (more than 7 days ago)
 	const sevenDaysAgo = new Date()
 	sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-	const employeesWithSyncIssues = await prisma.employee.findMany({
+	const staffWithSyncIssues = await prisma.employee.findMany({
 		where: {
 			updatedAt: { lt: sevenDaysAgo },
 		},
@@ -72,15 +98,40 @@ export async function loader({ request }: Route.LoaderArgs) {
 		take: 50, // Limit to most recent 50
 	})
 
-	return {
-		lastSync,
-		statistics: {
-			total: totalEmployees,
-			active: activeEmployees,
-			inactive: inactiveEmployees,
+	// Get students that haven't been updated recently (more than 7 days ago)
+	const studentsWithSyncIssues = await prisma.student.findMany({
+		where: {
+			updatedAt: { lt: sevenDaysAgo },
 		},
-		recentErrors,
-		employeesWithSyncIssues,
+		select: {
+			id: true,
+			sisStudentId: true,
+			fullName: true,
+			email: true,
+			status: true,
+			updatedAt: true,
+		},
+		orderBy: { updatedAt: 'asc' },
+		take: 50, // Limit to most recent 50
+	})
+
+	return {
+		lastStaffSync,
+		lastStudentSync,
+		staffStatistics: {
+			total: totalStaff,
+			active: activeStaff,
+			inactive: inactiveStaff,
+		},
+		studentStatistics: {
+			total: totalStudents,
+			active: activeStudents,
+			inactive: inactiveStudents,
+		},
+		recentStaffErrors,
+		recentStudentErrors,
+		staffWithSyncIssues,
+		studentsWithSyncIssues,
 	}
 }
 
@@ -89,26 +140,51 @@ export async function action({ request }: Route.ActionArgs) {
 	const formData = await request.formData()
 	const intent = formData.get('intent')
 
-	if (intent === 'sync') {
+	if (intent === 'sync-staff') {
 		const result = await syncEmployeesFromFacts()
 
 		if (result.success) {
 			const message =
 				result.created > 0 || result.updated > 0
-					? `Sync completed: ${result.created} created, ${result.updated} updated${
+					? `Staff sync completed: ${result.created} created, ${result.updated} updated${
 							result.errors > 0 ? `, ${result.errors} errors` : ''
 						}`
-					: 'Sync completed: No changes needed'
+					: 'Staff sync completed: No changes needed'
 
 			return redirectWithToast('/admin/sync-status', {
 				type: 'success',
-				title: 'Sync Successful',
+				title: 'Staff Sync Successful',
 				description: message,
 			})
 		} else {
 			return redirectWithToast('/admin/sync-status', {
 				type: 'error',
-				title: 'Sync Failed',
+				title: 'Staff Sync Failed',
+				description: result.errorMessage || 'An error occurred during sync',
+			})
+		}
+	}
+
+	if (intent === 'sync-students') {
+		const result = await syncStudentsFromFacts()
+
+		if (result.success) {
+			const message =
+				result.created > 0 || result.updated > 0
+					? `Student sync completed: ${result.created} created, ${result.updated} updated${
+							result.errors > 0 ? `, ${result.errors} errors` : ''
+						}`
+					: 'Student sync completed: No changes needed'
+
+			return redirectWithToast('/admin/sync-status', {
+				type: 'success',
+				title: 'Student Sync Successful',
+				description: message,
+			})
+		} else {
+			return redirectWithToast('/admin/sync-status', {
+				type: 'error',
+				title: 'Student Sync Failed',
 				description: result.errorMessage || 'An error occurred during sync',
 			})
 		}
@@ -117,50 +193,210 @@ export async function action({ request }: Route.ActionArgs) {
 	return redirect('/admin/sync-status')
 }
 
-export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
-	const { lastSync, statistics, recentErrors, employeesWithSyncIssues } =
-		loaderData
-	const syncPending = useIsPending({ formAction: '/admin/sync-status' })
+function SyncStatusCard({
+	title,
+	lastSync,
+	statistics,
+	recentErrors,
+	personsWithSyncIssues,
+	personType,
+	syncPending,
+	onSyncClick,
+	confirmDialogOpen,
+	setConfirmDialogOpen,
+	confirmationChecked,
+	setConfirmationChecked,
+	formAction,
+}: {
+	title: string
+	lastSync: any
+	statistics: { total: number; active: number; inactive: number }
+	recentErrors: any[]
+	personsWithSyncIssues: any[]
+	personType: 'staff' | 'students'
+	syncPending: boolean
+	onSyncClick: () => void
+	confirmDialogOpen: boolean
+	setConfirmDialogOpen: (open: boolean) => void
+	confirmationChecked: boolean
+	setConfirmationChecked: (checked: boolean) => void
+	formAction: string
+}) {
 	const revalidator = useRevalidator()
-	const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
-	const [confirmationChecked, setConfirmationChecked] = useState(false)
-
-	const actionButtons = (
-		<div className="flex flex-col gap-2 sm:flex-row">
-			<StatusButton
-				type="button"
-				variant="outline"
-				status={revalidator.state === 'loading' ? 'pending' : 'idle'}
-				disabled={revalidator.state === 'loading'}
-				onClick={() => revalidator.revalidate()}
-			>
-				<Icon name="update" />
-				Refresh
-			</StatusButton>
-			<StatusButton
-				type="button"
-				status={syncPending ? 'pending' : 'idle'}
-				disabled={syncPending}
-				onClick={() => setConfirmDialogOpen(true)}
-			>
-				<Icon name="update" className={syncPending ? 'animate-spin' : ''} />
-				Sync Now
-			</StatusButton>
-		</div>
-	)
+	const personLinkBase = personType === 'staff' ? '/admin/employees' : '/admin/students'
 
 	return (
-		<div>
-			<PageTitle title="SIS Sync Status" rightSlot={actionButtons} />
-
-			{/* Help text */}
-			<div className="bg-muted/30 border-border mt-4 rounded-md border p-3 text-sm">
-				<p className="text-muted-foreground">
-					<strong>Refresh</strong> reloads the status page without making
-					changes. <strong>Sync Now</strong> pulls the latest employee data from
-					FACTS and may overwrite local changes.
-				</p>
+		<div className="space-y-6">
+			{/* Action Buttons */}
+			<div className="flex flex-col gap-2 sm:flex-row">
+				<StatusButton
+					type="button"
+					variant="outline"
+					status={revalidator.state === 'loading' ? 'pending' : 'idle'}
+					disabled={revalidator.state === 'loading'}
+					onClick={() => revalidator.revalidate()}
+				>
+					Refresh
+				</StatusButton>
+				<StatusButton
+					type="button"
+					status={syncPending ? 'pending' : 'idle'}
+					disabled={syncPending}
+					onClick={onSyncClick}
+				>
+					Sync {title} Now
+				</StatusButton>
 			</div>
+
+			{/* Last Sync Status */}
+			<CardSection title="Last Sync" className="border-muted/50 shadow-sm">
+				{lastSync ? (
+					<div className="space-y-2">
+						<div className="flex items-center gap-2">
+							<Icon
+								name={lastSync.success ? 'check' : 'cross'}
+								className={
+									lastSync.success ? 'text-success' : 'text-destructive'
+								}
+							/>
+							<span className="font-semibold">
+								{lastSync.success ? 'Successful' : 'Failed'}
+							</span>
+							<span className="text-muted-foreground">
+								• {new Date(lastSync.createdAt).toLocaleString()}
+							</span>
+						</div>
+						<div className="grid grid-cols-3 gap-4 text-sm">
+							<div>
+								<span className="text-muted-foreground">Created:</span>{' '}
+								<span className="font-medium">{lastSync.created}</span>
+							</div>
+							<div>
+								<span className="text-muted-foreground">Updated:</span>{' '}
+								<span className="font-medium">{lastSync.updated}</span>
+							</div>
+							<div>
+								<span className="text-muted-foreground">Errors:</span>{' '}
+								<span
+									className={
+										lastSync.errors > 0
+											? 'text-destructive font-medium'
+											: 'font-medium'
+									}
+								>
+									{lastSync.errors}
+								</span>
+							</div>
+						</div>
+						{lastSync.errorMessage && (
+							<div className="bg-destructive/10 text-destructive mt-2 rounded p-2 text-sm">
+								{lastSync.errorMessage}
+							</div>
+						)}
+					</div>
+				) : (
+					<p className="text-muted-foreground">No sync history available</p>
+				)}
+			</CardSection>
+
+			{/* Statistics */}
+			<CardSection
+				title="Sync Statistics"
+				className="border-muted/50 shadow-sm"
+			>
+				<div className="grid grid-cols-3 gap-4">
+					<div>
+						<div className="text-2xl font-bold">{statistics.total}</div>
+						<div className="text-muted-foreground text-sm">Total {title}</div>
+					</div>
+					<div>
+						<div className="text-success text-2xl font-bold">
+							{statistics.active}
+						</div>
+						<div className="text-muted-foreground text-sm">Active</div>
+					</div>
+					<div>
+						<div className="text-muted-foreground text-2xl font-bold">
+							{statistics.inactive}
+						</div>
+						<div className="text-muted-foreground text-sm">Inactive</div>
+					</div>
+				</div>
+			</CardSection>
+
+			{/* Recent Errors */}
+			{recentErrors.length > 0 && (
+				<CardSection
+					title="Recent Sync Errors"
+					className="border-muted/50 shadow-sm"
+				>
+					<div className="space-y-3">
+						{recentErrors.map((error) => (
+							<div
+								key={error.id}
+								className="border-destructive/20 bg-destructive/5 rounded border p-3"
+							>
+								<div className="flex items-center justify-between">
+									<div className="flex items-center gap-2">
+										<Icon name="cross" className="text-destructive" />
+										<span className="font-medium">
+											{new Date(error.createdAt).toLocaleString()}
+										</span>
+									</div>
+									<span className="text-muted-foreground text-sm">
+										{error.errors} error{error.errors !== 1 ? 's' : ''}
+									</span>
+								</div>
+								{error.errorMessage && (
+									<div className="text-destructive mt-2 text-sm">
+										{error.errorMessage}
+									</div>
+								)}
+							</div>
+						))}
+					</div>
+				</CardSection>
+			)}
+
+			{/* Persons with Sync Issues */}
+			{personsWithSyncIssues.length > 0 && (
+				<CardSection
+					title={`${title} Pending Sync (${personsWithSyncIssues.length})`}
+					description={`${title} that haven't been updated in the last 7 days`}
+					className="border-muted/50 shadow-sm"
+				>
+					<div className="space-y-2">
+						{personsWithSyncIssues.map((person) => (
+							<div
+								key={person.id}
+								className="border-border flex items-center justify-between rounded border p-2"
+							>
+								<div>
+									<Link
+										to={`${personLinkBase}/${person.id}`}
+										className="font-medium hover:underline"
+									>
+										{person.fullName}
+									</Link>
+									<div className="text-muted-foreground text-sm">
+										{person.email} • Last updated:{' '}
+										{new Date(person.updatedAt).toLocaleDateString()}
+									</div>
+								</div>
+								<span
+									className={`rounded px-2 py-1 text-xs ${
+										person.status === 'active'
+											? 'bg-success/20 text-success'
+											: 'bg-muted text-muted-foreground'
+									}`}
+								>
+									{person.status}
+								</span>
+							</div>
+						))}
+					</div>
+				</CardSection>
+			)}
 
 			{/* Confirmation Dialog */}
 			<Dialog
@@ -174,10 +410,10 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Sync from FACTS SIS</DialogTitle>
+						<DialogTitle>Sync {title} from FACTS SIS</DialogTitle>
 						<DialogDescription>
-							This will pull the latest employee data from FACTS and may
-							overwrite local changes.
+							This will pull the latest {title.toLowerCase()} data from FACTS
+							and may overwrite local changes.
 						</DialogDescription>
 					</DialogHeader>
 
@@ -186,12 +422,11 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 						<div className="flex items-start gap-2">
 							<Icon name="cross-1" className="mt-0.5 size-4 flex-shrink-0" />
 							<div>
-								<p className="font-semibold">
-									Warning: Potential Data Overwrite
-								</p>
+								<p className="font-semibold">Warning: Potential Data Overwrite</p>
 								<p className="mt-1">
-									Local changes to employee records may be overwritten by data
-									from FACTS SIS. This action cannot be undone.
+									Local changes to {title.toLowerCase()} records may be
+									overwritten by data from FACTS SIS. This action cannot be
+									undone.
 								</p>
 							</div>
 						</div>
@@ -202,8 +437,8 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 							<strong>What will happen:</strong>
 						</p>
 						<ul className="text-muted-foreground mt-2 list-disc space-y-1 pl-5">
-							<li>Employee records will be updated from FACTS</li>
-							<li>New employees may be added</li>
+							<li>{title} records will be updated from FACTS</li>
+							<li>New {title.toLowerCase()} may be added</li>
 							<li>Local changes may be overwritten</li>
 							<li>Profile pictures may be refreshed</li>
 						</ul>
@@ -213,13 +448,13 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 					<div className="flex items-start gap-2">
 						<input
 							type="checkbox"
-							id="sync-confirmation"
+							id={`sync-confirmation-${personType}`}
 							checked={confirmationChecked}
 							onChange={(e) => setConfirmationChecked(e.target.checked)}
 							className="mt-1 h-4 w-4 rounded border-gray-300"
 						/>
 						<label
-							htmlFor="sync-confirmation"
+							htmlFor={`sync-confirmation-${personType}`}
 							className="text-foreground text-sm leading-relaxed"
 						>
 							I understand that local changes may be overwritten by this sync
@@ -239,7 +474,7 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 							Cancel
 						</Button>
 						<Form method="post" action="/admin/sync-status">
-							<input type="hidden" name="intent" value="sync" />
+							<input type="hidden" name="intent" value={formAction} />
 							<Button
 								type="submit"
 								disabled={syncPending || !confirmationChecked}
@@ -250,173 +485,117 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 										Syncing...
 									</>
 								) : (
-									'Sync Now'
+									`Sync ${title} Now`
 								)}
 							</Button>
 						</Form>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+		</div>
+	)
+}
 
-			<div className="mt-6">
-				{/* Last Sync Status */}
-				<CardSection title="Last Sync" className="border-muted/50 shadow-sm">
-					{lastSync ? (
-						<div className="space-y-2">
-							<div className="flex items-center gap-2">
-								<Icon
-									name={lastSync.success ? 'check' : 'cross'}
-									className={
-										lastSync.success ? 'text-success' : 'text-destructive'
-									}
-								/>
-								<span className="font-semibold">
-									{lastSync.success ? 'Successful' : 'Failed'}
-								</span>
-								<span className="text-muted-foreground">
-									• {new Date(lastSync.createdAt).toLocaleString()}
-								</span>
-							</div>
-							<div className="grid grid-cols-3 gap-4 text-sm">
-								<div>
-									<span className="text-muted-foreground">Created:</span>{' '}
-									<span className="font-medium">{lastSync.created}</span>
-								</div>
-								<div>
-									<span className="text-muted-foreground">Updated:</span>{' '}
-									<span className="font-medium">{lastSync.updated}</span>
-								</div>
-								<div>
-									<span className="text-muted-foreground">Errors:</span>{' '}
-									<span
-										className={
-											lastSync.errors > 0
-												? 'text-destructive font-medium'
-												: 'font-medium'
-										}
-									>
-										{lastSync.errors}
-									</span>
-								</div>
-							</div>
-							{lastSync.errorMessage && (
-								<div className="bg-destructive/10 text-destructive mt-2 rounded p-2 text-sm">
-									{lastSync.errorMessage}
-								</div>
-							)}
-						</div>
-					) : (
-						<p className="text-muted-foreground">No sync history available</p>
-					)}
-				</CardSection>
+export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
+	const {
+		lastStaffSync,
+		lastStudentSync,
+		staffStatistics,
+		studentStatistics,
+		recentStaffErrors,
+		recentStudentErrors,
+		staffWithSyncIssues,
+		studentsWithSyncIssues,
+	} = loaderData
+
+	const staffSyncPending = useIsPending({ formAction: '/admin/sync-status' })
+	const [staffDialogOpen, setStaffDialogOpen] = useState(false)
+	const [staffConfirmationChecked, setStaffConfirmationChecked] = useState(false)
+
+	const [studentDialogOpen, setStudentDialogOpen] = useState(false)
+	const [studentConfirmationChecked, setStudentConfirmationChecked] =
+		useState(false)
+
+	return (
+		<div>
+			<PageTitle title="SIS Sync Status" />
+
+			{/* Help text */}
+			<div className="bg-muted/30 border-border mt-4 rounded-md border p-3 text-sm">
+				<p className="text-muted-foreground">
+					<strong>Refresh</strong> reloads the status page without making
+					changes. <strong>Sync Now</strong> pulls the latest data from FACTS
+					and may overwrite local changes.
+				</p>
 			</div>
 
+			{/* Tabs for Staff and Students */}
 			<div className="mt-6">
-				{/* Statistics */}
-				<CardSection
-					title="Sync Statistics"
-					className="border-muted/50 shadow-sm"
-				>
-					<div className="grid grid-cols-3 gap-4">
-						<div>
-							<div className="text-2xl font-bold">{statistics.total}</div>
-							<div className="text-muted-foreground text-sm">
-								Total Employees
-							</div>
-						</div>
-						<div>
-							<div className="text-success text-2xl font-bold">
-								{statistics.active}
-							</div>
-							<div className="text-muted-foreground text-sm">Active</div>
-						</div>
-						<div>
-							<div className="text-muted-foreground text-2xl font-bold">
-								{statistics.inactive}
-							</div>
-							<div className="text-muted-foreground text-sm">Inactive</div>
-						</div>
-					</div>
-				</CardSection>
+				<div className="border-b border-gray-200">
+					<nav className="-mb-px flex space-x-8" aria-label="Tabs">
+						<button
+							onClick={() => {
+								document
+									.getElementById('staff-section')
+									?.scrollIntoView({ behavior: 'smooth' })
+							}}
+							className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium"
+						>
+							Staff ({staffStatistics.total})
+						</button>
+						<button
+							onClick={() => {
+								document
+									.getElementById('students-section')
+									?.scrollIntoView({ behavior: 'smooth' })
+							}}
+							className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium"
+						>
+							Students ({studentStatistics.total})
+						</button>
+					</nav>
+				</div>
 			</div>
 
-			{/* Recent Errors */}
-			{recentErrors.length > 0 && (
-				<div className="mt-6">
-					<CardSection
-						title="Recent Sync Errors"
-						className="border-muted/50 shadow-sm"
-					>
-						<div className="space-y-3">
-							{recentErrors.map((error) => (
-								<div
-									key={error.id}
-									className="border-destructive/20 bg-destructive/5 rounded border p-3"
-								>
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-2">
-											<Icon name="cross" className="text-destructive" />
-											<span className="font-medium">
-												{new Date(error.createdAt).toLocaleString()}
-											</span>
-										</div>
-										<span className="text-muted-foreground text-sm">
-											{error.errors} error{error.errors !== 1 ? 's' : ''}
-										</span>
-									</div>
-									{error.errorMessage && (
-										<div className="text-destructive mt-2 text-sm">
-											{error.errorMessage}
-										</div>
-									)}
-								</div>
-							))}
-						</div>
-					</CardSection>
-				</div>
-			)}
+			{/* Staff Section */}
+			<div id="staff-section" className="mt-6">
+				<h2 className="mb-4 text-xl font-semibold">Staff Sync</h2>
+				<SyncStatusCard
+					title="Staff"
+					lastSync={lastStaffSync}
+					statistics={staffStatistics}
+					recentErrors={recentStaffErrors}
+					personsWithSyncIssues={staffWithSyncIssues}
+					personType="staff"
+					syncPending={staffSyncPending}
+					onSyncClick={() => setStaffDialogOpen(true)}
+					confirmDialogOpen={staffDialogOpen}
+					setConfirmDialogOpen={setStaffDialogOpen}
+					confirmationChecked={staffConfirmationChecked}
+					setConfirmationChecked={setStaffConfirmationChecked}
+					formAction="sync-staff"
+				/>
+			</div>
 
-			{/* Employees with Sync Issues */}
-			{employeesWithSyncIssues.length > 0 && (
-				<div className="mt-6">
-					<CardSection
-						title={`Employees Pending Sync (${employeesWithSyncIssues.length})`}
-						description="Employees that haven't been updated in the last 7 days"
-						className="border-muted/50 shadow-sm"
-					>
-						<div className="space-y-2">
-							{employeesWithSyncIssues.map((employee) => (
-								<div
-									key={employee.id}
-									className="border-border flex items-center justify-between rounded border p-2"
-								>
-									<div>
-										<Link
-											to={`/admin/employees/${employee.id}`}
-											className="font-medium hover:underline"
-										>
-											{employee.fullName}
-										</Link>
-										<div className="text-muted-foreground text-sm">
-											{employee.email} • Last updated:{' '}
-											{new Date(employee.updatedAt).toLocaleDateString()}
-										</div>
-									</div>
-									<span
-										className={`rounded px-2 py-1 text-xs ${
-											employee.status === 'active'
-												? 'bg-success/20 text-success'
-												: 'bg-muted text-muted-foreground'
-										}`}
-									>
-										{employee.status}
-									</span>
-								</div>
-							))}
-						</div>
-					</CardSection>
-				</div>
-			)}
+			{/* Students Section */}
+			<div id="students-section" className="mt-12">
+				<h2 className="mb-4 text-xl font-semibold">Student Sync</h2>
+				<SyncStatusCard
+					title="Students"
+					lastSync={lastStudentSync}
+					statistics={studentStatistics}
+					recentErrors={recentStudentErrors}
+					personsWithSyncIssues={studentsWithSyncIssues}
+					personType="students"
+					syncPending={staffSyncPending}
+					onSyncClick={() => setStudentDialogOpen(true)}
+					confirmDialogOpen={studentDialogOpen}
+					setConfirmDialogOpen={setStudentDialogOpen}
+					confirmationChecked={studentConfirmationChecked}
+					setConfirmationChecked={setStudentConfirmationChecked}
+					formAction="sync-students"
+				/>
+			</div>
 		</div>
 	)
 }

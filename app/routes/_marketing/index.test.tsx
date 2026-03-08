@@ -17,12 +17,12 @@ test('Landing page displays brief system information', () => {
 
 	render(<App initialEntries={['/']} />)
 
-	expect(screen.getByText('Employee ID System')).toBeInTheDocument()
+	expect(screen.getByText('JPG ID System')).toBeInTheDocument()
 	expect(
-		screen.getByText(/Access your official employee ID card/i),
+		screen.getByText(/Access your official ID card\. View, download/i),
 	).toBeInTheDocument()
 	expect(
-		screen.getByText(/This system is for internal use by school employees/i),
+		screen.getByText(/This system is for internal use by school/i),
 	).toBeInTheDocument()
 })
 
@@ -43,7 +43,7 @@ test('Landing page displays embedded login form', () => {
 
 test('Landing page has correct meta title', () => {
 	const metaData = meta({ data: {}, params: {}, location: {} } as any)
-	expect(metaData).toContainEqual({ title: 'Employee ID System' })
+	expect(metaData).toContainEqual({ title: 'JPG ID System' })
 })
 
 

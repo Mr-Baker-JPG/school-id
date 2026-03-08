@@ -2,6 +2,10 @@ import { invariantResponse } from '@epic-web/invariant'
 import { Img } from 'openimg/react'
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
 import { Form, Link } from 'react-router'
+import {
+	IDCardFrontPreview,
+	IDCardBackPreview,
+} from '#app/components/employee-id-card.tsx'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
@@ -10,12 +14,18 @@ import { PageTitle } from '#app/ui/components/PageTitle.tsx'
 import { CardSection } from '#app/ui/components/CardSection.tsx'
 import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
 import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
+import { IdPreviewCard } from '#app/ui/components/IdPreviewCard.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import {
 	getNextJuly1ExpirationDate,
 	fetchAndCacheFactsProfilePicture,
+	getExpirationStatus,
 } from '#app/utils/student.server.ts'
+import { getCurrentAcademicYear } from '#app/utils/employee.server.ts'
+import { generateBarcodeDataURL } from '#app/utils/barcode.server.ts'
+import { getBrandingConfig } from '#app/utils/branding.server.ts'
 import { getStudentPhotoSrc, useIsPending } from '#app/utils/misc.tsx'
+import { generateStudentQRCodeDataURL } from '#app/utils/qr-code.server.ts'
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { type Route } from './+types/$studentId.ts'
@@ -30,6 +40,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
 	invariantResponse(studentId, 'Student ID is required', { status: 400 })
 
+	// Check for force photo check parameter
+	const url = new URL(request.url)
+	const forcePhotoCheck = url.searchParams.get('forcePhotoCheck') === 'true'
+
 	// Fetch student with all related data
 	const student = await prisma.student.findUnique({
 		where: { id: studentId },
@@ -38,6 +52,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 			sisStudentId: true,
 			fullName: true,
 			email: true,
+			grade: true,
 			status: true,
 			isNameEdited: true,
 			createdAt: true,
@@ -48,6 +63,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 					expirationDate: true,
 					createdAt: true,
 					updatedAt: true,
+					factsPhotoCheckedAt: true,
 				},
 			},
 		},
@@ -68,14 +84,26 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 				expirationDate: true,
 				createdAt: true,
 				updatedAt: true,
+				factsPhotoCheckedAt: true,
 			},
 		})
 	}
 
-	// Fetch FACTS profile picture if no uploaded photo
-	if (!studentIdRecord?.photoUrl) {
+	// Fetch FACTS profile picture
+	// - If forcePhotoCheck=true, bypass rate limiting and always fetch
+	// - If no uploaded photo exists, try to fetch (respects 7-day rate limit)
+	let photoCheckAttempted = false
+	let photoCheckResult: { success: boolean; message: string } | null = null
+
+	if (forcePhotoCheck || !studentIdRecord?.photoUrl) {
+		photoCheckAttempted = true
 		try {
-			await fetchAndCacheFactsProfilePicture(student.id, student.sisStudentId)
+			const photoUrl = await fetchAndCacheFactsProfilePicture(
+				student.id,
+				student.sisStudentId,
+				forcePhotoCheck, // Force bypass rate limiting if requested
+			)
+			
 			// Re-fetch to get the updated photoUrl
 			const updatedStudentId = await prisma.studentID.findUnique({
 				where: { studentId: student.id },
@@ -84,22 +112,84 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 					expirationDate: true,
 					createdAt: true,
 					updatedAt: true,
+					factsPhotoCheckedAt: true,
 				},
 			})
 			if (updatedStudentId) {
 				studentIdRecord = updatedStudentId
 			}
+
+			// Set result message
+			if (photoUrl) {
+				photoCheckResult = {
+					success: true,
+					message: 'Profile picture successfully fetched from FACTS and cached.',
+				}
+			} else {
+				photoCheckResult = {
+					success: false,
+					message: studentIdRecord?.photoUrl
+						? 'No new photo found in FACTS (existing photo retained).'
+						: 'No profile picture found in FACTS for this student.',
+				}
+			}
 		} catch (error) {
 			// Log error but continue without photo
 			console.error('Failed to fetch FACTS profile picture:', error)
+			photoCheckResult = {
+				success: false,
+				message: `Error fetching photo from FACTS: ${error instanceof Error ? error.message : 'Unknown error'}`,
+			}
 		}
 	}
+
+	// Get branding config
+	const branding = getBrandingConfig()
+
+	// Get photo URL (objectKey from database)
+	const photoUrl: string | null = studentIdRecord?.photoUrl ?? null
+
+	// Get logo URL (if configured)
+	const logoUrl = branding.logoUrl || null
+
+	// Generate QR code for verification
+	const qrCodeDataURL = await generateStudentQRCodeDataURL(student.id, request)
+
+	// Generate barcode for ID card
+	const barcodeDataURL = await generateBarcodeDataURL(student.sisStudentId, {
+		width: 2,
+		height: 40,
+		format: 'CODE128',
+		displayValue: false,
+	})
+
+	// Get current academic year
+	const academicYear = getCurrentAcademicYear()
+
+	// Calculate expiration status
+	let expirationStatus = null
+	if (studentIdRecord.expirationDate) {
+		expirationStatus = getExpirationStatus(studentIdRecord.expirationDate)
+	}
+
+	// Ensure we always have an expiration date for the component
+	const defaultExpirationDate = getNextJuly1ExpirationDate()
 
 	return {
 		student: {
 			...student,
 			studentId: studentIdRecord,
 		},
+		photoCheckResult,
+		forcePhotoCheck,
+		branding,
+		photoUrl,
+		logoUrl,
+		qrCodeDataURL,
+		barcodeDataURL,
+		expirationStatus,
+		academicYear,
+		defaultExpirationDate,
 	}
 }
 
@@ -145,8 +235,21 @@ export async function action({ request, params }: Route.ActionArgs) {
 export default function AdminStudentDetailRoute({
 	loaderData,
 }: Route.ComponentProps) {
-	const { student } = loaderData
+	const {
+		student,
+		photoCheckResult,
+		forcePhotoCheck,
+		branding,
+		photoUrl,
+		logoUrl,
+		qrCodeDataURL,
+		barcodeDataURL,
+		expirationStatus,
+		academicYear,
+		defaultExpirationDate,
+	} = loaderData
 	const hasPhoto = !!student.studentId?.photoUrl
+	const displayPhotoUrl = photoUrl ? getStudentPhotoSrc(photoUrl) : null
 	const expirationDate = student.studentId?.expirationDate
 		? new Date(student.studentId.expirationDate).toLocaleDateString()
 		: 'Not set'
@@ -155,6 +258,23 @@ export default function AdminStudentDetailRoute({
 		formAction: `/admin/students/${student.id}`,
 		intent: 'update-name',
 	})
+	const isPhotoCheckPending = useIsPending({
+		formAction: `/admin/students/${student.id}`,
+	})
+
+	// Prepare student data for ID card component
+	const studentCardData = {
+		id: student.id,
+		fullName: student.fullName,
+		personType: 'STUDENT' as const,
+		email: student.email,
+		status: student.status,
+		sisEmployeeId: student.sisStudentId, // Using sisEmployeeId field name for component compatibility
+		photoUrl: student.studentId?.photoUrl || null,
+		expirationDate: student.studentId?.expirationDate
+			? new Date(student.studentId.expirationDate)
+			: new Date(defaultExpirationDate),
+	}
 
 	const downloadButton = (
 		<Button
@@ -187,29 +307,76 @@ export default function AdminStudentDetailRoute({
 			<div className="mt-8 grid gap-6 md:grid-cols-2">
 				{/* Left Column: Photo */}
 				<CardSection title="Photo">
-					<div className="flex items-center gap-4">
-						{hasPhoto ? (
-							<Img
-								src={getStudentPhotoSrc(student.studentId?.photoUrl)}
-								alt={student.fullName}
-								className="size-32 rounded-lg object-cover"
-								width={128}
-								height={128}
-							/>
-						) : (
-							<div className="bg-muted-foreground/20 flex size-32 items-center justify-center rounded-lg">
-								<Icon name="avatar" className="text-muted-foreground size-16" />
+					<div className="flex flex-col gap-4">
+						{/* Photo display */}
+						<div className="flex items-center gap-4">
+							{hasPhoto ? (
+								<Img
+									src={getStudentPhotoSrc(student.studentId?.photoUrl)}
+									alt={student.fullName}
+									className="size-32 rounded-lg object-cover"
+									width={128}
+									height={128}
+								/>
+							) : (
+								<div className="bg-muted-foreground/20 flex size-32 items-center justify-center rounded-lg">
+									<Icon name="avatar" className="text-muted-foreground size-16" />
+								</div>
+							)}
+							<div className="flex flex-col gap-2">
+								<Button asChild variant="outline">
+									<Link to={`/admin/students/${student.id}/photo`}>
+										<Icon name="pencil-1">
+											{hasPhoto ? 'Change Photo' : 'Upload Photo'}
+										</Icon>
+									</Link>
+								</Button>
+								<Button
+									asChild
+									variant="outline"
+									className={
+										forcePhotoCheck ? 'border-primary bg-primary/10' : ''
+									}
+								>
+									<Link to={`/admin/students/${student.id}?forcePhotoCheck=true`}>
+										<Icon name="refresh">
+											{isPhotoCheckPending
+												? 'Checking FACTS...'
+												: 'Refresh from FACTS'}
+										</Icon>
+									</Link>
+								</Button>
+							</div>
+						</div>
+
+						{/* Photo check result message */}
+						{photoCheckResult && (
+							<div
+								className={`rounded-lg border p-3 ${
+									photoCheckResult.success
+										? 'border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400'
+										: 'border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+								}`}
+							>
+								<div className="flex items-start gap-2">
+									<Icon
+										name={photoCheckResult.success ? 'check' : 'info'}
+										className="mt-0.5 size-4 flex-shrink-0"
+									/>
+									<div className="text-sm">{photoCheckResult.message}</div>
+								</div>
 							</div>
 						)}
-						<div className="flex flex-col gap-2">
-							<Button asChild variant="outline">
-								<Link to={`/admin/students/${student.id}/photo`}>
-									<Icon name="pencil-1">
-										{hasPhoto ? 'Change Photo' : 'Upload Photo'}
-									</Icon>
-								</Link>
-							</Button>
-						</div>
+
+						{/* Last checked info */}
+						{student.studentId?.factsPhotoCheckedAt && !forcePhotoCheck && (
+							<div className="text-muted-foreground text-xs">
+								Last checked FACTS:{' '}
+								{new Date(
+									student.studentId.factsPhotoCheckedAt,
+								).toLocaleString()}
+							</div>
+						)}
 					</div>
 				</CardSection>
 
@@ -219,6 +386,7 @@ export default function AdminStudentDetailRoute({
 						items={[
 							{ key: 'Full Name', value: student.fullName },
 							{ key: 'Email', value: student.email },
+							{ key: 'Grade', value: student.grade || 'Not set' },
 							{
 								key: 'SIS Student ID',
 								value: student.sisStudentId,
@@ -317,6 +485,57 @@ export default function AdminStudentDetailRoute({
 						]}
 					/>
 				</CardSection>
+			</div>
+
+			{/* ID Card Preview Section */}
+			<div className="mt-6">
+				<h2 className="mb-4 text-xl font-semibold">ID Card Preview</h2>
+				<div className="grid gap-6 md:grid-cols-2">
+					<CardSection title="Front" className="border-muted/50 shadow-sm">
+						<IdPreviewCard
+							title="Front of ID"
+							previewContent={
+								<IDCardFrontPreview
+									employee={studentCardData}
+									photoUrl={displayPhotoUrl}
+									logoUrl={logoUrl}
+									branding={branding}
+									academicYear={academicYear}
+									barcodeDataURL={barcodeDataURL}
+								/>
+							}
+						>
+							<div className="flex justify-center">
+								<IDCardFrontPreview
+									employee={studentCardData}
+									photoUrl={displayPhotoUrl}
+									logoUrl={logoUrl}
+									branding={branding}
+									academicYear={academicYear}
+									barcodeDataURL={barcodeDataURL}
+								/>
+							</div>
+						</IdPreviewCard>
+					</CardSection>
+					<CardSection title="Back" className="border-muted/50 shadow-sm">
+						<IdPreviewCard
+							title="Back of ID"
+							previewContent={
+								<IDCardBackPreview
+									qrCodeDataURL={qrCodeDataURL}
+									branding={branding}
+								/>
+							}
+						>
+							<div className="flex justify-center">
+								<IDCardBackPreview
+									qrCodeDataURL={qrCodeDataURL}
+									branding={branding}
+								/>
+							</div>
+						</IdPreviewCard>
+					</CardSection>
+				</div>
 			</div>
 		</div>
 	)

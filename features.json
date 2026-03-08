@@ -381,7 +381,7 @@
 	{
 		"id": "F027",
 		"title": "Landing Page with Embedded Login Form and Reimagined Navigation",
-		"description": "Replace the current marketing landing page with a simple landing page that includes brief information about the Employee ID System and an embedded login form (Google OAuth). Reimagine the header and footer navigation: remove the search bar and theme switcher, add navigation links for authenticated users (My ID, Admin Dashboard if admin), and update branding to reflect the Employee ID System.",
+		"description": "Replace the current marketing landing page with a simple landing page that includes brief information about the JPG ID System and an embedded login form (Google OAuth). Reimagine the header and footer navigation: remove the search bar and theme switcher, add navigation links for authenticated users (My ID, Admin Dashboard if admin), and update branding to reflect the JPG ID System.",
 		"tests": [
 			"Unit: Landing page displays brief system information and embedded login form",
 			"Unit: Header navigation shows \"My ID\" link for authenticated employees",

@@ -89,6 +89,7 @@ export interface FactsStudentData {
 	sisStudentId: string
 	fullName: string
 	email: string
+	grade: string
 	status: 'active' | 'inactive'
 }
 
@@ -698,6 +699,7 @@ function transformStudentToStudent(
 		sisStudentId: student.studentId.toString(),
 		fullName: normalizedFullName,
 		email: email.trim(),
+		grade,
 		status,
 	}
 }

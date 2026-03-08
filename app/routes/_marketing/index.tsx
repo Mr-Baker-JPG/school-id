@@ -13,7 +13,7 @@ export const meta: Route.MetaFunction = () => [
 	{ title: APP_NAME },
 	{
 		name: 'description',
-		content: 'View and download your official employee ID card',
+		content: 'View and download your official ID card',
 	},
 ]
 
@@ -34,13 +34,13 @@ export default function Index() {
 			{/* Hero Section */}
 			<section className="bg-muted/40 rounded-xl p-8 text-center">
 				<div className="mx-auto max-w-2xl">
+					<h1 className="text-h2 mb-6 font-bold">{APP_NAME}</h1>
 					<p className="text-body-lg text-muted-foreground mb-6">
-						Access your official employee ID card. View, download, and verify
-						your employment status.
+						Access your official ID card. View, download, and verify your status.
 					</p>
 					<p className="text-body-md text-muted-foreground mb-8">
-						This system is for internal use by school employees. External
-						parties can verify employee status using the QR code on ID cards.
+						This system is for internal use by school faculty, staff, and students. External
+						parties can verify status using the QR code on ID cards.
 					</p>
 					<div className="flex justify-center">
 						<div className="w-full max-w-xs">
@@ -61,11 +61,11 @@ export default function Index() {
 				<div className="grid gap-4 md:grid-cols-3">
 					<CardSection
 						title="Digital ID Cards"
-						description="Access your official employee ID card anytime, anywhere"
+						description="Access your official ID card anytime, anywhere"
 						className="border-muted/50"
 					>
 						<p className="text-body-sm text-muted-foreground">
-							View and download your employee ID card in PDF format for easy
+							View and download your ID card in PDF format for easy
 							access and printing.
 						</p>
 					</CardSection>
@@ -76,7 +76,7 @@ export default function Index() {
 					>
 						<p className="text-body-sm text-muted-foreground">
 							Each ID card includes a QR code that links to a public
-							verification page confirming your active employment status.
+							verification page confirming your active status.
 						</p>
 					</CardSection>
 					<CardSection
@@ -85,7 +85,7 @@ export default function Index() {
 						className="border-muted/50"
 					>
 						<p className="text-body-sm text-muted-foreground">
-							Employee data is automatically synchronized with the school's
+							Data is automatically synchronized with the school's
 							FACTS Student Information System.
 						</p>
 					</CardSection>

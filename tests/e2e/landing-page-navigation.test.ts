@@ -88,13 +88,13 @@ test('Unauthenticated user can view landing page with login form', async ({
 
 	// Check for landing page content
 	await expect(
-		page.getByRole('heading', { name: /Employee ID System/i }),
+		page.getByRole('heading', { name: /JPG ID System/i }),
 	).toBeVisible()
 	await expect(
-		page.getByText(/Access your official employee ID card/i),
+		page.getByText(/Access your official ID card/i),
 	).toBeVisible()
 	await expect(
-		page.getByText(/This system is for internal use by school employees/i),
+		page.getByText(/This system is for internal use by school/i),
 	).toBeVisible()
 
 	// Check for Google OAuth login button

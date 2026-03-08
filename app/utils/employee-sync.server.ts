@@ -123,6 +123,7 @@ export async function syncEmployeesFromFacts(): Promise<SyncResult> {
 async function logSyncHistory(result: SyncResult): Promise<void> {
 	await prisma.syncHistory.create({
 		data: {
+			syncType: 'staff',
 			success: result.success,
 			created: result.created,
 			updated: result.updated,

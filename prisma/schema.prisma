@@ -222,6 +222,7 @@ model EmployeeID {
 
 model SyncHistory {
   id           String  @id @default(cuid())
+  syncType     String  // 'staff' or 'student'
   success      Boolean
   created      Int     @default(0)
   updated      Int     @default(0)
@@ -231,6 +232,7 @@ model SyncHistory {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+  @@index([syncType])
 }
 
 model Student {
@@ -238,6 +240,7 @@ model Student {
   sisStudentId  String @unique
   fullName      String
   email         String @unique
+  grade         String?
   status        String // 'active' or 'inactive'
   isNameEdited  Boolean @default(false) // Tracks if admin edited the name
 
@@ -249,6 +252,7 @@ model Student {
   @@index([email])
   @@index([status])
   @@index([sisStudentId])
+  @@index([grade])
 }
 
 model StudentID {

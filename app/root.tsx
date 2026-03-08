@@ -58,10 +58,10 @@ export const links: Route.LinksFunction = () => {
 
 export const meta: Route.MetaFunction = ({ data }) => {
 	return [
-		{ title: data ? 'Employee ID System' : 'Error | Employee ID System' },
+		{ title: data ? 'JPG ID System' : 'Error | JPG ID System' },
 		{
 			name: 'description',
-			content: 'View and download your official employee ID card',
+			content: 'View and download your official ID card',
 		},
 	]
 }
@@ -239,7 +239,7 @@ function Logo() {
 	return (
 		<Link to="/" className="group grid leading-snug">
 			<span className="font-light transition group-hover:-translate-x-1">
-				Employee
+				JPG
 			</span>
 			<span className="font-bold transition group-hover:translate-x-1">
 				ID System

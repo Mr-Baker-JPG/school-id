@@ -1,7 +1,7 @@
 # 📄 Product Requirements Document (PRD)
 
-**Project:** School Employee ID System **Status:** Draft v1 **Primary Users:**
-Teachers, School Administrators **Secondary Users:** General Public
+**Project:** JPG ID System **Status:** Draft v1 **Primary Users:**
+Teachers, School Administrators, Students **Secondary Users:** General Public
 (verification only)
 
 ---

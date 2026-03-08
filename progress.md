@@ -1,6 +1,6 @@
 # Development Progress
 
-## Project: School Employee ID System
+## Project: JPG ID System
 
 This document tracks the implementation progress of features defined in
 features.json`.
@@ -1163,3 +1163,87 @@ The system now intelligently manages FACTS API calls to avoid rate limiting:
 - Cached photos are served from storage (no API calls)
 - Uploaded photos always take precedence
 - Graceful error handling ensures system remains functional even if FACTS API is unavailable
+
+---
+
+## 2026-03-08 – Admin Sync Status Page Update
+
+**Feature:** Track Staff vs Student Syncs on Admin Sync Status Page
+
+**Issue:** The admin sync status page only tracked staff (employee) syncs. It needed to be updated to separately track and display both staff and student syncs.
+
+**Implementation:**
+
+### Database Changes
+
+- Added `syncType` field to `SyncHistory` model (values: 'staff' or 'student')
+- Created migration `20260308045042_add_sync_type_to_sync_history`
+- Updated existing sync history records to have `syncType: 'staff'`
+
+### Sync Service Updates
+
+- Updated `employee-sync.server.ts` to log sync history with `syncType: 'staff'`
+- Updated `student-sync.server.ts` to log sync history with `syncType: 'student'`
+- Both services now properly record sync history with their respective types
+
+### Admin Sync Status Page Rewrite
+
+Completely rewrote `/admin/sync-status` to display both staff and student sync information:
+
+**Loader Changes:**
+- Fetches separate last sync history for staff and students
+- Calculates separate statistics (total, active, inactive) for both
+- Fetches separate recent sync errors for both types
+- Identifies staff and students with sync issues (not updated in 7 days)
+
+**UI Changes:**
+- Added tab-like navigation between Staff and Students sections
+- Two separate sync status cards (one for staff, one for students)
+- Each section has its own:
+  - Last sync status (success/failure, timestamp, counts)
+  - Sync statistics (total, active, inactive)
+  - Recent sync errors list
+  - Persons with sync issues list
+  - Sync Now button with confirmation dialog
+
+**Action Changes:**
+- Added `sync-staff` intent for staff sync
+- Added `sync-students` intent for student sync
+- Separate toast messages for each sync type
+
+**Tests:**
+
+- ✅ Dashboard displays last staff sync timestamp
+- ✅ Dashboard displays last student sync timestamp
+- ✅ Dashboard shows staff sync errors if any occurred
+- ✅ Dashboard shows student sync errors if any occurred
+- ✅ Dashboard lists staff with sync issues
+- ✅ Dashboard lists students with sync issues
+- ✅ Dashboard shows staff statistics (total, active, inactive)
+- ✅ Dashboard shows student statistics (total, active, inactive)
+- ✅ Dashboard is only accessible to admins
+- ✅ Unauthenticated users cannot access this route
+- ✅ Dashboard shows no sync history when none exists
+- ✅ Dashboard limits staff with sync issues to 50
+- ✅ Dashboard limits students with sync issues to 50
+- ✅ Dashboard separates staff and student sync history
+- ✅ All 14 tests pass
+- ✅ Build succeeds
+
+**Files Modified:**
+
+- `prisma/schema.prisma` - Added `syncType` field to SyncHistory model
+- `prisma/migrations/20260308045042_add_sync_type_to_sync_history/migration.sql` - Migration to add syncType
+- `app/utils/employee-sync.server.ts` - Updated to log syncType: 'staff'
+- `app/utils/student-sync.server.ts` - Added logSyncHistory function with syncType: 'student'
+- `app/routes/admin/sync-status.tsx` - Complete rewrite to support both staff and student syncs
+- `app/routes/admin/sync-status.test.ts` - Updated tests for new dual-sync tracking
+
+**Key Features:**
+
+- ✅ Separate tracking of staff and student sync history
+- ✅ Visual separation of staff and student sync information
+- ✅ Independent sync buttons for each type
+- ✅ Separate error tracking and reporting
+- ✅ Separate statistics for each person type
+- ✅ Backward compatible with existing sync history (all old records marked as 'staff')

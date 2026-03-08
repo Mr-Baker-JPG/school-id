@@ -1,6 +1,6 @@
 # Application Route Structure
 
-This document describes the functionality of each route in the Employee ID
+This document describes the functionality of each route in the JPG ID
 System application. This is intended for use with UX designers to develop the
 application layout.
 
@@ -23,19 +23,19 @@ application layout.
 
 **Route:** `app/routes/_marketing/index.tsx`
 
-**Purpose:** Public landing page for the Employee ID System
+**Purpose:** Public landing page for the JPG ID System
 
 **Functionality:**
 
 - Displays welcome message and system description
-- Explains that the system is for internal school employee use
-- Mentions that external parties can verify employee status via QR codes
-- Provides Google OAuth login button for employees
+- Explains that the system is for internal school employee and student use
+- Mentions that external parties can verify status via QR codes
+- Provides Google OAuth login button
 - No authentication required
 
 **UI Elements:**
 
-- Page title: "Employee ID System"
+- Page title: "JPG ID System"
 - Description text explaining the system purpose
 - Google OAuth login button/form
 

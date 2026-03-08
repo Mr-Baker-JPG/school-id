@@ -25,6 +25,22 @@ export interface StudentSyncResult {
 }
 
 /**
+ * Log student sync history to database
+ */
+async function logSyncHistory(result: StudentSyncResult): Promise<void> {
+	await prisma.syncHistory.create({
+		data: {
+			syncType: 'student',
+			success: result.success,
+			created: result.created,
+			updated: result.updated,
+			errors: result.errors,
+			errorMessage: result.errorMessage || null,
+		},
+	})
+}
+
+/**
  * Sync all students from FACTS SIS to local database
  */
 export async function syncStudentsFromFacts(): Promise<StudentSyncResult> {
@@ -64,6 +80,8 @@ export async function syncStudentsFromFacts(): Promise<StudentSyncResult> {
 		console.log(
 			`Student sync completed: ${result.created} created, ${result.updated} updated, ${result.errors} errors`,
 		)
+		// Log sync history
+		await logSyncHistory(result)
 		return result
 	} catch (error) {
 		result.success = false
@@ -75,6 +93,10 @@ export async function syncStudentsFromFacts(): Promise<StudentSyncResult> {
 			result.errorMessage = 'Unknown error during sync'
 		}
 		console.error('Student sync failed:', error)
+		// Log sync history even on failure
+		await logSyncHistory(result).catch((logError) => {
+			console.error('Failed to log sync history:', logError)
+		})
 		return result
 	}
 }
@@ -101,10 +123,12 @@ async function syncSingleStudent(
 		// If name was edited by admin (isNameEdited=true), preserve the edited name
 		const updateData: {
 			email: string
+			grade: string
 			status: string
 			fullName?: string
 		} = {
 			email: factsStudent.email,
+			grade: factsStudent.grade,
 			status: factsStudent.status,
 		}
 
@@ -126,6 +150,7 @@ async function syncSingleStudent(
 				sisStudentId: factsStudent.sisStudentId,
 				fullName: factsStudent.fullName,
 				email: factsStudent.email,
+				grade: factsStudent.grade,
 				status: factsStudent.status,
 				isNameEdited: false, // New students start with isNameEdited=false
 			},
