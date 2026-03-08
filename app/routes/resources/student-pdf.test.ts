@@ -5,6 +5,12 @@ import { prisma } from '#app/utils/db.server.ts'
 import { authSessionStorage } from '#app/utils/session.server.ts'
 import { loader } from './student-pdf.tsx'
 
+// Mock the FACTS profile picture fetcher to prevent API calls during tests
+vi.mock('#app/utils/student.server.ts', () => ({
+	getNextJuly1ExpirationDate: () => new Date(2025, 6, 1), // July 1, 2025
+	fetchAndCacheFactsProfilePicture: vi.fn(),
+}))
+
 // Mock console.warn to avoid test failures when photo fetching fails
 const originalWarn = console.warn
 beforeEach(() => {

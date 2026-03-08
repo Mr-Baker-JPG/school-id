@@ -2,7 +2,10 @@ import { captureException } from '@sentry/react-router'
 import { prisma } from '#app/utils/db.server.ts'
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { generateEmployeeIDPDF } from '#app/utils/pdf-id.server.tsx'
-import { getNextJuly1ExpirationDate } from '#app/utils/student.server.ts'
+import {
+	getNextJuly1ExpirationDate,
+	fetchAndCacheFactsProfilePicture,
+} from '#app/utils/student.server.ts'
 import { type Route } from './+types/admin/student-pdf.$studentId.ts'
 
 /**
@@ -70,6 +73,27 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 					expirationDate: true,
 				},
 			})
+		}
+
+		// Fetch FACTS profile picture if no uploaded photo
+		if (!studentIdRecord?.photoUrl) {
+			try {
+				await fetchAndCacheFactsProfilePicture(student.id, student.sisStudentId)
+				// Re-fetch to get the updated photoUrl
+				const updatedStudentId = await prisma.studentID.findUnique({
+					where: { studentId: student.id },
+					select: {
+						photoUrl: true,
+						expirationDate: true,
+					},
+				})
+				if (updatedStudentId) {
+					studentIdRecord = updatedStudentId
+				}
+			} catch (error) {
+				// Log error but continue without photo
+				console.error('Failed to fetch FACTS profile picture:', error)
+			}
 		}
 
 		// Prepare student data for PDF generation

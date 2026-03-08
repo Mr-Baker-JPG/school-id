@@ -983,3 +983,87 @@ Let me just run the commit directly:
 **Status:** Active version still NOT complete. 1 feature remaining.
 
 **Next Feature to Implement:** F041 - Student ID Expiration Notifications
+
+---
+
+## 2026-03-06 – Student FACTS Profile Picture Integration
+
+**Feature:** FACTS Profile Picture Integration for Students (matching employee functionality)
+
+**Issue:** Student IDs were not pulling photos from FACTS like staff IDs do. The integration only existed in the student's own ID view, but was missing from admin views and PDF generation.
+
+**Implementation:**
+
+- Added FACTS profile picture integration to **Admin Student Detail View** (`/admin/students/$studentId`):
+  - Fetches FACTS profile picture if no uploaded photo exists
+  - Caches photo in storage and updates StudentID.photoUrl
+  - Gracefully handles errors (continues without photo if API fails)
+  - Uploaded photos always take precedence over FACTS photos
+
+- Added FACTS profile picture integration to **Admin Student PDF Download** (`/resources/admin/student-pdf.$studentId`):
+  - Fetches FACTS profile picture before PDF generation
+  - Ensures PDFs include student photos from FACTS when available
+  - Auto-creates StudentID record with default expiration if missing
+
+- Added FACTS profile picture integration to **Student's Own PDF Download** (`/resources/student-pdf`):
+  - Fetches FACTS profile picture before PDF generation
+  - Students downloading their own PDFs will now include FACTS photos
+  - Auto-creates StudentID record with default expiration if missing
+
+- Updated test files to mock `fetchAndCacheFactsProfilePicture`:
+  - `app/routes/admin/students/$studentId.test.ts` - Added vi.mock for student.server
+  - `app/routes/resources/student-pdf.test.ts` - Added vi.mock for student.server
+  - `app/routes/resources/admin/student-pdf.$studentId.test.ts` - Added vi.mock for student.server
+
+**Behavior:**
+
+The system now follows this priority for student photos:
+1. **Uploaded photo** (admin-uploaded) - **highest priority**
+2. **FACTS profile picture** (fetched from API and cached) - **fallback**
+3. **No Photo placeholder** - if neither available
+
+**Key Features:**
+
+- ✅ Fetches profile picture from FACTS API endpoint `/People/{personId}/ProfilePicture`
+- ✅ Uses `sisStudentId` as the `personId` parameter
+- ✅ Caches fetched photo in local storage (students/{studentId}/photos/)
+- ✅ Updates StudentID.photoUrl with cached photo path
+- ✅ Uploaded photos always take precedence
+- ✅ Graceful error handling (continues without photo on API errors)
+- ✅ Consistent with employee photo handling
+
+**Tests:**
+
+- ✅ All 15 admin student detail tests pass
+- ✅ All 8 student PDF download tests pass
+- ✅ All 9 admin student PDF download tests pass
+- ✅ Total: 32 tests pass
+- ✅ Build succeeds
+
+**Files Modified:**
+
+- `app/routes/admin/students/$studentId.tsx` - Added FACTS photo integration to loader
+- `app/routes/resources/admin/student-pdf.$studentId.tsx` - Added FACTS photo integration to loader
+- `app/routes/resources/student-pdf.tsx` - Added FACTS photo integration to loader
+- `app/routes/admin/students/$studentId.test.ts` - Added vi.mock for student.server
+- `app/routes/resources/student-pdf.test.ts` - Added vi.mock for student.server
+- `app/routes/resources/admin/student-pdf.$studentId.test.ts` - Added vi.mock for student.server
+
+**Note:**
+
+The verification route (`/verify/$id`) already had FACTS profile picture integration for both employees and students, so no changes were needed there.
+
+---
+
+## Summary
+
+✅ **FACTS Profile Picture Integration for Students Complete**
+
+All student-related routes now pull photos from FACTS SIS just like staff IDs do. The integration is consistent across:
+- Student's own ID view (`/student/id`) - **already had it**
+- Admin student detail view (`/admin/students/$studentId`) - **now added**
+- Admin student PDF download (`/resources/admin/student-pdf.$studentId`) - **now added**
+- Student's own PDF download (`/resources/student-pdf`) - **now added**
+- Public verification page (`/verify/$id`) - **already had it**
+
+The photo priority is: Uploaded Photo > FACTS Photo > No Photo Placeholder

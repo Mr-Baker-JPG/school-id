@@ -11,7 +11,10 @@ import { CardSection } from '#app/ui/components/CardSection.tsx'
 import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
 import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
 import { prisma } from '#app/utils/db.server.ts'
-import { getNextJuly1ExpirationDate } from '#app/utils/student.server.ts'
+import {
+	getNextJuly1ExpirationDate,
+	fetchAndCacheFactsProfilePicture,
+} from '#app/utils/student.server.ts'
 import { getStudentPhotoSrc, useIsPending } from '#app/utils/misc.tsx'
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
@@ -67,6 +70,29 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 				updatedAt: true,
 			},
 		})
+	}
+
+	// Fetch FACTS profile picture if no uploaded photo
+	if (!studentIdRecord?.photoUrl) {
+		try {
+			await fetchAndCacheFactsProfilePicture(student.id, student.sisStudentId)
+			// Re-fetch to get the updated photoUrl
+			const updatedStudentId = await prisma.studentID.findUnique({
+				where: { studentId: student.id },
+				select: {
+					photoUrl: true,
+					expirationDate: true,
+					createdAt: true,
+					updatedAt: true,
+				},
+			})
+			if (updatedStudentId) {
+				studentIdRecord = updatedStudentId
+			}
+		} catch (error) {
+			// Log error but continue without photo
+			console.error('Failed to fetch FACTS profile picture:', error)
+		}
 	}
 
 	return {
