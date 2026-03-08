@@ -162,9 +162,11 @@ export async function getExpiringEmployees(
  * If the employee already has an uploaded photo, this function does nothing.
  * If the FACTS API call fails, returns null without throwing.
  *
+ * Rate limiting: Only fetches if we haven't checked FACTS in the last 7 days.
+ *
  * @param employeeId - The local employee ID (database ID)
  * @param sisEmployeeId - The SIS employee ID (used as personId in FACTS API)
- * @param force - If true, force re-fetch even if photo exists (but only if no uploaded photo)
+ * @param force - If true, force re-fetch even if checked recently (but only if no uploaded photo)
  * @returns The objectKey (photoUrl) if successfully cached, null otherwise
  */
 export async function fetchAndCacheFactsProfilePicture(
@@ -175,13 +177,27 @@ export async function fetchAndCacheFactsProfilePicture(
 	// Check if employee already has an uploaded photo
 	const employeeIdRecord = await prisma.employeeID.findUnique({
 		where: { employeeId },
-		select: { photoUrl: true },
+		select: { photoUrl: true, factsPhotoCheckedAt: true },
 	})
 
 	// If employee already has a photo and we're not forcing, don't fetch from FACTS
 	// Uploaded photos always take precedence
 	if (employeeIdRecord?.photoUrl && !force) {
 		return null
+	}
+
+	// Rate limiting: Only check FACTS if we haven't checked in the last 7 days
+	// This prevents hitting API rate limits on every page load
+	const DAYS_BEFORE_RECHECK = 7
+	if (!force && employeeIdRecord?.factsPhotoCheckedAt) {
+		const daysSinceLastCheck = Math.floor(
+			(Date.now() - employeeIdRecord.factsPhotoCheckedAt.getTime()) /
+				(1000 * 60 * 60 * 24),
+		)
+		if (daysSinceLastCheck < DAYS_BEFORE_RECHECK) {
+			// Skip FACTS photo check - we checked recently
+			return null
+		}
 	}
 
 	// Parse sisEmployeeId to number (personId)
@@ -193,10 +209,25 @@ export async function fetchAndCacheFactsProfilePicture(
 		return null
 	}
 
+	// Mark that we're checking FACTS now (even before the API call)
+	// This prevents multiple concurrent checks
+	await prisma.employeeID.upsert({
+		where: { employeeId },
+		create: {
+			employeeId,
+			factsPhotoCheckedAt: new Date(),
+			expirationDate: getDefaultExpirationDate(),
+		},
+		update: {
+			factsPhotoCheckedAt: new Date(),
+		},
+	})
+
 	// Fetch profile picture from FACTS API
 	const profilePictureBuffer = await fetchProfilePicture(personId)
 
 	// If no profile picture found or error occurred, return null
+	// (we've already marked that we checked, so won't retry for 7 days)
 	if (!profilePictureBuffer) {
 		return null
 	}
@@ -211,14 +242,9 @@ export async function fetchAndCacheFactsProfilePicture(
 		)
 
 		// Update EmployeeID record with the cached photo URL
-		await prisma.employeeID.upsert({
+		await prisma.employeeID.update({
 			where: { employeeId },
-			create: {
-				employeeId,
-				photoUrl: objectKey,
-				expirationDate: getDefaultExpirationDate(),
-			},
-			update: {
+			data: {
 				photoUrl: objectKey,
 			},
 		})

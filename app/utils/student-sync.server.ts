@@ -4,6 +4,7 @@
  * Syncs student data from FACTS SIS to local database.
  * Handles creating new students and updating existing ones.
  * Preserves admin-edited names during sync.
+ * Fetches and caches FACTS profile pictures during sync to avoid rate limits.
  */
 
 import { prisma } from './db.server.ts'
@@ -13,6 +14,7 @@ import {
 	type FactsStudentData,
 } from './facts-api.server.ts'
 import { getNextJuly1ExpirationDate } from './employee.server.ts'
+import { fetchAndCacheFactsProfilePicture } from './student.server.ts'
 
 export interface StudentSyncResult {
 	success: boolean
@@ -35,11 +37,14 @@ export async function syncStudentsFromFacts(): Promise<StudentSyncResult> {
 
 	try {
 		// Fetch all students from FACTS API
+		// Note: Students endpoint doesn't support filtering by 'active' field,
+		// so we fetch all students and handle status during sync
 		const factsStudents = await fetchAllStudents({
 			includes: 'demographics',
-			filters: 'active==true',
 			bypassCache: true,
 		})
+
+		console.log(`Starting sync for ${factsStudents.length} students from FACTS`)
 
 		// Process each student
 		for (const factsStudent of factsStudents) {
@@ -56,6 +61,9 @@ export async function syncStudentsFromFacts(): Promise<StudentSyncResult> {
 		}
 
 		result.success = true
+		console.log(
+			`Student sync completed: ${result.created} created, ${result.updated} updated, ${result.errors} errors`,
+		)
 		return result
 	} catch (error) {
 		result.success = false
@@ -74,6 +82,7 @@ export async function syncStudentsFromFacts(): Promise<StudentSyncResult> {
 /**
  * Sync a single student from FACTS data
  * Preserves admin-edited names during sync
+ * Fetches and caches FACTS profile picture for active students
  */
 async function syncSingleStudent(
 	factsStudent: FactsStudentData,
@@ -138,5 +147,21 @@ async function syncSingleStudent(
 				expirationDate: getNextJuly1ExpirationDate(),
 			},
 		})
+
+		// Fetch and cache FACTS profile picture for active students
+		// This happens during sync to avoid hitting rate limits on-demand
+		// The function has built-in rate limiting (won't refetch if checked recently)
+		try {
+			await fetchAndCacheFactsProfilePicture(
+				studentId,
+				factsStudent.sisStudentId,
+				false, // Don't force - respect the 7-day rate limit
+			)
+		} catch (error) {
+			// Log error but don't fail the sync
+			console.warn(
+				`Failed to fetch FACTS profile picture for student ${studentId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+			)
+		}
 	}
 }

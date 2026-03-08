@@ -8,6 +8,10 @@ vi.mock('#app/utils/employee.server.ts', () => ({
 	fetchAndCacheFactsProfilePicture: vi.fn(() => Promise.resolve()),
 }))
 
+vi.mock('#app/utils/student.server.ts', () => ({
+	fetchAndCacheFactsProfilePicture: vi.fn(() => Promise.resolve()),
+}))
+
 beforeEach(() => {
 	vi.clearAllMocks()
 })

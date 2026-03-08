@@ -1,9 +1,18 @@
 import { faker } from '@faker-js/faker'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { getSessionExpirationDate, sessionKey } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { authSessionStorage } from '#app/utils/session.server.ts'
 import { loader } from './$employeeId.tsx'
+
+// Mock the FACTS profile picture fetcher to prevent API calls during tests
+vi.mock('#app/utils/employee.server.ts', async (importOriginal) => {
+	const original = await importOriginal<typeof import('#app/utils/employee.server.ts')>()
+	return {
+		...original,
+		fetchAndCacheFactsProfilePicture: vi.fn(() => Promise.resolve(null)),
+	}
+})
 
 async function createAdminUser() {
 	const adminRole = await prisma.role.findUnique({

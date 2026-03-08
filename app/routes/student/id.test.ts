@@ -1,9 +1,15 @@
 import { faker } from '@faker-js/faker'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { getSessionExpirationDate, sessionKey } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { authSessionStorage } from '#app/utils/session.server.ts'
 import { loader } from './id.tsx'
+
+// Mock the FACTS profile picture fetch to avoid console warnings in tests
+vi.mock('#app/utils/student.server.ts', () => ({
+	fetchAndCacheFactsProfilePicture: vi.fn(() => Promise.resolve()),
+	getNextJuly1ExpirationDate: vi.fn(() => new Date(2026, 6, 1)),
+}))
 
 async function createUser(data?: { email?: string }) {
 	const userRole = await prisma.role.findUnique({

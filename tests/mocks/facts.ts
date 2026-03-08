@@ -79,14 +79,16 @@ function createMockStudent(overrides?: {
 	// If email is explicitly empty, also make email2 empty for proper testing
 	const email2 = overrides?.email === '' ? '' : faker.internet.email()
 
+	// Map active boolean to school.status string
+	// FACTS API uses "Enrolled" for active students
+	const status = overrides?.active !== false ? 'Enrolled' : 'Withdrawn'
+
 	return {
 		studentId,
-		name: `${firstName} ${lastName}`,
-		firstName,
-		lastName,
-		middleName,
-		active: overrides?.active ?? true,
-		grade: overrides?.grade ?? '9',
+		school: {
+			status,
+			gradeLevel: overrides?.grade ?? '9',
+		},
 		demographics: {
 			person: {
 				personId: faker.number.int({ min: 1, max: 100000 }),

@@ -8,7 +8,8 @@ import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
 import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
 import { getBrandingConfig } from '#app/utils/branding.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
-import { fetchAndCacheFactsProfilePicture } from '#app/utils/employee.server.ts'
+import { fetchAndCacheFactsProfilePicture as fetchEmployeeProfilePicture } from '#app/utils/employee.server.ts'
+import { fetchAndCacheFactsProfilePicture as fetchStudentProfilePicture } from '#app/utils/student.server.ts'
 import { getDomainUrl, getEmployeePhotoSrc, getStudentPhotoSrc } from '#app/utils/misc.tsx'
 import { getVerificationStatus } from '#app/utils/verification.server.ts'
 import { type Route } from './+types/$id.ts'
@@ -29,6 +30,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 		where: { id },
 		select: {
 			id: true,
+			sisEmployeeId: true,
 			fullName: true,
 			jobTitle: true,
 			email: true,
@@ -46,7 +48,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 		// Fetch FACTS profile picture if no uploaded photo
 		if (!employee.employeeId?.photoUrl) {
 			try {
-				await fetchAndCacheFactsProfilePicture(employee.id, request)
+				await fetchEmployeeProfilePicture(employee.id, employee.sisEmployeeId)
 				// Re-fetch to get the updated photoUrl
 				const updatedEmployee = await prisma.employee.findUnique({
 					where: { id },
@@ -99,6 +101,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 		where: { id },
 		select: {
 			id: true,
+			sisStudentId: true,
 			fullName: true,
 			email: true,
 			status: true,
@@ -112,6 +115,31 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 	})
 
 	if (student) {
+		// Fetch FACTS profile picture if no uploaded photo
+		if (!student.studentId?.photoUrl) {
+			try {
+				await fetchStudentProfilePicture(student.id, student.sisStudentId)
+				// Re-fetch to get the updated photoUrl
+				const updatedStudent = await prisma.student.findUnique({
+					where: { id },
+					select: {
+						studentId: {
+							select: {
+								photoUrl: true,
+								expirationDate: true,
+							},
+						},
+					},
+				})
+				if (updatedStudent?.studentId) {
+					student.studentId = updatedStudent.studentId
+				}
+			} catch (error) {
+				// Log error but continue without photo
+				console.error('Failed to fetch FACTS profile picture for student:', error)
+			}
+		}
+
 		const expirationDate = student.studentId?.expirationDate ?? null
 		const photoUrl = student.studentId?.photoUrl ?? null
 

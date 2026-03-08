@@ -32,7 +32,7 @@ export function AdminShell({ children, headerActions }: AdminShellProps) {
 	const adminNavItems: NavItem[] = isAdmin
 		? [
 				{ to: '/admin/employees', label: 'Employees', icon: 'user' },
-				{ to: '/admin/students', label: 'Students', icon: 'student' },
+				{ to: '/admin/students', label: 'Students', icon: 'user' },
 				{ to: '/admin/users', label: 'Users', icon: 'user' },
 				{ to: '/admin/sync-status', label: 'Sync Status', icon: 'cloud-sync' },
 				{ to: '/admin/cache', label: 'Cache', icon: 'settings' },
@@ -56,7 +56,7 @@ export function AdminShell({ children, headerActions }: AdminShellProps) {
 				}
 			/>
 			<div className="flex flex-1">
-				{/* <SidebarNav groups={navGroups} /> */}
+				<SidebarNav groups={navGroups} />
 				<main className="flex-1 px-6 py-6">{children}</main>
 			</div>
 		</div>

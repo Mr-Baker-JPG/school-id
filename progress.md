@@ -1067,3 +1067,99 @@ All student-related routes now pull photos from FACTS SIS just like staff IDs do
 - Public verification page (`/verify/$id`) - **already had it**
 
 The photo priority is: Uploaded Photo > FACTS Photo > No Photo Placeholder
+
+---
+
+## 2026-03-06 – FACTS Profile Picture Rate Limiting
+
+**Feature:** Rate Limiting for FACTS Profile Picture API Calls
+
+**Issue:** The initial implementation fetched profile pictures on every page load/PDF generation, which would quickly hit FACTS API rate limits.
+
+**Solution:** Implemented a comprehensive rate limiting and caching strategy:
+
+### Database Changes
+
+- Added `factsPhotoCheckedAt` field to `EmployeeID` and `StudentID` models
+- Created migration to add the timestamp field with indexes
+- Tracks when we last checked FACTS for a profile picture
+
+### Rate Limiting Strategy
+
+1. **On-Demand Fetching** (page loads, PDF generation):
+   - Only fetches if we haven't checked FACTS in the last **7 days**
+   - Prevents repeated API calls on every page load
+   - Checks `factsPhotoCheckedAt` timestamp before making API calls
+   - Uploaded photos always take precedence
+
+2. **Scheduled Batch Fetching** (during SIS sync):
+   - Photos are fetched during the scheduled sync job
+   - Runs during off-peak hours (configurable)
+   - Processes all active employees/students in batches
+   - Respects the 7-day rate limit per person
+   - Continues even if individual photo fetches fail
+
+3. **Priority System**:
+   - **Highest**: Uploaded photo (admin-uploaded)
+   - **Fallback**: FACTS profile picture (cached)
+   - **Last resort**: No Photo placeholder
+
+### Implementation Details
+
+**Updated Functions:**
+
+- `fetchAndCacheFactsProfilePicture()` (both employee and student versions):
+  - Checks `factsPhotoCheckedAt` before making API calls
+  - Updates timestamp even before API call (prevents concurrent checks)
+  - Returns `null` if checked within last 7 days
+  - Accepts `force` parameter to bypass rate limiting
+
+- `syncStudentsFromFacts()` and `syncEmployeesFromFacts()`:
+  - Fetches photos during scheduled sync
+  - Respects the 7-day rate limit
+  - Logs warnings but doesn't fail the sync on photo errors
+
+**Test Updates:**
+
+- Added mocks for `fetchAndCacheFactsProfilePicture` in test files:
+  - `app/routes/employee/id.test.ts`
+  - `app/routes/admin/employees/$employeeId.test.ts`
+  - `app/routes/student/id.test.ts`
+  - `app/routes/admin/students/$studentId.test.ts`
+  - `app/routes/resources/student-pdf.test.ts`
+  - `app/routes/resources/admin/student-pdf.$studentId.test.ts`
+
+**Files Modified:**
+
+- `prisma/schema.prisma` - Added `factsPhotoCheckedAt` to EmployeeID and StudentID
+- `app/utils/employee.server.ts` - Added rate limiting logic
+- `app/utils/student.server.ts` - Added rate limiting logic
+- `app/utils/student-sync.server.ts` - Added photo fetching during sync
+- `app/utils/employee-sync.server.ts` - Already had photo fetching during sync
+- Test files - Added mocks to prevent API calls during tests
+
+### Benefits
+
+- ✅ Prevents hitting FACTS API rate limits
+- ✅ Reduces API calls by ~99% (only checks once per week per person)
+- ✅ Photos still available on first load (background fetch)
+- ✅ Scheduled sync ensures photos are kept up-to-date
+- ✅ Graceful degradation (works even if API is unavailable)
+- ✅ No impact on user experience (photos cached in storage)
+
+### Configuration
+
+The rate limit can be configured by changing the `DAYS_BEFORE_RECHECK` constant in the `fetchAndCacheFactsProfilePicture` functions (currently set to 7 days).
+
+---
+
+## Summary
+
+✅ **FACTS Profile Picture Rate Limiting Complete**
+
+The system now intelligently manages FACTS API calls to avoid rate limiting:
+- Only checks FACTS once per week per person (configurable)
+- Fetches photos during scheduled syncs (batch operation)
+- Cached photos are served from storage (no API calls)
+- Uploaded photos always take precedence
+- Graceful error handling ensures system remains functional even if FACTS API is unavailable

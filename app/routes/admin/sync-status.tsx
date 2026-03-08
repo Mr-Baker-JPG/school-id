@@ -143,7 +143,7 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 				disabled={syncPending}
 				onClick={() => setConfirmDialogOpen(true)}
 			>
-				<Icon name="update" />
+				<Icon name="update" className={syncPending ? 'animate-spin' : ''} />
 				Sync Now
 			</StatusButton>
 		</div>
@@ -238,7 +238,7 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 						>
 							Cancel
 						</Button>
-						<Form method="post">
+						<Form method="post" action="/admin/sync-status">
 							<input type="hidden" name="intent" value="sync" />
 							<Button
 								type="submit"

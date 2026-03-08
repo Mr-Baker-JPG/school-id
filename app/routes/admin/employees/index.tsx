@@ -425,14 +425,17 @@ export default function AdminEmployeesRoute({
 	}
 
 	const syncButton = (
-		<Form method="post">
+		<Form method="post" action="/admin/employees">
 			<input type="hidden" name="intent" value="sync" />
 			<StatusButton
 				type="submit"
 				status={syncPending ? 'pending' : 'idle'}
 				disabled={syncPending}
 			>
-				<Icon name="update" className="mr-4" />
+				<Icon
+					name="update"
+					className={cn('mr-4', syncPending && 'animate-spin')}
+				/>
 				Sync from FACTS
 			</StatusButton>
 		</Form>

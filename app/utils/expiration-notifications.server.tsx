@@ -1,19 +1,26 @@
 import * as E from '@react-email/components'
 import { sendEmail } from './email.server.ts'
 import { getExpiringEmployees } from './employee.server.ts'
+import { getExpiringStudents } from './student.server.ts'
 import { prisma } from './db.server.ts'
 
 /**
  * Email template for expiration notifications
  */
 export function ExpirationNotificationEmail({
-	expiringCount,
-	expiredCount,
+	expiringEmployeeCount,
+	expiredEmployeeCount,
+	expiringStudentCount,
+	expiredStudentCount,
 	expiringEmployees,
 	expiredEmployees,
+	expiringStudents,
+	expiredStudents,
 }: {
-	expiringCount: number
-	expiredCount: number
+	expiringEmployeeCount: number
+	expiredEmployeeCount: number
+	expiringStudentCount: number
+	expiredStudentCount: number
 	expiringEmployees: Array<{
 		fullName: string
 		email: string
@@ -26,19 +33,36 @@ export function ExpirationNotificationEmail({
 		jobTitle: string
 		expirationStatus: { type: 'expired'; daysSinceExpiration: number }
 	}>
+	expiringStudents: Array<{
+		fullName: string
+		email: string
+		expirationStatus: { type: 'expiring'; daysUntilExpiration: number }
+	}>
+	expiredStudents: Array<{
+		fullName: string
+		email: string
+		expirationStatus: { type: 'expired'; daysSinceExpiration: number }
+	}>
 }) {
+	const totalExpiring = expiringEmployeeCount + expiringStudentCount
+	const totalExpired = expiredEmployeeCount + expiredStudentCount
+
 	return (
 		<E.Html lang="en" dir="ltr">
 			<E.Container>
-				<E.Heading>Employee ID Expiration Notifications</E.Heading>
+				<E.Heading>ID Expiration Notifications</E.Heading>
 				<E.Text>
-					This is an automated notification about employee ID expirations.
+					This is an automated notification about ID expirations for employees
+					and students.
 				</E.Text>
-				{expiringCount > 0 && (
+
+				{/* Faculty/Employee Expirations */}
+				{expiringEmployeeCount > 0 && (
 					<>
 						<E.Heading as="h2">
-							{expiringCount} ID{expiringCount !== 1 ? 's' : ''} expiring
-							within 30 days:
+							{expiringEmployeeCount} Faculty ID
+							{expiringEmployeeCount !== 1 ? 's' : ''} expiring within 30
+							days:
 						</E.Heading>
 						<E.Section>
 							{expiringEmployees.map((employee) => (
@@ -53,10 +77,12 @@ export function ExpirationNotificationEmail({
 						</E.Section>
 					</>
 				)}
-				{expiredCount > 0 && (
+
+				{expiredEmployeeCount > 0 && (
 					<>
 						<E.Heading as="h2">
-							{expiredCount} ID{expiredCount !== 1 ? 's' : ''} expired:
+							{expiredEmployeeCount} Faculty ID
+							{expiredEmployeeCount !== 1 ? 's' : ''} expired:
 						</E.Heading>
 						<E.Section>
 							{expiredEmployees.map((employee) => (
@@ -72,6 +98,50 @@ export function ExpirationNotificationEmail({
 						</E.Section>
 					</>
 				)}
+
+				{/* Student Expirations */}
+				{expiringStudentCount > 0 && (
+					<>
+						<E.Heading as="h2">
+							{expiringStudentCount} Student ID
+							{expiringStudentCount !== 1 ? 's' : ''} expiring within 30
+							days:
+						</E.Heading>
+						<E.Section>
+							{expiringStudents.map((student) => (
+								<E.Text key={student.email}>
+									{student.fullName} - Expires in{' '}
+									{student.expirationStatus.daysUntilExpiration} day
+									{student.expirationStatus.daysUntilExpiration !== 1
+										? 's'
+										: ''}
+								</E.Text>
+							))}
+						</E.Section>
+					</>
+				)}
+
+				{expiredStudentCount > 0 && (
+					<>
+						<E.Heading as="h2">
+							{expiredStudentCount} Student ID
+							{expiredStudentCount !== 1 ? 's' : ''} expired:
+						</E.Heading>
+						<E.Section>
+							{expiredStudents.map((student) => (
+								<E.Text key={student.email}>
+									{student.fullName} - Expired{' '}
+									{student.expirationStatus.daysSinceExpiration} day
+									{student.expirationStatus.daysSinceExpiration !== 1
+										? 's'
+										: ''}{' '}
+									ago
+								</E.Text>
+							))}
+						</E.Section>
+					</>
+				)}
+
 				<E.Text>
 					Please review and update expiration dates as needed in the admin
 					interface.
@@ -93,7 +163,10 @@ export async function sendExpirationNotifications(
 		// Get expiring and expired employees
 		const employees = await getExpiringEmployees(warningDays)
 
-		if (employees.length === 0) {
+		// Get expiring and expired students
+		const students = await getExpiringStudents(warningDays)
+
+		if (employees.length === 0 && students.length === 0) {
 			// No expiring or expired IDs, no need to send notifications
 			return { success: true }
 		}
@@ -117,6 +190,23 @@ export async function sendExpirationNotifications(
 			expirationStatus: { type: 'expired'; daysSinceExpiration: number }
 		}>
 
+		// Separate expiring and expired students
+		const expiringStudents = students.filter(
+			(s) => s.expirationStatus?.type === 'expiring',
+		) as Array<{
+			fullName: string
+			email: string
+			expirationStatus: { type: 'expiring'; daysUntilExpiration: number }
+		}>
+
+		const expiredStudents = students.filter(
+			(s) => s.expirationStatus?.type === 'expired',
+		) as Array<{
+			fullName: string
+			email: string
+			expirationStatus: { type: 'expired'; daysSinceExpiration: number }
+		}>
+
 		// Get all admin users
 		const adminUsers = await prisma.user.findMany({
 			where: {
@@ -136,17 +226,35 @@ export async function sendExpirationNotifications(
 			return { success: false, error: 'No admin users found' }
 		}
 
+		// Build subject line
+		const totalExpiring = expiringEmployees.length + expiringStudents.length
+		const totalExpired = expiredEmployees.length + expiredStudents.length
+		const subjectParts: string[] = []
+
+		if (totalExpiring > 0) {
+			subjectParts.push(`${totalExpiring} expiring`)
+		}
+		if (totalExpired > 0) {
+			subjectParts.push(`${totalExpired} expired`)
+		}
+
+		const subject = `ID Expiration Alert: ${subjectParts.join(', ')}`
+
 		// Send email to each admin
 		const emailPromises = adminUsers.map((admin) =>
 			sendEmail({
 				to: admin.email,
-				subject: `Employee ID Expiration Alert: ${expiringEmployees.length} expiring, ${expiredEmployees.length} expired`,
+				subject,
 				react: (
 					<ExpirationNotificationEmail
-						expiringCount={expiringEmployees.length}
-						expiredCount={expiredEmployees.length}
+						expiringEmployeeCount={expiringEmployees.length}
+						expiredEmployeeCount={expiredEmployees.length}
+						expiringStudentCount={expiringStudents.length}
+						expiredStudentCount={expiredStudents.length}
 						expiringEmployees={expiringEmployees}
 						expiredEmployees={expiredEmployees}
+						expiringStudents={expiringStudents}
+						expiredStudents={expiredStudents}
 					/>
 				),
 			}),

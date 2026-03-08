@@ -1,6 +1,6 @@
 import closeWithGrace from 'close-with-grace'
 import { setupServer } from 'msw/node'
-import { handlers as factsHandlers } from './facts.ts'
+// import { handlers as factsHandlers } from './facts.ts'
 import { handlers as githubHandlers } from './github.ts'
 import { handlers as googleHandlers } from './google.ts'
 import { handlers as pwnedPasswordApiHandlers } from './pwned-passwords.ts'
@@ -13,7 +13,7 @@ export const server = setupServer(
 	...googleHandlers,
 	...tigrisHandlers,
 	...pwnedPasswordApiHandlers,
-	...factsHandlers,
+	// ...factsHandlers,
 )
 
 // Ensure MSW intercepts Node.js native fetch

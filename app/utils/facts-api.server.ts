@@ -45,6 +45,29 @@ export interface FactsStudentVmOutV1_1 {
 	demographics?: FactsDemographicsModel
 }
 
+export interface FactsStudentSchoolV1_3 {
+	status?: string
+	substatus?: string
+	enrollDate?: string
+	withdrawDate?: string
+	withdrawReason?: string
+	graduationDate?: string
+	gradeLevel?: string
+	nextStatus?: string
+	nextSchoolCode?: string
+	nextGradeLevel?: string
+}
+
+export interface FactsStudentModelV1_3 {
+	studentId: number
+	school?: FactsStudentSchoolV1_3
+	schoolCode?: string
+	classYear?: string
+	gender?: string
+	birthdate?: string
+	demographics?: FactsDemographicsModel
+}
+
 export interface FactsPagedResult<T> {
 	results: T[]
 	currentPage: number
@@ -539,7 +562,7 @@ async function fetchStudentPage(
 		sorts?: string
 		bypassCache?: boolean
 	},
-): Promise<FactsPagedResult<FactsStudentVmOutV1_1>> {
+): Promise<FactsPagedResult<FactsStudentModelV1_3>> {
 	const config = getFactsConfig()
 
 	invariantResponse(
@@ -549,7 +572,7 @@ async function fetchStudentPage(
 	)
 
 	const url = new URL(`${config.baseUrl}/Students`)
-	url.searchParams.set('api-version', '1.1')
+	url.searchParams.set('api-version', '1.3')
 	url.searchParams.set('Page', page.toString())
 	url.searchParams.set('PageSize', pageSize.toString())
 
@@ -565,10 +588,22 @@ async function fetchStudentPage(
 		url.searchParams.set('Sorts', options.sorts)
 	}
 
-	const response = await fetch(url.toString(), {
-		method: 'GET',
-		headers: createAuthHeaders(options?.bypassCache),
-	})
+	console.log(`[Student Fetch] URL: ${url.toString()}`)
+	console.log(`[Student Fetch] Headers:`, createAuthHeaders(options?.bypassCache))
+
+	let response: Response
+	try {
+		response = await fetch(url.toString(), {
+			method: 'GET',
+			headers: createAuthHeaders(options?.bypassCache),
+		})
+		console.log(`[Student Fetch] Response status: ${response.status}`)
+	} catch (fetchError) {
+		console.error(`[Student Fetch] Fetch error:`, fetchError)
+		throw new FactsApiError(
+			`Network error fetching students: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`,
+		)
+	}
 
 	// Handle rate limiting (429 Too Many Requests)
 	if (response.status === 429) {
@@ -601,17 +636,31 @@ async function fetchStudentPage(
 	}
 
 	const data = await response.json()
-	return data as FactsPagedResult<FactsStudentVmOutV1_1>
+	return data as FactsPagedResult<FactsStudentModelV1_3>
 }
 
 /**
  * Transform FACTS API student data to Student schema format
+ * Only includes students in grades 7-12 (who have email addresses)
  */
 function transformStudentToStudent(
-	student: FactsStudentVmOutV1_1,
+	student: FactsStudentModelV1_3,
 ): FactsStudentData | null {
 	// Validate required fields
 	if (!student.studentId) {
+		console.log(`Skipping student: no studentId`)
+		return null
+	}
+
+	// Filter for grades 7-12 only
+	// Accept both "7" and "07" formats
+	const validGrades = ['7', '8', '9', '10', '11', '12', '07', '08', '09']
+	const grade = student.school?.gradeLevel?.trim() || ''
+	
+	if (!validGrades.includes(grade)) {
+		console.log(
+			`Skipping student ${student.studentId} (${student.demographics?.person?.firstName || ''} ${student.demographics?.person?.lastName || ''}): grade "${grade}" not in 7-12`,
+		)
 		return null
 	}
 
@@ -623,32 +672,31 @@ function transformStudentToStudent(
 
 	if (!email) {
 		// Email is required in our schema
+		console.log(
+			`Skipping student ${student.studentId} (${student.demographics?.person?.firstName || ''} ${student.demographics?.person?.lastName || ''}): no email address`,
+		)
 		return null
 	}
 
-	// Build full name from available fields
-	const firstName = (student.firstName || '').trim()
-	const lastName = (student.lastName || '').trim()
-	const middleName = (student.middleName || '').trim()
-	const name = (student.name || '').trim()
+	// Build full name from demographics.person fields
+	const firstName = (student.demographics?.person?.firstName || '').trim()
+	const lastName = (student.demographics?.person?.lastName || '').trim()
+	const middleName = (student.demographics?.person?.middleName || '').trim()
 
-	let fullName = name
-	if (!fullName) {
-		const nameParts = [firstName, middleName, lastName]
-			.filter(Boolean)
-			.join(' ')
-		fullName = nameParts || 'Unknown'
-	}
+	const nameParts = [firstName, middleName, lastName].filter(Boolean).join(' ')
+	const fullName = nameParts || 'Unknown'
 
 	// Normalize multiple spaces to single space and trim
-	fullName = fullName.replace(/\s+/g, ' ').trim()
+	const normalizedFullName = fullName.replace(/\s+/g, ' ').trim()
 
-	// Determine status from active flag
-	const status: 'active' | 'inactive' = student.active ? 'active' : 'inactive'
+	// Determine status from school.status
+	// Active if status is "Enrolled" (FACTS SIS uses "Enrolled" for active students)
+	const status: 'active' | 'inactive' =
+		student.school?.status?.toLowerCase() === 'enrolled' ? 'active' : 'inactive'
 
 	return {
 		sisStudentId: student.studentId.toString(),
-		fullName,
+		fullName: normalizedFullName,
 		email: email.trim(),
 		status,
 	}
@@ -671,14 +719,24 @@ export async function fetchAllStudents(options?: {
 
 	while (hasMorePages) {
 		try {
+			console.log(`[fetchAllStudents] Fetching page ${currentPage}...`)
 			const pageResult = await fetchStudentPage(currentPage, pageSize, options)
+			console.log(
+				`Fetched student page ${currentPage}: ${pageResult.results.length} students (total: ${pageResult.rowCount}, pages: ${pageResult.pageCount})`,
+			)
 
 			// Transform and filter valid students
+			let filteredCount = 0
 			for (const student of pageResult.results) {
 				const studentData = transformStudentToStudent(student)
 				if (studentData) {
 					allStudents.push(studentData)
+				} else {
+					filteredCount++
 				}
+			}
+			if (filteredCount > 0) {
+				console.log(`Filtered out ${filteredCount} students from page ${currentPage}`)
 			}
 
 			// Check if there are more pages
@@ -698,6 +756,7 @@ export async function fetchAllStudents(options?: {
 		}
 	}
 
+	console.log(`Total students fetched and validated: ${allStudents.length}`)
 	return allStudents
 }
 
@@ -721,7 +780,7 @@ export async function fetchStudentById(
 	)
 
 	const url = new URL(`${config.baseUrl}/Students/${studentId}`)
-	url.searchParams.set('api-version', '1.1')
+	url.searchParams.set('api-version', '1.3')
 
 	if (options?.includes) {
 		url.searchParams.set('includes', options.includes)
@@ -765,6 +824,6 @@ export async function fetchStudentById(
 		throw new FactsApiError(errorMessage, response.status, errorData)
 	}
 
-	const student = (await response.json()) as FactsStudentVmOutV1_1
+	const student = (await response.json()) as FactsStudentModelV1_3
 	return transformStudentToStudent(student)
 }

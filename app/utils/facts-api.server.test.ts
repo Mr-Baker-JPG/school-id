@@ -895,7 +895,7 @@ describe('FACTS SIS Student Sync Service', () => {
 				firstName: 'Active',
 				lastName: 'Student',
 				email: 'active@jpgacademy.org',
-				active: true,
+				active: true, // Will be mapped to 'Enrolled' status
 			})
 
 			const inactiveStudent = insertMockStudent({
@@ -903,12 +903,13 @@ describe('FACTS SIS Student Sync Service', () => {
 				firstName: 'Inactive',
 				lastName: 'Student',
 				email: 'inactive@jpgacademy.org',
-				active: false,
+				active: false, // Will be mapped to 'Withdrawn' status
 			})
 
 			const activeResult = await fetchStudentById(activeStudent.studentId)
 			const inactiveResult = await fetchStudentById(inactiveStudent.studentId)
 
+			// Status is mapped from school.status === 'Enrolled' to 'active'
 			expect(activeResult?.status).toBe('active')
 			expect(inactiveResult?.status).toBe('inactive')
 		})
