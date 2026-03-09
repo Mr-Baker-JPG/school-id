@@ -197,7 +197,7 @@ export default function StudentIdRoute({ loaderData }: Route.ComponentProps) {
 	// Check if downloading PDF
 	const isDownloadingPDF =
 		navigation.state === 'loading' &&
-		navigation.location?.pathname === `/resources/admin/student-pdf/${student.id}`
+		navigation.location?.pathname === `/resources/student-pdf`
 
 	const primaryAction = (
 		<a href={`/resources/student/wallet/${student.id}`}>
@@ -215,7 +215,7 @@ export default function StudentIdRoute({ loaderData }: Route.ComponentProps) {
 		{
 			label: 'Download PDF',
 			icon: 'download' as const,
-			href: `/resources/admin/student-pdf/${student.id}`,
+			href: `/resources/student-pdf`,
 			asChild: true,
 			loading: isDownloadingPDF,
 		},
