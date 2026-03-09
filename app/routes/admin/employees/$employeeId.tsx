@@ -112,12 +112,15 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	)
 
 	// Generate barcode for ID card
-	const barcodeDataURL = await generateBarcodeDataURL(employee.sisEmployeeId || employee.id, {
-		width: 2,
-		height: 40,
-		format: 'CODE128',
-		displayValue: false,
-	})
+	const barcodeDataURL = await generateBarcodeDataURL(
+		employee.sisEmployeeId || employee.id,
+		{
+			width: 2,
+			height: 40,
+			format: 'CODE128',
+			displayValue: false,
+		},
+	)
 
 	// Get current academic year
 	const academicYear = getCurrentAcademicYear()
@@ -222,7 +225,9 @@ export default function AdminEmployeeDetailRoute({
 	})
 
 	// Determine personType based on job title
-	const personType: PersonType = employee.jobTitle?.toLowerCase().includes('teacher')
+	const personType: PersonType = employee.jobTitle
+		?.toLowerCase()
+		.includes('teacher')
 		? 'FACULTY'
 		: 'FACULTY' // Default to FACULTY for employees
 
