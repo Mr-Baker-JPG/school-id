@@ -164,9 +164,9 @@ export async function generateAppleWalletPass(
 		// Fetch school logo
 		const logoBuffer = await getSchoolLogoBuffer(branding.logoUrl, request)
 
-		// Generate QR code
+		// Generate QR code (using SIS ID for verification)
 		const qrCodeBuffer = await generateEmployeeQRCodeBuffer(
-			employee.id,
+			employee.sisEmployeeId,
 			request,
 		)
 

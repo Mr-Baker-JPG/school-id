@@ -106,9 +106,9 @@ export async function loader({ request }: Route.LoaderArgs) {
 	// Get logo URL (if configured)
 	const logoUrl = branding.logoUrl || null
 
-	// Generate QR code data URL for preview
+	// Generate QR code data URL for preview (using SIS ID for verification)
 	const qrCodeDataURL = await generateEmployeeQRCodeDataURL(
-		employee.id,
+		employee.sisEmployeeId,
 		request,
 	)
 

@@ -68,8 +68,8 @@ export function IdPreviewCard({
 				) : (
 					<div className="relative">
 						{children}
-						<div className="bg-background/80 absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
-							<div className="bg-background rounded-md border px-3 py-1.5 text-sm font-medium shadow-sm">
+						<div className="bg-background/80 pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
+							<div className="bg-background pointer-events-auto rounded-md border px-3 py-1.5 text-sm font-medium shadow-sm">
 								Click to enlarge
 							</div>
 						</div>
@@ -83,11 +83,11 @@ export function IdPreviewCard({
 						<DialogTitle>{title}</DialogTitle>
 					</DialogHeader>
 					<div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-4 md:p-6">
-						<div className="flex max-h-[70vh] w-full items-center justify-center md:max-h-[90vh]">
-							<div
-								className="h-full w-full md:origin-center md:scale-[2]"
-								style={{ objectFit: 'contain' }}
-							>
+						<div
+							className="flex items-center justify-center"
+							style={{ minWidth: '486px', minHeight: '306px' }}
+						>
+							<div style={{ transform: 'scale(2)', transformOrigin: 'center' }}>
 								{previewContent}
 							</div>
 						</div>

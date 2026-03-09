@@ -1,5 +1,8 @@
 /**
- * Reusable Employee ID Card Components
+ * Reusable Employee ID Card Components — "Light Executive" Design
+ *
+ * Layout: Photo left, structured info right, white bg, thin maroon accent
+ * Back: QR left, school info right, maroon top/bottom rules
  *
  * This module provides both PDF (React PDF) and Preview (React/HTML) versions
  * of the employee ID card layout components for use in PDF generation and
@@ -8,6 +11,7 @@
 
 import { Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer'
 import { type BrandingConfig } from '#app/utils/branding.server.ts'
+export type { BrandingConfig } from '#app/utils/branding.server.ts'
 import { getFirstAndLastName } from '#app/utils/misc.tsx'
 
 /**
@@ -65,231 +69,249 @@ export interface IDCardFrontPreviewProps {
 export interface IDCardBackProps {
 	qrCodeDataURL: string
 	branding: BrandingConfig
+	logoDataURL?: string | null
 }
 
-/**
- * Formats school name to uppercase, splitting into two lines if needed
- */
-function formatSchoolName(schoolName: string): string[] {
-	const upper = schoolName.toUpperCase()
-	// Split by common patterns or at natural break points
-	const words = upper.split(/\s+/)
-	if (words.length <= 3) {
-		// For short names, try to split evenly
-		const mid = Math.ceil(words.length / 2)
-		return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')]
-	}
-	// For longer names, split at "THE" or other common words, or at midpoint
-	const theIndex = words.indexOf('THE')
-	if (theIndex > 0 && theIndex < words.length - 1) {
-		return [
-			words.slice(0, theIndex + 1).join(' '),
-			words.slice(theIndex + 1).join(' '),
-		]
-	}
-	// Otherwise split roughly in half
-	const mid = Math.ceil(words.length / 2)
-	return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')]
-}
+// Design constants
+const NAVY = '#1B2A4A'
+const MAROON = '#8B1A2B'
+
+const SCHOOL_ADDRESS_LINE1 = '1522 Carmel Dr.'
+const SCHOOL_ADDRESS_LINE2 = 'Lafayette, LA 70501'
+const SCHOOL_PHONE = '337-889-5345'
 
 /**
- * Creates PDF styles matching the reference design
+ * Creates PDF styles for the Light Executive design
  */
 export function createIDCardPDFStyles(_branding: BrandingConfig) {
-	// Reference colors: light blue-grey background, black text, dark red separator
-	const bgColor = '#d0e0e3' // Light blue-grey
-	const textColor = '#000000' // Black
-	const separatorColor = '#8B0000' // Dark red
-
 	return StyleSheet.create({
 		page: {
 			width: ID_WIDTH,
 			height: ID_HEIGHT,
 			padding: 0,
 		},
-		frontPage: {
+		// Front card
+		frontCard: {
 			width: ID_WIDTH,
 			height: ID_HEIGHT,
-			backgroundColor: bgColor,
-			border: '1px solid #000000',
-			padding: 8,
+			backgroundColor: '#FFFFFF',
 			display: 'flex',
 			flexDirection: 'column',
 		},
-		backPage: {
-			width: ID_WIDTH,
-			height: ID_HEIGHT,
-			backgroundColor: bgColor,
-			padding: 12,
-			display: 'flex',
-			flexDirection: 'column',
-			alignItems: 'center',
-			justifyContent: 'center',
-			gap: 8,
-		},
-		// Top section: logo + school name + photo
-		topSection: {
-			display: 'flex',
-			flexDirection: 'row',
-			alignItems: 'flex-start',
-			marginBottom: 8,
-		},
-		logoAndNameContainer: {
-			flex: 1,
-			display: 'flex',
-			flexDirection: 'row',
-			alignItems: 'flex-start',
-			gap: 6,
-		},
-		logoContainer: {
-			width: 35,
-			height: 35,
+		// Watermark (ghosted logo)
+		watermark: {
+			position: 'absolute',
+			top: 0,
+			left: 0,
+			right: 0,
+			bottom: 0,
 			display: 'flex',
 			alignItems: 'center',
 			justifyContent: 'center',
+			opacity: 0.025,
 		},
-		logo: {
-			width: 35,
-			height: 35,
+		watermarkImage: {
+			width: 140,
+			height: 140,
 			objectFit: 'contain',
 		},
-		schoolNameContainer: {
+		maroonTopBar: {
+			height: 3,
+			backgroundColor: MAROON,
+		},
+		frontBody: {
 			flex: 1,
 			display: 'flex',
-			flexDirection: 'column',
-			justifyContent: 'flex-start',
+			flexDirection: 'row',
 		},
-		schoolNameLine1: {
-			fontSize: 8,
-			fontWeight: 'normal',
-			color: textColor,
-			fontFamily: 'Times-Roman',
-			lineHeight: 1.2,
-		},
-		schoolNameLine2: {
-			fontSize: 8,
-			fontWeight: 'normal',
-			color: textColor,
-			fontFamily: 'Times-Roman',
-			lineHeight: 1.2,
-		},
-		photoContainer: {
-			width: 70,
-			height: 85,
+		// Photo column (left)
+		photoColumn: {
 			display: 'flex',
 			alignItems: 'center',
 			justifyContent: 'center',
-			backgroundColor: '#ffffff',
+			paddingLeft: 10,
+			paddingTop: 10,
+			paddingBottom: 8,
+		},
+		photoFrame: {
+			width: 54,
+			height: 68,
+			border: `1.5pt solid ${NAVY}`,
+			borderRadius: 3,
 			overflow: 'hidden',
 		},
 		photo: {
-			width: 70,
-			height: 85,
+			width: 54,
+			height: 68,
 			objectFit: 'cover',
 		},
 		photoPlaceholder: {
-			width: 70,
-			height: 85,
+			width: 54,
+			height: 68,
+			backgroundColor: '#e5e5e5',
 			display: 'flex',
 			alignItems: 'center',
 			justifyContent: 'center',
-			backgroundColor: '#e0e0e0',
 		},
-		// Middle section: name, role, academic year
-		middleSection: {
+		photoPlaceholderText: {
+			fontSize: 5,
+			color: '#999999',
+		},
+		// Info column (right)
+		infoColumn: {
+			flex: 1,
 			display: 'flex',
 			flexDirection: 'column',
-			gap: 2,
-			marginBottom: 4,
+			padding: '10 10 8 10',
+			justifyContent: 'space-between',
 		},
+		// Top: school identity
+		schoolRow: {
+			display: 'flex',
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 4,
+		},
+		schoolLogo: {
+			width: 18,
+			height: 18,
+			objectFit: 'contain',
+		},
+		schoolName: {
+			fontSize: 5.5,
+			color: '#888888',
+			fontFamily: 'Times-Roman',
+			letterSpacing: 1,
+		},
+		maroonRule: {
+			height: 0.75,
+			backgroundColor: MAROON,
+			marginTop: 6,
+			marginBottom: 6,
+		},
+		// Name
 		name: {
-			fontSize: 14,
+			fontSize: 11,
 			fontWeight: 'bold',
-			color: textColor,
+			color: NAVY,
 			fontFamily: 'Times-Bold',
-			lineHeight: 1.3,
-		},
-		role: {
-			fontSize: 9,
-			fontWeight: 'normal',
-			color: textColor,
-			fontFamily: 'Times-Roman',
 			lineHeight: 1.2,
 		},
-		academicYear: {
-			fontSize: 9,
-			fontWeight: 'normal',
-			color: textColor,
-			fontFamily: 'Times-Roman',
-			lineHeight: 1.2,
+		// Role badge + year row
+		badgeRow: {
+			display: 'flex',
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 6,
+			marginTop: 3,
 		},
-		// Red separator line
-		separator: {
-			width: '100%',
-			height: 3,
-			backgroundColor: separatorColor,
-			marginBottom: 8,
+		roleBadge: {
+			fontSize: 6,
+			color: '#FFFFFF',
+			backgroundColor: MAROON,
+			paddingHorizontal: 4,
+			paddingVertical: 1,
+			borderRadius: 1.5,
+			fontFamily: 'Helvetica-Bold',
+			letterSpacing: 0.8,
 		},
-		// Bottom section: barcode + ID number
-		bottomSection: {
+		yearText: {
+			fontSize: 6,
+			color: '#888888',
+			fontFamily: 'Helvetica',
+		},
+		// Bottom: ID number
+		bottomRow: {
 			display: 'flex',
 			flexDirection: 'row',
 			justifyContent: 'space-between',
 			alignItems: 'flex-end',
-			marginTop: 4,
 		},
-		barcodeContainer: {
-			display: 'flex',
-			flexDirection: 'column',
-			alignItems: 'flex-start',
-			gap: 2,
-		},
-		barcode: {
-			width: 100,
-			height: 25,
-			objectFit: 'contain',
-		},
-		barcodeNumber: {
-			fontSize: 7,
-			fontWeight: 'normal',
-			color: textColor,
-			fontFamily: 'Times-Roman',
-		},
-		idNumberContainer: {
-			display: 'flex',
-			flexDirection: 'column',
-			alignItems: 'flex-end',
-			gap: 2,
-		},
-		idNumberLabel: {
-			fontSize: 7,
-			fontWeight: 'normal',
-			color: textColor,
-			fontFamily: 'Times-Roman',
+		idLabel: {
+			fontSize: 5,
+			color: '#aaaaaa',
+			fontFamily: 'Helvetica',
+			letterSpacing: 0.5,
 		},
 		idNumber: {
-			fontSize: 12,
+			fontSize: 8,
 			fontWeight: 'bold',
-			color: textColor,
-			fontFamily: 'Times-Bold',
+			color: NAVY,
+			fontFamily: 'Helvetica-Bold',
+			letterSpacing: 0.3,
 		},
-		qrCodeContainer: {
+		amdg: {
+			fontSize: 4.5,
+			color: '#bbbbbb',
+			fontFamily: 'Times-Roman',
+			fontStyle: 'italic',
+		},
+		// Back card
+		backCard: {
+			width: ID_WIDTH,
+			height: ID_HEIGHT,
+			backgroundColor: '#FFFFFF',
 			display: 'flex',
+			flexDirection: 'column',
+		},
+		backBody: {
+			flex: 1,
+			display: 'flex',
+			flexDirection: 'row',
+			padding: '10 14',
 			alignItems: 'center',
-			justifyContent: 'center',
-			width: 100,
-			height: 100,
+			gap: 12,
+		},
+		qrContainer: {
+			display: 'flex',
+			flexDirection: 'column',
+			alignItems: 'center',
 		},
 		qrCode: {
-			width: 100,
-			height: 100,
+			width: 65,
+			height: 65,
 		},
-		verificationText: {
-			fontSize: 8,
-			color: textColor,
-			textAlign: 'center',
-			marginTop: 4,
+		verifyLabel: {
+			fontSize: 5,
+			color: NAVY,
+			fontFamily: 'Helvetica-Bold',
+			marginTop: 2,
+			letterSpacing: 0.5,
+		},
+		backInfoColumn: {
+			flex: 1,
+			display: 'flex',
+			flexDirection: 'column',
+			gap: 3,
+		},
+		backSchoolName: {
+			fontSize: 7,
+			fontWeight: 'bold',
+			color: NAVY,
+			fontFamily: 'Times-Bold',
+		},
+		backAddress: {
+			fontSize: 5.5,
+			color: '#555555',
+			fontFamily: 'Helvetica',
+			lineHeight: 1.5,
+		},
+		backMotto: {
+			fontSize: 5.5,
+			color: MAROON,
 			fontFamily: 'Times-Roman',
+			fontStyle: 'italic',
+			marginTop: 2,
+		},
+		backReturnNotice: {
+			fontSize: 4.5,
+			color: '#aaaaaa',
+			fontFamily: 'Helvetica',
+			marginTop: 1,
+		},
+		bottomMaroonBar: {
+			height: 3,
+			backgroundColor: MAROON,
 		},
 	})
 }
@@ -304,60 +326,71 @@ export function IDCardFrontContentView({
 	logoDataURL,
 	branding,
 	academicYear,
-	barcodeDataURL,
 }: IDCardFrontPDFProps) {
 	const styles = createIDCardPDFStyles(branding)
-	const schoolNameLines = formatSchoolName(branding.schoolName)
+	const displayName = getFirstAndLastName(employee.fullName).toUpperCase()
 
 	return (
-		<View style={styles.frontPage}>
-			{/* Top Section: Logo + School Name + Photo */}
-			<View style={styles.topSection}>
-				<View style={styles.logoAndNameContainer}>
-					{logoDataURL ? (
-						<View style={styles.logoContainer}>
-							<Image src={logoDataURL} style={styles.logo} />
-						</View>
-					) : null}
-					<View style={styles.schoolNameContainer}>
-						<Text style={styles.schoolNameLine1}>{schoolNameLines[0]}</Text>
-						<Text style={styles.schoolNameLine2}>{schoolNameLines[1]}</Text>
+		<View style={styles.frontCard}>
+			{/* Watermark */}
+			{logoDataURL ? (
+				<View style={styles.watermark} fixed>
+					<Image src={logoDataURL} style={styles.watermarkImage} />
+				</View>
+			) : null}
+			{/* Thin maroon top accent */}
+			<View style={styles.maroonTopBar} />
+
+			<View style={styles.frontBody}>
+				{/* Left: Photo */}
+				<View style={styles.photoColumn}>
+					<View style={styles.photoFrame}>
+						{photoDataURL ? (
+							<Image src={photoDataURL} style={styles.photo} />
+						) : (
+							<View style={styles.photoPlaceholder}>
+								<Text style={styles.photoPlaceholderText}>No Photo</Text>
+							</View>
+						)}
 					</View>
 				</View>
-				{/* Photo */}
-				<View style={styles.photoContainer}>
-					{photoDataURL ? (
-						<Image src={photoDataURL} style={styles.photo} />
-					) : (
-						<View style={styles.photoPlaceholder}>
-							<Text style={{ fontSize: 6, color: '#999999' }}>No Photo</Text>
+
+				{/* Right: Info */}
+				<View style={styles.infoColumn}>
+					<View>
+						{/* School identity */}
+						<View style={styles.schoolRow}>
+							{logoDataURL ? (
+								<Image src={logoDataURL} style={styles.schoolLogo} />
+							) : null}
+							<Text style={styles.schoolName}>
+								{branding.schoolName.toUpperCase()}
+							</Text>
 						</View>
-					)}
-				</View>
-			</View>
 
-			{/* Middle Section: Name, Role, Academic Year */}
-			<View style={styles.middleSection}>
-				<Text style={styles.name}>
-					{getFirstAndLastName(employee.fullName).toUpperCase()}
-				</Text>
-				<Text style={styles.role}>{employee.personType.toUpperCase()}</Text>
-				<Text style={styles.academicYear}>{academicYear}</Text>
-			</View>
+						{/* Maroon rule */}
+						<View style={styles.maroonRule} />
 
-			{/* Red Separator Line */}
-			<View style={styles.separator} />
+						{/* Name */}
+						<Text style={styles.name}>{displayName}</Text>
 
-			{/* Bottom Section: Barcode + ID Number */}
-			<View style={styles.bottomSection}>
-				{barcodeDataURL && (
-					<View style={styles.barcodeContainer}>
-						<Image src={barcodeDataURL} style={styles.barcode} />
+						{/* Role + Year */}
+						<View style={styles.badgeRow}>
+							<Text style={styles.roleBadge}>
+								{employee.personType}
+							</Text>
+							<Text style={styles.yearText}>{academicYear}</Text>
+						</View>
 					</View>
-				)}
-				<View style={styles.idNumberContainer}>
-					<Text style={styles.idNumberLabel}>ID NUMBER:</Text>
-					<Text style={styles.idNumber}>{employee.sisEmployeeId}</Text>
+
+					{/* Bottom: ID number */}
+					<View style={styles.bottomRow}>
+						<View>
+							<Text style={styles.idLabel}>ID NUMBER</Text>
+							<Text style={styles.idNumber}>{employee.sisEmployeeId}</Text>
+						</View>
+						<Text style={styles.amdg}>AMDG</Text>
+					</View>
 				</View>
 			</View>
 		</View>
@@ -398,19 +431,40 @@ export function IDCardFrontPDF({
 export function IDCardBackContentView({
 	qrCodeDataURL,
 	branding,
+	logoDataURL,
 }: IDCardBackProps) {
 	const styles = createIDCardPDFStyles(branding)
 	return (
-		<View style={styles.backPage}>
-			<View style={styles.qrCodeContainer}>
-				<Image src={qrCodeDataURL} style={styles.qrCode} />
+		<View style={styles.backCard}>
+			{/* Watermark */}
+			{logoDataURL ? (
+				<View style={styles.watermark} fixed>
+					<Image src={logoDataURL} style={styles.watermarkImage} />
+				</View>
+			) : null}
+			<View style={styles.maroonTopBar} />
+			<View style={styles.backBody}>
+				{/* Left: QR code */}
+				<View style={styles.qrContainer}>
+					<Image src={qrCodeDataURL} style={styles.qrCode} />
+					<Text style={styles.verifyLabel}>VERIFY ID</Text>
+				</View>
+
+				{/* Right: School info */}
+				<View style={styles.backInfoColumn}>
+					<Text style={styles.backSchoolName}>{branding.schoolName}</Text>
+					<Text style={styles.backAddress}>
+						{SCHOOL_ADDRESS_LINE1}{'\n'}
+						{SCHOOL_ADDRESS_LINE2}{'\n'}
+						{SCHOOL_PHONE}
+					</Text>
+					<Text style={styles.backMotto}>Ad Majorem Dei Gloriam</Text>
+					<Text style={styles.backReturnNotice}>
+						If found, please return to the school office.
+					</Text>
+				</View>
 			</View>
-			<Text style={styles.verificationText}>
-				Scan to verify ID status
-			</Text>
-			<Text style={{ fontSize: 10, fontWeight: 'bold', color: '#000000' }}>
-				{branding.schoolName.toUpperCase()}
-			</Text>
+			<View style={styles.bottomMaroonBar} />
 		</View>
 	)
 }
@@ -418,13 +472,14 @@ export function IDCardBackContentView({
 /**
  * PDF version: React PDF component for ID card back
  */
-export function IDCardBackPDF({ qrCodeDataURL, branding }: IDCardBackProps) {
+export function IDCardBackPDF({ qrCodeDataURL, branding, logoDataURL }: IDCardBackProps) {
 	const styles = createIDCardPDFStyles(branding)
 	return (
 		<Page size={[ID_WIDTH, ID_HEIGHT]} style={styles.page}>
 			<IDCardBackContentView
 				qrCodeDataURL={qrCodeDataURL}
 				branding={branding}
+				logoDataURL={logoDataURL}
 			/>
 		</Page>
 	)
@@ -432,8 +487,7 @@ export function IDCardBackPDF({ qrCodeDataURL, branding }: IDCardBackProps) {
 
 /**
  * Preview version: React/HTML component for ID card front
- * Used for browser preview of ID cards
- * Accepts regular URLs (not base64 data URLs) for photos and logos
+ * "Light Executive" — white bg, photo left, structured info right
  */
 export function IDCardFrontPreview({
 	employee,
@@ -441,247 +495,229 @@ export function IDCardFrontPreview({
 	logoUrl,
 	branding,
 	academicYear,
-	barcodeDataURL,
 }: IDCardFrontPreviewProps) {
-	// Convert points to pixels (assuming 72 DPI: 1 point = 1 pixel)
-	const widthPx = ID_WIDTH
-	const heightPx = ID_HEIGHT
-	const bgColor = '#d0e0e3'
-	const textColor = '#000000'
-	const schoolNameLines = formatSchoolName(branding.schoolName)
+	const displayName = getFirstAndLastName(employee.fullName).toUpperCase()
 
 	return (
 		<div
-			className="flex flex-col border border-black"
 			style={{
-				width: `${widthPx}px`,
-				height: `${heightPx}px`,
-				backgroundColor: bgColor,
-				padding: '8px',
-				fontFamily: 'Times, "Times New Roman", serif',
+				width: ID_WIDTH,
+				height: ID_HEIGHT,
+				backgroundColor: '#FFFFFF',
+				borderRadius: 8,
+				overflow: 'hidden',
+				display: 'flex',
+				flexDirection: 'column',
+				boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+				position: 'relative',
 			}}
 		>
-			{/* Top Section: Logo + School Name + Photo */}
-			<div
-				style={{
-					display: 'flex',
-					flexDirection: 'row',
-					alignItems: 'flex-start',
-					marginBottom: '8px',
-				}}
-			>
+			{/* Watermark */}
+			{logoUrl ? (
+				<div
+					style={{
+						position: 'absolute',
+						top: 0,
+						left: 0,
+						right: 0,
+						bottom: 0,
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+						opacity: 0.025,
+						pointerEvents: 'none',
+						zIndex: 0,
+					}}
+				>
+					<img
+						src={logoUrl}
+						alt=""
+						style={{ width: 140, height: 140, objectFit: 'contain' }}
+					/>
+				</div>
+			) : null}
+			{/* Thin maroon top accent */}
+			<div style={{ height: 3, backgroundColor: MAROON, flexShrink: 0 }} />
+
+			<div style={{ flex: 1, display: 'flex' }}>
+				{/* Left: Photo */}
+				<div
+					style={{
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+						paddingLeft: 10,
+						paddingTop: 10,
+						paddingBottom: 8,
+					}}
+				>
+					<div
+						style={{
+							width: 54,
+							height: 68,
+							border: `1.5px solid ${NAVY}`,
+							borderRadius: 3,
+							overflow: 'hidden',
+							flexShrink: 0,
+							backgroundColor: '#e5e5e5',
+						}}
+					>
+						{photoUrl ? (
+							<img
+								src={photoUrl}
+								alt={employee.fullName}
+								style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+							/>
+						) : (
+							<div
+								style={{
+									width: '100%',
+									height: '100%',
+									display: 'flex',
+									alignItems: 'center',
+									justifyContent: 'center',
+									fontSize: 5,
+									color: '#999',
+									fontFamily: 'system-ui, sans-serif',
+								}}
+							>
+								No Photo
+							</div>
+						)}
+					</div>
+				</div>
+
+				{/* Right: Info */}
 				<div
 					style={{
 						flex: 1,
 						display: 'flex',
-						flexDirection: 'row',
-						alignItems: 'flex-start',
-						gap: '6px',
-					}}
-				>
-					{logoUrl && (
-						<div
-							style={{
-								width: '35px',
-								height: '35px',
-								display: 'flex',
-								alignItems: 'center',
-								justifyContent: 'center',
-							}}
-						>
-							<img
-								src={logoUrl}
-								alt="School Logo"
-								style={{ width: '35px', height: '35px', objectFit: 'contain' }}
-							/>
-						</div>
-					)}
-					<div
-						style={{
-							flex: 1,
-							display: 'flex',
-							flexDirection: 'column',
-							justifyContent: 'flex-start',
-						}}
-					>
-						<div
-							style={{
-								fontSize: '8px',
-								fontWeight: 'normal',
-								color: textColor,
-								fontFamily: 'Times, "Times New Roman", serif',
-								lineHeight: 1.2,
-							}}
-						>
-							{schoolNameLines[0]}
-						</div>
-						<div
-							style={{
-								fontSize: '8px',
-								fontWeight: 'normal',
-								color: textColor,
-								fontFamily: 'Times, "Times New Roman", serif',
-								lineHeight: 1.2,
-							}}
-						>
-							{schoolNameLines[1]}
-						</div>
-					</div>
-				</div>
-				{/* Photo */}
-				<div
-					style={{
-						width: '70px',
-						height: '85px',
-						display: 'flex',
-						alignItems: 'center',
-						justifyContent: 'center',
-						backgroundColor: '#ffffff',
-						overflow: 'hidden',
-					}}
-				>
-					{photoUrl ? (
-						<img
-							src={photoUrl}
-							alt={employee.fullName}
-							style={{
-								width: '70px',
-								height: '85px',
-								objectFit: 'cover',
-							}}
-						/>
-					) : (
-						<div
-							style={{
-								width: '70px',
-								height: '85px',
-								display: 'flex',
-								alignItems: 'center',
-								justifyContent: 'center',
-								backgroundColor: '#e0e0e0',
-								fontSize: '6px',
-								color: '#999999',
-							}}
-						>
-							No Photo
-						</div>
-					)}
-				</div>
-			</div>
-
-			{/* Middle Section: Name, Role, Academic Year */}
-			<div
-				style={{
-					display: 'flex',
-					flexDirection: 'column',
-					gap: '2px',
-					marginBottom: '4px',
-					marginTop: '-35px',
-					borderBottom: '3px solid #8B0000',
-				}}
-			>
-				<div
-					style={{
-						fontSize: '14px',
-						fontWeight: 'bold',
-						color: textColor,
-						fontFamily: 'Times, "Times New Roman", serif',
-						lineHeight: 1.3,
-					}}
-				>
-					{getFirstAndLastName(employee.fullName).toUpperCase()}
-				</div>
-				<div
-					style={{
-						fontSize: '9px',
-						fontWeight: 'normal',
-						color: textColor,
-						fontFamily: 'Times, "Times New Roman", serif',
-						lineHeight: 1.2,
-					}}
-				>
-					{employee.personType.toUpperCase()}
-				</div>
-				<div
-					style={{
-						fontSize: '9px',
-						fontWeight: 'normal',
-						color: textColor,
-						fontFamily: 'Times, "Times New Roman", serif',
-						lineHeight: 1.2,
-					}}
-				>
-					{academicYear}
-				</div>
-			</div>
-
-			{/* Red Separator Line */}
-			{/* <div
-				style={{
-					width: '100%',
-					height: '3px',
-					backgroundColor: separatorColor,
-					marginBottom: '8px',
-				}}
-			/> */}
-
-			{/* Bottom Section: Barcode + ID Number */}
-			<div
-				style={{
-					display: 'flex',
-					flexDirection: 'row',
-					justifyContent: 'space-between',
-					alignItems: 'flex-end',
-					marginTop: '0px',
-				}}
-			>
-				{barcodeDataURL && (
-					<div
-						style={{
-							display: 'flex',
-							flexDirection: 'column',
-							alignItems: 'flex-start',
-							gap: '2px',
-						}}
-					>
-						<img
-							src={barcodeDataURL}
-							alt="Barcode"
-							style={{
-								width: '100px',
-								height: '25px',
-								objectFit: 'contain',
-							}}
-						/>
-					</div>
-				)}
-				<div
-					style={{
-						display: 'flex',
 						flexDirection: 'column',
-						alignItems: 'flex-end',
-						gap: '2px',
+						padding: '10px 10px 8px 10px',
+						justifyContent: 'space-between',
 					}}
 				>
-					<div
-						style={{
-							fontSize: '7px',
-							fontWeight: 'normal',
-							color: textColor,
-							fontFamily: 'Times, "Times New Roman", serif',
-						}}
-					>
-						ID NUMBER:
+					<div>
+						{/* School identity */}
+						<div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+							{logoUrl && (
+								<img
+									src={logoUrl}
+									alt=""
+									style={{ width: 18, height: 18, objectFit: 'contain' }}
+								/>
+							)}
+							<div
+								style={{
+									fontSize: 5.5,
+									color: '#888',
+									fontFamily: 'Georgia, "Times New Roman", serif',
+									letterSpacing: 1,
+								}}
+							>
+								{branding.schoolName.toUpperCase()}
+							</div>
+						</div>
+
+						{/* Maroon rule */}
+						<div
+							style={{
+								height: 0.75,
+								backgroundColor: MAROON,
+								marginTop: 6,
+								marginBottom: 6,
+							}}
+						/>
+
+						{/* Name */}
+						<div
+							style={{
+								fontSize: 11,
+								fontWeight: 700,
+								color: NAVY,
+								fontFamily: 'Georgia, "Times New Roman", serif',
+								lineHeight: 1.2,
+							}}
+						>
+							{displayName}
+						</div>
+
+						{/* Role badge + year */}
+						<div
+							style={{
+								display: 'flex',
+								gap: 6,
+								alignItems: 'center',
+								marginTop: 3,
+							}}
+						>
+							<span
+								style={{
+									fontSize: 6,
+									color: '#fff',
+									backgroundColor: MAROON,
+									padding: '1px 4px',
+									borderRadius: 1.5,
+									fontFamily: 'system-ui, sans-serif',
+									fontWeight: 600,
+									letterSpacing: 0.8,
+								}}
+							>
+								{employee.personType}
+							</span>
+							<span
+								style={{
+									fontSize: 6,
+									color: '#888',
+									fontFamily: 'system-ui, sans-serif',
+								}}
+							>
+								{academicYear}
+							</span>
+						</div>
 					</div>
+
+					{/* Bottom: ID number */}
 					<div
 						style={{
-							fontSize: '12px',
-							fontWeight: 'bold',
-							color: textColor,
-							fontFamily: 'Times, "Times New Roman", serif',
+							display: 'flex',
+							justifyContent: 'space-between',
+							alignItems: 'flex-end',
 						}}
 					>
-						{employee.sisEmployeeId}
+						<div>
+							<div
+								style={{
+									fontSize: 5,
+									color: '#aaa',
+									fontFamily: 'system-ui, sans-serif',
+									letterSpacing: 0.5,
+								}}
+							>
+								ID NUMBER
+							</div>
+							<div
+								style={{
+									fontSize: 8,
+									fontWeight: 700,
+									color: NAVY,
+									fontFamily: 'system-ui, sans-serif',
+									letterSpacing: 0.3,
+								}}
+							>
+								{employee.sisEmployeeId}
+							</div>
+						</div>
+						<div
+							style={{
+								fontSize: 4.5,
+								color: '#bbb',
+								fontFamily: 'Georgia, "Times New Roman", serif',
+								fontStyle: 'italic',
+							}}
+						>
+							AMDG
+						</div>
 					</div>
 				</div>
 			</div>
@@ -691,53 +727,152 @@ export function IDCardFrontPreview({
 
 /**
  * Preview version: React/HTML component for ID card back
- * Used for browser preview of ID cards
- * Accepts QR code data URL (base64) for display
+ * Two-column: QR left, school info right
  */
 export function IDCardBackPreview({
 	qrCodeDataURL,
 	branding,
+	logoDataURL,
 }: IDCardBackProps) {
-	// Convert points to pixels (assuming 72 DPI: 1 point = 1 pixel)
-	const widthPx = ID_WIDTH
-	const heightPx = ID_HEIGHT
-	const bgColor = '#d0e0e3'
+	// Use logoDataURL if provided, otherwise fall back to branding.logoUrl
+	const watermarkLogo = logoDataURL || branding.logoUrl
 
 	return (
 		<div
-			className="flex flex-col items-center justify-center gap-2 border border-black"
 			style={{
-				width: `${widthPx}px`,
-				height: `${heightPx}px`,
-				backgroundColor: bgColor,
-				padding: '12px',
+				width: ID_WIDTH,
+				height: ID_HEIGHT,
+				backgroundColor: '#FFFFFF',
+				borderRadius: 8,
+				overflow: 'hidden',
+				display: 'flex',
+				flexDirection: 'column',
+				boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+				position: 'relative',
 			}}
 		>
-			<div className="flex items-center justify-center">
-				<img
-					src={qrCodeDataURL}
-					alt="QR Code"
-					style={{ width: '100px', height: '100px' }}
-				/>
-			</div>
+			{/* Watermark */}
+			{watermarkLogo ? (
+				<div
+					style={{
+						position: 'absolute',
+						top: 0,
+						left: 0,
+						right: 0,
+						bottom: 0,
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+						opacity: 0.025,
+						pointerEvents: 'none',
+						zIndex: 0,
+					}}
+				>
+					<img
+						src={watermarkLogo}
+						alt=""
+						style={{ width: 140, height: 140, objectFit: 'contain' }}
+					/>
+				</div>
+			) : null}
+			{/* Top maroon rule */}
+			<div style={{ height: 3, backgroundColor: MAROON, flexShrink: 0 }} />
+
 			<div
 				style={{
-					fontSize: '8px',
-					color: '#000000',
-					textAlign: 'center',
+					flex: 1,
+					display: 'flex',
+					alignItems: 'center',
+					padding: '10px 14px',
+					gap: 12,
 				}}
 			>
-				Scan to verify ID status
+				{/* Left: QR */}
+				<div
+					style={{
+						display: 'flex',
+						flexDirection: 'column',
+						alignItems: 'center',
+					}}
+				>
+					<img
+						src={qrCodeDataURL}
+						alt="QR Code"
+						style={{ width: 65, height: 65 }}
+					/>
+					<div
+						style={{
+							fontSize: 5,
+							color: NAVY,
+							fontFamily: 'system-ui, sans-serif',
+							fontWeight: 600,
+							marginTop: 2,
+							letterSpacing: 0.5,
+						}}
+					>
+						VERIFY ID
+					</div>
+				</div>
+
+				{/* Right: School info */}
+				<div
+					style={{
+						flex: 1,
+						display: 'flex',
+						flexDirection: 'column',
+						gap: 3,
+					}}
+				>
+					<div
+						style={{
+							fontSize: 7,
+							fontWeight: 700,
+							color: NAVY,
+							fontFamily: 'Georgia, "Times New Roman", serif',
+						}}
+					>
+						{branding.schoolName}
+					</div>
+					<div
+						style={{
+							fontSize: 5.5,
+							color: '#555',
+							fontFamily: 'system-ui, sans-serif',
+							lineHeight: 1.5,
+						}}
+					>
+						{SCHOOL_ADDRESS_LINE1}
+						<br />
+						{SCHOOL_ADDRESS_LINE2}
+						<br />
+						{SCHOOL_PHONE}
+					</div>
+					<div
+						style={{
+							fontSize: 5.5,
+							color: MAROON,
+							fontFamily: 'Georgia, "Times New Roman", serif',
+							fontStyle: 'italic',
+							marginTop: 2,
+						}}
+					>
+						Ad Majorem Dei Gloriam
+					</div>
+					<div
+						style={{
+							fontSize: 4.5,
+							color: '#aaa',
+							fontFamily: 'system-ui, sans-serif',
+							marginTop: 1,
+						}}
+					>
+						If found, please return to the school office.
+					</div>
+				</div>
 			</div>
-			<div
-				style={{
-					fontSize: '10px',
-					fontWeight: 'bold',
-					color: '#000000',
-				}}
-			>
-				{branding.schoolName.toUpperCase()}
-			</div>
+
+			{/* Bottom maroon rule */}
+			<div style={{ height: 3, backgroundColor: MAROON, flexShrink: 0 }} />
 		</div>
 	)
 }

@@ -2,6 +2,11 @@ import { invariantResponse } from '@epic-web/invariant'
 import { Img } from 'openimg/react'
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
 import { Form, Link } from 'react-router'
+import {
+	IDCardFrontPreview,
+	IDCardBackPreview,
+	type PersonType,
+} from '#app/components/employee-id-card.tsx'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
@@ -10,13 +15,18 @@ import { PageTitle } from '#app/ui/components/PageTitle.tsx'
 import { CardSection } from '#app/ui/components/CardSection.tsx'
 import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
 import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
+import { IdPreviewCard } from '#app/ui/components/IdPreviewCard.tsx'
+import { generateBarcodeDataURL } from '#app/utils/barcode.server.ts'
+import { getBrandingConfig } from '#app/utils/branding.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import {
 	getDefaultExpirationDate,
 	fetchAndCacheFactsProfilePicture,
+	getCurrentAcademicYear,
 } from '#app/utils/employee.server.ts'
 import { getEmployeePhotoSrc, useIsPending } from '#app/utils/misc.tsx'
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
+import { generateEmployeeQRCodeDataURL } from '#app/utils/qr-code.server.ts'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { type Route } from './+types/$employeeId.ts'
 
@@ -89,6 +99,29 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		)
 	}
 
+	// Get branding config
+	const branding = getBrandingConfig()
+
+	// Get logo URL (if configured)
+	const logoUrl = branding.logoUrl || null
+
+	// Generate QR code for verification
+	const qrCodeDataURL = await generateEmployeeQRCodeDataURL(
+		employee.id,
+		request,
+	)
+
+	// Generate barcode for ID card
+	const barcodeDataURL = await generateBarcodeDataURL(employee.sisEmployeeId || employee.id, {
+		width: 2,
+		height: 40,
+		format: 'CODE128',
+		displayValue: false,
+	})
+
+	// Get current academic year
+	const academicYear = getCurrentAcademicYear()
+
 	return {
 		employee: {
 			...employee,
@@ -100,6 +133,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 			},
 		},
 		photoUrl,
+		branding,
+		logoUrl,
+		qrCodeDataURL,
+		barcodeDataURL,
+		academicYear,
 	}
 }
 
@@ -164,8 +202,17 @@ export async function action({ request, params }: Route.ActionArgs) {
 export default function AdminEmployeeDetailRoute({
 	loaderData,
 }: Route.ComponentProps) {
-	const { employee, photoUrl } = loaderData
+	const {
+		employee,
+		photoUrl,
+		branding,
+		logoUrl,
+		qrCodeDataURL,
+		barcodeDataURL,
+		academicYear,
+	} = loaderData
 	const hasPhoto = !!photoUrl
+	const displayPhotoUrl = photoUrl ? getEmployeePhotoSrc(photoUrl) : null
 	const expirationDate = employee.employeeId?.expirationDate
 		? new Date(employee.employeeId.expirationDate).toLocaleDateString()
 		: 'Not set'
@@ -173,6 +220,25 @@ export default function AdminEmployeeDetailRoute({
 	const isPending = useIsPending({
 		formAction: `/admin/employees/${employee.id}`,
 	})
+
+	// Determine personType based on job title
+	const personType: PersonType = employee.jobTitle?.toLowerCase().includes('teacher')
+		? 'FACULTY'
+		: 'FACULTY' // Default to FACULTY for employees
+
+	// Prepare employee data for ID card component
+	const employeeCardData = {
+		id: employee.id,
+		fullName: employee.fullName,
+		personType,
+		email: employee.email,
+		status: employee.status,
+		sisEmployeeId: employee.sisEmployeeId || employee.id,
+		photoUrl: employee.employeeId?.photoUrl || null,
+		expirationDate: employee.employeeId?.expirationDate
+			? new Date(employee.employeeId.expirationDate)
+			: new Date(getDefaultExpirationDate()),
+	}
 
 	const downloadButton = (
 		<Button
@@ -309,6 +375,60 @@ export default function AdminEmployeeDetailRoute({
 						]}
 					/>
 				</CardSection>
+			</div>
+
+			{/* ID Card Preview Section */}
+			<div className="mt-8">
+				<h2 className="mb-4 text-xl font-semibold">ID Card Preview</h2>
+				<div className="grid gap-6 md:grid-cols-2">
+					{/* Front of ID */}
+					<CardSection title="Front" className="border-muted/50 shadow-sm">
+						<IdPreviewCard
+							title="Front of ID"
+							previewContent={
+								<IDCardFrontPreview
+									employee={employeeCardData}
+									photoUrl={displayPhotoUrl}
+									logoUrl={logoUrl}
+									branding={branding}
+									academicYear={academicYear}
+									barcodeDataURL={barcodeDataURL}
+								/>
+							}
+						>
+							<div className="flex justify-center">
+								<IDCardFrontPreview
+									employee={employeeCardData}
+									photoUrl={displayPhotoUrl}
+									logoUrl={logoUrl}
+									branding={branding}
+									academicYear={academicYear}
+									barcodeDataURL={barcodeDataURL}
+								/>
+							</div>
+						</IdPreviewCard>
+					</CardSection>
+
+					{/* Back of ID */}
+					<CardSection title="Back" className="border-muted/50 shadow-sm">
+						<IdPreviewCard
+							title="Back of ID"
+							previewContent={
+								<IDCardBackPreview
+									qrCodeDataURL={qrCodeDataURL}
+									branding={branding}
+								/>
+							}
+						>
+							<div className="flex justify-center">
+								<IDCardBackPreview
+									qrCodeDataURL={qrCodeDataURL}
+									branding={branding}
+								/>
+							</div>
+						</IdPreviewCard>
+					</CardSection>
+				</div>
 			</div>
 		</div>
 	)

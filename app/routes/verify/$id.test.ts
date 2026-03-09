@@ -25,10 +25,11 @@ async function createEmployee(data?: {
 	email?: string
 	jobTitle?: string
 	status?: 'active' | 'inactive'
+	sisEmployeeId?: string
 }) {
 	const employee = await prisma.employee.create({
 		data: {
-			sisEmployeeId: faker.string.alphanumeric(10),
+			sisEmployeeId: data?.sisEmployeeId ?? faker.string.alphanumeric(10),
 			fullName: data?.fullName ?? faker.person.fullName(),
 			jobTitle: data?.jobTitle ?? faker.person.jobTitle(),
 			email: data?.email ?? faker.internet.email(),
@@ -36,6 +37,7 @@ async function createEmployee(data?: {
 		},
 		select: {
 			id: true,
+			sisEmployeeId: true,
 			fullName: true,
 			jobTitle: true,
 			email: true,
@@ -72,16 +74,18 @@ async function createStudent(data?: {
 	fullName?: string
 	email?: string
 	status?: 'active' | 'inactive'
+	sisStudentId?: string
 }) {
 	const student = await prisma.student.create({
 		data: {
-			sisStudentId: faker.string.alphanumeric(10),
+			sisStudentId: data?.sisStudentId ?? faker.string.alphanumeric(10),
 			fullName: data?.fullName ?? faker.person.fullName(),
 			email: data?.email ?? faker.internet.email(),
 			status: data?.status ?? 'active',
 		},
 		select: {
 			id: true,
+			sisStudentId: true,
 			fullName: true,
 			email: true,
 			status: true,
@@ -920,6 +924,115 @@ describe('verify/$id route', () => {
 
 			// Cleanup
 			await prisma.student.delete({ where: { id: student.id } })
+		})
+	})
+
+	describe('Verification by SIS ID', () => {
+		test('Verification page works with employee SIS ID', async () => {
+			const employee = await createEmployee({
+				fullName: 'Samantha Baker',
+				jobTitle: 'Teacher',
+				email: 'samantha.baker@school.edu',
+				status: 'active',
+				sisEmployeeId: '1201702',
+			})
+
+			await createEmployeeId({
+				employeeId: employee.id,
+				expirationDate: new Date('2025-07-01'),
+			})
+
+			// Use SIS ID instead of database ID
+			const request = new Request(
+				'http://localhost/verify/' + employee.sisEmployeeId,
+			)
+
+			const data = await loader({
+				params: { id: employee.sisEmployeeId },
+				request,
+				context: {},
+			} as any)
+
+			expect(data).toBeDefined()
+			expect(data.person).toBeDefined()
+			expect(data.person.fullName).toBe('Samantha Baker')
+			expect(data.personType).toBe('employee')
+
+			// Cleanup
+			await prisma.employeeID.deleteMany({
+				where: { employeeId: employee.id },
+			})
+			await prisma.employee.delete({ where: { id: employee.id } })
+		})
+
+		test('Verification page works with student SIS ID', async () => {
+			const student = await createStudent({
+				fullName: 'Test Student',
+				email: 'test.student@school.edu',
+				status: 'active',
+				sisStudentId: '9876543',
+			})
+
+			await createStudentId({
+				studentId: student.id,
+				expirationDate: new Date('2025-07-01'),
+			})
+
+			// Use SIS ID instead of database ID
+			const request = new Request(
+				'http://localhost/verify/' + student.sisStudentId,
+			)
+
+			const data = await loader({
+				params: { id: student.sisStudentId },
+				request,
+				context: {},
+			} as any)
+
+			expect(data).toBeDefined()
+			expect(data.person).toBeDefined()
+			expect(data.person.fullName).toBe('Test Student')
+			expect(data.personType).toBe('student')
+
+			// Cleanup
+			await prisma.studentID.deleteMany({
+				where: { studentId: student.id },
+			})
+			await prisma.student.delete({ where: { id: student.id } })
+		})
+
+		test('Verification still works with database ID (backward compatibility)', async () => {
+			const employee = await createEmployee({
+				fullName: 'Backward Compat Employee',
+				jobTitle: 'Teacher',
+				email: 'backward@school.edu',
+				status: 'active',
+			})
+
+			await createEmployeeId({
+				employeeId: employee.id,
+				expirationDate: new Date('2025-07-01'),
+			})
+
+			// Use database ID (UUID format)
+			const request = new Request('http://localhost/verify/' + employee.id)
+
+			const data = await loader({
+				params: { id: employee.id },
+				request,
+				context: {},
+			} as any)
+
+			expect(data).toBeDefined()
+			expect(data.person).toBeDefined()
+			expect(data.person.fullName).toBe('Backward Compat Employee')
+			expect(data.personType).toBe('employee')
+
+			// Cleanup
+			await prisma.employeeID.deleteMany({
+				where: { employeeId: employee.id },
+			})
+			await prisma.employee.delete({ where: { id: employee.id } })
 		})
 	})
 })

@@ -152,8 +152,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	// Get logo URL (if configured)
 	const logoUrl = branding.logoUrl || null
 
-	// Generate QR code for verification
-	const qrCodeDataURL = await generateStudentQRCodeDataURL(student.id, request)
+	// Generate QR code for verification (using SIS ID)
+	const qrCodeDataURL = await generateStudentQRCodeDataURL(
+		student.sisStudentId,
+		request,
+	)
 
 	// Generate barcode for ID card
 	const barcodeDataURL = await generateBarcodeDataURL(student.sisStudentId, {

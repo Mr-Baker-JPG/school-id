@@ -179,7 +179,7 @@ export async function generateEmployeeIDPDF(
 					academicYear={academicYear}
 					barcodeDataURL={barcodeDataURL}
 				/>
-				<IDCardBackPDF qrCodeDataURL={qrCodeDataURL} branding={branding} />
+				<IDCardBackPDF qrCodeDataURL={qrCodeDataURL} branding={branding} logoDataURL={logoDataURL} />
 			</Document>
 		)
 
@@ -229,7 +229,11 @@ async function prepareEmployeeCard(
 	const photoDataURL = await getEmployeePhotoDataURL(employee.photoUrl)
 	const logoDataURL = await getSchoolLogoDataURL(branding.logoUrl, request)
 
-	const qrCodeBuffer = await generateEmployeeQRCodeBuffer(employee.id, request)
+	// Use SIS ID for QR code (verification URL)
+	const qrCodeBuffer = await generateEmployeeQRCodeBuffer(
+		employee.sisEmployeeId,
+		request,
+	)
 	const qrCodeDataURL = `data:image/png;base64,${qrCodeBuffer.toString('base64')}`
 
 	const barcodeDataURL = await generateBarcodeDataURL(employee.sisEmployeeId, {
@@ -396,6 +400,7 @@ export async function generateBulkEmployeeIDPDF(
 						<IDCardBackContentView
 							qrCodeDataURL={prepared.qrCodeDataURL}
 							branding={prepared.branding}
+							logoDataURL={prepared.logoDataURL}
 						/>
 					</View>
 				)

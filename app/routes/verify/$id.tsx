@@ -25,9 +25,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 		throw new Response('ID is required', { status: 400 })
 	}
 
-	// Try to find employee first
-	const employee = await prisma.employee.findUnique({
-		where: { id },
+	// Try to find employee by SIS ID first, then by database ID (for backward compatibility)
+	const employee = await prisma.employee.findFirst({
+		where: {
+			OR: [{ sisEmployeeId: id }, { id }],
+		},
 		select: {
 			id: true,
 			sisEmployeeId: true,
@@ -96,9 +98,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 		}
 	}
 
-	// Try to find student
-	const student = await prisma.student.findUnique({
-		where: { id },
+	// Try to find student by SIS ID first, then by database ID (for backward compatibility)
+	const student = await prisma.student.findFirst({
+		where: {
+			OR: [{ sisStudentId: id }, { id }],
+		},
 		select: {
 			id: true,
 			sisStudentId: true,
