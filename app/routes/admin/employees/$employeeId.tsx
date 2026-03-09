@@ -20,7 +20,6 @@ import { generateBarcodeDataURL } from '#app/utils/barcode.server.ts'
 import { getBrandingConfig } from '#app/utils/branding.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import {
-	getDefaultExpirationDate,
 	fetchAndCacheFactsProfilePicture,
 	getCurrentAcademicYear,
 } from '#app/utils/employee.server.ts'
