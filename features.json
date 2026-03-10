@@ -606,5 +606,20 @@
 		],
 		"implemented": false,
 		"tests_passed": false
+	},
+	{
+		"id": "F042",
+		"title": "Differentiate Faculty vs Staff on Employee IDs",
+		"description": "Update the ID card component to display FACULTY or STAFF for employees based on job title. Employees with job titles containing 'Faculty' should display FACULTY badge. Employees with job titles containing 'Staff' (but not 'Faculty') should display STAFF badge. Default to STAFF if neither match. This ensures accurate role-based identification across all employee ID cards.",
+		"tests": [
+			"Employee with job title containing 'Faculty' displays FACULTY badge",
+			"Employee with job title containing 'Staff' (but not 'Faculty') displays STAFF badge",
+			"Employee with job title containing neither displays STAFF badge (default)",
+			"PDF generation includes correct person type for both faculty and staff",
+			"Preview components display correct badge",
+			"Branding is applied consistently"
+		],
+		"implemented": true,
+		"tests_passed": true
 	}
 ]

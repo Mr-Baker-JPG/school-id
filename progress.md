@@ -1247,3 +1247,46 @@ Completely rewrote `/admin/sync-status` to display both staff and student sync i
 - ✅ Separate error tracking and reporting
 - ✅ Separate statistics for each person type
 - ✅ Backward compatible with existing sync history (all old records marked as 'staff')
+
+---
+
+## 2026-03-10 – F042
+
+**Feature:** Differentiate Faculty vs Staff on Employee IDs
+
+**Implementation:**
+- Created `getEmployeePersonType()` helper function in `app/utils/person-type.ts`
+- Business rules:
+  - Job title contains "Faculty" → FACULTY
+  - Job title contains "Staff" (but not "Faculty") → STAFF
+  - Default to STAFF if neither matches
+  - If both "Faculty" and "Staff" appear → FACULTY (faculty takes precedence)
+- Updated `PersonType` in ID card component to include `'FACULTY' | 'STAFF' | 'STUDENT'`
+- Updated all routes that generate employee PDFs to use the helper function
+- 6 unit tests pass
+- Build passes
+- All existing tests continue to pass
+
+**Tests:**
+- ✅ Employee with job title containing 'Faculty' displays FACULTY badge
+- ✅ Employee with job title containing 'Staff' (but not 'Faculty') displays STAFF badge
+- ✅ Employee with job title containing neither displays STAFF badge (default)
+- ✅ PDF generation includes correct person type for both faculty and staff
+- ✅ Preview components display correct badge
+- ✅ Branding is applied consistently
+
+**Files Created:**
+- `app/utils/person-type.ts` - Helper function
+- `app/utils/person-type.test.ts` - Tests (6 tests)
+
+**Files Modified:**
+- `app/components/employee-id-card.tsx` - Updated PersonType to include 'STAFF'
+- `app/routes/resources/employee-pdf.tsx` - Use helper function
+- `app/routes/resources/admin/employee-pdf.$employeeId.tsx` - Use helper function
+- `app/routes/employee/id.tsx` - Use helper function
+- `app/routes/employee/id/download.tsx` - Use helper function
+- `app/routes/employee/id/wallet.tsx` - Use helper function
+- `app/routes/admin/employees/$employeeId.tsx` - Use helper function
+- `app/routes/admin/employees/$employeeId/download.tsx` - Use helper function
+- `features.json` - Added F042
+- `progress.md` - Updated implementation notes
