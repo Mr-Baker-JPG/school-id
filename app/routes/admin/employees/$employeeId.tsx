@@ -13,6 +13,7 @@ import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
 import { PageTitle } from '#app/ui/components/PageTitle.tsx'
 import { CardSection } from '#app/ui/components/CardSection.tsx'
+import { getEmployeePersonType } from '#app/utils/person-type.ts'
 import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
 import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
 import { IdPreviewCard } from '#app/ui/components/IdPreviewCard.tsx'
@@ -20,6 +21,7 @@ import { generateBarcodeDataURL } from '#app/utils/barcode.server.ts'
 import { getBrandingConfig } from '#app/utils/branding.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import {
+	getDefaultExpirationDate,
 	fetchAndCacheFactsProfilePicture,
 	getCurrentAcademicYear,
 } from '#app/utils/employee.server.ts'
@@ -239,9 +241,7 @@ export default function AdminEmployeeDetailRoute({
 		status: employee.status,
 		sisEmployeeId: employee.sisEmployeeId || employee.id,
 		photoUrl: employee.employeeId?.photoUrl || null,
-		expirationDate: employee.employeeId?.expirationDate
-			? new Date(employee.employeeId.expirationDate)
-			: new Date(getDefaultExpirationDate()),
+		expirationDate: new Date(employee.employeeId?.expirationDate ?? new Date()),
 	}
 
 	const downloadButton = (

@@ -4,6 +4,7 @@ import { requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { getDefaultExpirationDate } from '#app/utils/employee.server.ts'
 import { generateEmployeeIDPDF } from '#app/utils/pdf-id.server.tsx'
+import { getEmployeePersonType } from '#app/utils/person-type.ts'
 import { type Route } from './+types/download.ts'
 
 /**
@@ -84,7 +85,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 			id: employee.id,
 			fullName: employee.fullName,
 			jobTitle: employee.jobTitle,
-			personType: 'FACULTY' as const,
+			personType: getEmployeePersonType(employee.jobTitle),
 			email: employee.email,
 			status: employee.status,
 			sisEmployeeId: employee.sisEmployeeId,

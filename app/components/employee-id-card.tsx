@@ -7,17 +7,28 @@
  * This module provides both PDF (React PDF) and Preview (React/HTML) versions
  * of the employee ID card layout components for use in PDF generation and
  * browser preview.
+ *
+ * Fonts:
+ * - Trajan Pro Bold: Names, titles (classical Roman inscription style)
+ * - Garamond: Body text, addresses, motto (elegant 16th-century serif)
  */
 
 import { Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer'
 import { type BrandingConfig } from '#app/utils/branding.server.ts'
 export type { BrandingConfig } from '#app/utils/branding.server.ts'
 import { getFirstAndLastName } from '#app/utils/misc.tsx'
+import { FontFamilies, CSSFontStacks } from '#app/utils/font-families.ts'
+
+// Note: Font registration happens in pdf-id.server.tsx (server-only)
+// This component uses FontFamilies constants for PDF and CSSFontStacks for preview
 
 /**
  * Person type for ID card display
+ * - FACULTY: Teaching staff (teachers, professors, instructors)
+ * - STAFF: Non-teaching staff (administration, support, etc.)
+ * - STUDENT: Students
  */
-export type PersonType = 'FACULTY' | 'STUDENT'
+export type PersonType = 'FACULTY' | 'STAFF' | 'STUDENT'
 
 /**
  * Employee data required for ID card generation
@@ -82,6 +93,7 @@ const SCHOOL_PHONE = '337-889-5345'
 
 /**
  * Creates PDF styles for the Light Executive design
+ * Uses Trajan Pro Bold for titles/names and Garamond for body text
  */
 export function createIDCardPDFStyles(_branding: BrandingConfig) {
 	return StyleSheet.create({
@@ -180,7 +192,7 @@ export function createIDCardPDFStyles(_branding: BrandingConfig) {
 		schoolName: {
 			fontSize: 5.5,
 			color: '#888888',
-			fontFamily: 'Times-Roman',
+			fontFamily: FontFamilies.GARAMOND,
 			letterSpacing: 1,
 		},
 		maroonRule: {
@@ -189,12 +201,12 @@ export function createIDCardPDFStyles(_branding: BrandingConfig) {
 			marginTop: 6,
 			marginBottom: 6,
 		},
-		// Name
+		// Name - Trajan Pro Bold for classical Roman style
 		name: {
 			fontSize: 11,
 			fontWeight: 'bold',
 			color: NAVY,
-			fontFamily: 'Times-Bold',
+			fontFamily: FontFamilies.TRAJAN,
 			lineHeight: 1.2,
 		},
 		// Role badge + year row
@@ -212,13 +224,13 @@ export function createIDCardPDFStyles(_branding: BrandingConfig) {
 			paddingHorizontal: 4,
 			paddingVertical: 1,
 			borderRadius: 1.5,
-			fontFamily: 'Helvetica-Bold',
+			fontFamily: FontFamilies.HELVETICA_BOLD,
 			letterSpacing: 0.8,
 		},
 		yearText: {
 			fontSize: 6,
 			color: '#888888',
-			fontFamily: 'Helvetica',
+			fontFamily: FontFamilies.HELVETICA,
 		},
 		// Bottom: ID number
 		bottomRow: {
@@ -230,20 +242,20 @@ export function createIDCardPDFStyles(_branding: BrandingConfig) {
 		idLabel: {
 			fontSize: 5,
 			color: '#aaaaaa',
-			fontFamily: 'Helvetica',
+			fontFamily: FontFamilies.HELVETICA,
 			letterSpacing: 0.5,
 		},
 		idNumber: {
 			fontSize: 8,
 			fontWeight: 'bold',
 			color: NAVY,
-			fontFamily: 'Helvetica-Bold',
+			fontFamily: FontFamilies.HELVETICA_BOLD,
 			letterSpacing: 0.3,
 		},
 		amdg: {
 			fontSize: 4.5,
 			color: '#bbbbbb',
-			fontFamily: 'Times-Roman',
+			fontFamily: FontFamilies.GARAMOND,
 			fontStyle: 'italic',
 		},
 		// Back card
@@ -274,7 +286,7 @@ export function createIDCardPDFStyles(_branding: BrandingConfig) {
 		verifyLabel: {
 			fontSize: 5,
 			color: NAVY,
-			fontFamily: 'Helvetica-Bold',
+			fontFamily: FontFamilies.HELVETICA_BOLD,
 			marginTop: 2,
 			letterSpacing: 0.5,
 		},
@@ -284,29 +296,32 @@ export function createIDCardPDFStyles(_branding: BrandingConfig) {
 			flexDirection: 'column',
 			gap: 3,
 		},
+		// School name on back - Trajan Pro Bold
 		backSchoolName: {
 			fontSize: 7,
 			fontWeight: 'bold',
 			color: NAVY,
-			fontFamily: 'Times-Bold',
+			fontFamily: FontFamilies.TRAJAN,
 		},
+		// Address - Garamond
 		backAddress: {
 			fontSize: 5.5,
 			color: '#555555',
-			fontFamily: 'Helvetica',
+			fontFamily: FontFamilies.GARAMOND,
 			lineHeight: 1.5,
 		},
+		// Motto - Garamond italic
 		backMotto: {
 			fontSize: 5.5,
 			color: MAROON,
-			fontFamily: 'Times-Roman',
+			fontFamily: FontFamilies.GARAMOND,
 			fontStyle: 'italic',
 			marginTop: 2,
 		},
 		backReturnNotice: {
 			fontSize: 4.5,
 			color: '#aaaaaa',
-			fontFamily: 'Helvetica',
+			fontFamily: FontFamilies.HELVETICA,
 			marginTop: 1,
 		},
 		bottomMaroonBar: {
@@ -611,7 +626,7 @@ export function IDCardFrontPreview({
 								style={{
 									fontSize: 5.5,
 									color: '#888',
-									fontFamily: 'Georgia, "Times New Roman", serif',
+									fontFamily: CSSFontStacks.GARAMOND,
 									letterSpacing: 1,
 								}}
 							>
@@ -635,7 +650,7 @@ export function IDCardFrontPreview({
 								fontSize: 11,
 								fontWeight: 700,
 								color: NAVY,
-								fontFamily: 'Georgia, "Times New Roman", serif',
+								fontFamily: CSSFontStacks.TRAJAN,
 								lineHeight: 1.2,
 							}}
 						>
@@ -712,7 +727,7 @@ export function IDCardFrontPreview({
 							style={{
 								fontSize: 4.5,
 								color: '#bbb',
-								fontFamily: 'Georgia, "Times New Roman", serif',
+								fontFamily: CSSFontStacks.GARAMOND,
 								fontStyle: 'italic',
 							}}
 						>
@@ -828,7 +843,7 @@ export function IDCardBackPreview({
 							fontSize: 7,
 							fontWeight: 700,
 							color: NAVY,
-							fontFamily: 'Georgia, "Times New Roman", serif',
+							fontFamily: CSSFontStacks.TRAJAN,
 						}}
 					>
 						{branding.schoolName}
@@ -837,7 +852,7 @@ export function IDCardBackPreview({
 						style={{
 							fontSize: 5.5,
 							color: '#555',
-							fontFamily: 'system-ui, sans-serif',
+							fontFamily: CSSFontStacks.GARAMOND,
 							lineHeight: 1.5,
 						}}
 					>
@@ -851,7 +866,7 @@ export function IDCardBackPreview({
 						style={{
 							fontSize: 5.5,
 							color: MAROON,
-							fontFamily: 'Georgia, "Times New Roman", serif',
+							fontFamily: CSSFontStacks.GARAMOND,
 							fontStyle: 'italic',
 							marginTop: 2,
 						}}
@@ -862,7 +877,7 @@ export function IDCardBackPreview({
 						style={{
 							fontSize: 4.5,
 							color: '#aaa',
-							fontFamily: 'system-ui, sans-serif',
+							fontFamily: CSSFontStacks.HELVETICA,
 							marginTop: 1,
 						}}
 					>

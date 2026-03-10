@@ -25,6 +25,7 @@ import {
 	getCurrentAcademicYear,
 } from '#app/utils/employee.server.ts'
 import { cn, getEmployeePhotoSrc } from '#app/utils/misc.tsx'
+import { getEmployeePersonType } from '#app/utils/person-type.ts'
 import { generateEmployeeQRCodeDataURL } from '#app/utils/qr-code.server.ts'
 import { type Route } from './+types/id.ts'
 
@@ -172,7 +173,7 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 		id: employee.id,
 		fullName: employee.fullName,
 		jobTitle: employee.jobTitle,
-		personType: 'FACULTY' as const,
+		personType: getEmployeePersonType(employee.jobTitle),
 		email: employee.email,
 		status: employee.status,
 		sisEmployeeId: employee.sisEmployeeId,

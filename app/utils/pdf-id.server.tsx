@@ -5,6 +5,7 @@ import { getSignedGetRequestInfo } from './storage.server.ts'
 import { generateBarcodeDataURL } from './barcode.server.ts'
 import { getCurrentAcademicYear } from './employee.server.ts'
 import { getDomainUrl } from './misc.tsx'
+import { registerFonts } from './fonts.server.ts'
 import {
 	IDCardFrontPDF,
 	IDCardBackPDF,
@@ -17,6 +18,9 @@ import {
 
 // Re-export EmployeePDFData from employee-id-card component for backward compatibility
 export type { EmployeePDFData } from '#app/components/employee-id-card.tsx'
+
+// Register fonts at module load time (safe for server-only code)
+registerFonts()
 
 /**
  * Fetches an image from a URL and converts it to a base64 data URL

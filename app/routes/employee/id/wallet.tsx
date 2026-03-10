@@ -7,6 +7,7 @@ import {
 	getDefaultExpirationDate,
 	fetchAndCacheFactsProfilePicture,
 } from '#app/utils/employee.server.ts'
+import { getEmployeePersonType } from '#app/utils/person-type.ts'
 import {
 	generateAppleWalletPass,
 	generateGooglePayPass,
@@ -79,7 +80,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		id: employee.id,
 		fullName: employee.fullName,
 		jobTitle: employee.jobTitle,
-		personType: 'FACULTY',
+		personType: getEmployeePersonType(employee.jobTitle),
 		email: employee.email,
 		status: employee.status,
 		sisEmployeeId: employee.sisEmployeeId,
