@@ -10,10 +10,39 @@
 import { Font } from '@react-pdf/renderer'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import fs from 'fs'
 
 // Font file paths (relative to this file)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const FONTS_DIR = path.join(__dirname, '..', '..', 'public', 'fonts')
+
+/**
+ * Find the fonts directory in development or production
+ * In development: /app/public/fonts
+ * In production: could be at multiple locations depending on build
+ */
+function findFontsDir(): string | null {
+	const possiblePaths = [
+		// Development: relative to source
+		path.join(__dirname, '..', '..', 'public', 'fonts'),
+		// Production: relative to server-build
+		path.join(__dirname, '..', '..', '..', 'public', 'fonts'),
+		// Production: in build/client
+		path.join(__dirname, '..', '..', '..', 'build', 'client', 'fonts'),
+		// Production: at root
+		path.join('/', 'myapp', 'public', 'fonts'),
+		path.join('/', 'myapp', 'build', 'client', 'fonts'),
+	]
+
+	for (const fontPath of possiblePaths) {
+		if (fs.existsSync(fontPath)) {
+			console.log(`[Fonts] Found fonts directory at: ${fontPath}`)
+			return fontPath
+		}
+	}
+
+	console.warn('[Fonts] Could not find fonts directory in any of the expected locations')
+	return null
+}
 
 // Track if fonts have been registered to avoid duplicate registration
 let fontsRegistered = false
@@ -29,6 +58,14 @@ export function registerFonts(): void {
 	if (fontsRegistered) return
 
 	try {
+		const FONTS_DIR = findFontsDir()
+		
+		if (!FONTS_DIR) {
+			console.warn('Fonts directory not found, PDF generation will use fallback fonts')
+			fontsRegistered = true
+			return
+		}
+
 		// Register Trajan Pro Bold for titles/names
 		Font.register({
 			family: 'TrajanPro',
@@ -44,6 +81,7 @@ export function registerFonts(): void {
 		})
 
 		fontsRegistered = true
+		console.log('[Fonts] Successfully registered custom fonts')
 	} catch (error) {
 		console.warn('Failed to register custom fonts, falling back to defaults:', error)
 	}
