@@ -256,7 +256,6 @@ export function createIDCardPDFStyles(_branding: BrandingConfig) {
 			fontSize: 4.5,
 			color: '#bbbbbb',
 			fontFamily: FontFamilies.GARAMOND,
-			fontStyle: 'italic',
 		},
 		// Back card
 		backCard: {
@@ -315,7 +314,6 @@ export function createIDCardPDFStyles(_branding: BrandingConfig) {
 			fontSize: 5.5,
 			color: MAROON,
 			fontFamily: FontFamilies.GARAMOND,
-			fontStyle: 'italic',
 			marginTop: 2,
 		},
 		backReturnNotice: {
@@ -728,7 +726,6 @@ export function IDCardFrontPreview({
 								fontSize: 4.5,
 								color: '#bbb',
 								fontFamily: CSSFontStacks.GARAMOND,
-								fontStyle: 'italic',
 							}}
 						>
 							AMDG
@@ -867,7 +864,6 @@ export function IDCardBackPreview({
 							fontSize: 5.5,
 							color: MAROON,
 							fontFamily: CSSFontStacks.GARAMOND,
-							fontStyle: 'italic',
 							marginTop: 2,
 						}}
 					>
