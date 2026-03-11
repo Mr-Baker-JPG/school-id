@@ -61,12 +61,12 @@ export default defineConfig((config) => ({
 			: null,
 	],
 	test: {
-		include: ['./app/**/*.test.{ts,tsx}'],
+		include: ['./app/**/*.test.{ts,tsx}', './scripts/**/*.test.ts'],
 		setupFiles: ['./tests/setup/setup-test-env.ts'],
 		globalSetup: ['./tests/setup/global-setup.ts'],
 		restoreMocks: true,
 		coverage: {
-			include: ['app/**/*.{ts,tsx}'],
+			include: ['app/**/*.{ts,tsx}', 'scripts/**/*.ts'],
 			all: true,
 		},
 	},
