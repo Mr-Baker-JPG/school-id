@@ -254,13 +254,15 @@ async function seed() {
 		'cbaker@jpgacademy.org',
 	)
 
-	await prisma.user.delete({
-		where: { email: 'cbaker@jpgacademy.org' },
-	})
-
-	const craig = await prisma.user.create({
+	const craig = await prisma.user.upsert({
 		select: { id: true },
-		data: {
+		where: { email: 'cbaker@jpgacademy.org' },
+		update: {
+			username: 'cbaker',
+			name: 'Craig Baker',
+			roles: { connect: [{ name: 'admin' }, { name: 'user' }] },
+		},
+		create: {
 			email: 'cbaker@jpgacademy.org',
 			username: 'cbaker',
 			name: 'Craig Baker',
