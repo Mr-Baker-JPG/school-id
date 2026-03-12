@@ -24,6 +24,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	const search = searchParams.get('search')
 	const status = searchParams.get('status')
 	const photo = searchParams.get('photo')
+	const grade = searchParams.get('grade')
 
 	const where: Record<string, unknown> = {}
 
@@ -40,6 +41,9 @@ export async function loader({ request }: Route.LoaderArgs) {
 		where.studentId = { photoUrl: { not: null } }
 	} else if (photo === 'no') {
 		where.studentId = { photoUrl: { equals: null } }
+	}
+	if (grade && grade !== 'all') {
+		where.grade = grade
 	}
 
 	const students = await prisma.student.findMany({
@@ -71,11 +75,23 @@ export async function loader({ request }: Route.LoaderArgs) {
 			: null,
 	}))
 
+	// Get distinct grades for filter
+	const grades = await prisma.student
+		.findMany({
+			where: { grade: { not: null } },
+			select: { grade: true },
+			distinct: ['grade'],
+			orderBy: { grade: 'asc' },
+		})
+		.then((gs) => gs.map((g) => g.grade).filter(Boolean) as string[])
+
 	return {
 		students: studentsWithStatus,
+		grades,
 		search: search ?? '',
 		status: status ?? 'all',
 		photo: photo ?? 'all',
+		grade: grade ?? 'all',
 	}
 }
 
@@ -113,7 +129,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
-	const { students, search, status, photo } = loaderData
+	const { students, grades, search, status, photo, grade } = loaderData
 	const location = useLocation()
 	const [searchParams] = useSearchParams()
 	const submit = useSubmit()
@@ -133,6 +149,7 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 		if (search) params.search = search
 		if (status !== 'all') params.status = status
 		if (photo !== 'all') params.photo = photo
+		if (grade !== 'all') params.grade = grade
 		for (const [k, v] of Object.entries(overrides)) {
 			if (v === 'all') {
 				delete params[k]
@@ -190,6 +207,7 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 						/>
 						<input type="hidden" name="status" value={status} />
 						<input type="hidden" name="photo" value={photo} />
+						<input type="hidden" name="grade" value={grade} />
 					</Form>
 
 					<div className="space-y-1.5">
@@ -222,6 +240,27 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 								</FilterPill>
 							))}
 						</FilterRow>
+
+						{/* Grade */}
+						{grades.length > 0 && (
+							<FilterRow label="Grade">
+								<FilterPill
+									to={filterUrl({ grade: 'all' })}
+									active={grade === 'all'}
+								>
+									All
+								</FilterPill>
+								{grades.map((g) => (
+									<FilterPill
+										key={g}
+										to={filterUrl({ grade: g })}
+										active={grade === g}
+									>
+										{g}
+									</FilterPill>
+								))}
+							</FilterRow>
+						)}
 					</div>
 				</div>
 
