@@ -3,7 +3,7 @@ import { prisma } from './db.server.ts'
 
 /**
  * Gmail Signature Service
- * Uses Google Workspace domain-wide delegation to fetch user signatures
+ * Uses Google Workspace domain-wide delegation to fetch and set user signatures
  * via service account impersonation
  */
 export class GmailSignatureService {
@@ -13,7 +13,7 @@ export class GmailSignatureService {
 	 */
 	_setMockClient(client: any) {
 		// For testing - will be removed later
-		(this as any).mockClient = client
+		;(this as any).mockClient = client
 	}
 
 	/**
@@ -42,7 +42,7 @@ export class GmailSignatureService {
 			})
 
 			console.log('[GmailSignature] Fetching signature for:', email)
-			
+
 			// Impersonate the user to fetch their signature
 			const response = await client.request({
 				url: `https://gmail.googleapis.com/gmail/v1/users/${email}/settings/sendAs/${email}`,
@@ -50,11 +50,66 @@ export class GmailSignatureService {
 			})
 
 			console.log('[GmailSignature] Response:', response)
-			
+
 			return response.data?.signature ?? null
 		} catch (error) {
 			console.error(`Failed to fetch Gmail signature for ${email}:`, error)
 			return null
+		}
+	}
+
+	/**
+	 * Set Gmail signature for a user via service account impersonation
+	 * @param email - The user's email address
+	 * @param signature - The HTML signature content to set
+	 * @returns Success status and error message if failed
+	 */
+	async setSignature(
+		email: string,
+		signature: string,
+	): Promise<{ success: boolean; error?: string }> {
+		// Read credentials lazily (allows for test environment changes)
+		const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
+		const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY?.replace(/\\n/g, '\n')
+
+		if (!serviceAccountEmail || !privateKey) {
+			return {
+				success: false,
+				error: 'Gmail signature service not configured - missing service account credentials',
+			}
+		}
+
+		try {
+			// Create JWT client with subject for domain-wide delegation
+			// Using gmail.settings.sharing scope which is required for setting signatures
+			const client = new JWT({
+				email: serviceAccountEmail,
+				key: privateKey,
+				scopes: ['https://www.googleapis.com/auth/gmail.settings.sharing'],
+				subject: email, // This is the user we're impersonating
+			})
+
+			console.log('[GmailSignature] Setting signature for:', email)
+
+			// PUT request to set the signature
+			const response = await client.request({
+				url: `https://gmail.googleapis.com/gmail/v1/users/${email}/settings/sendAs/${email}`,
+				method: 'PUT',
+				data: {
+					signature,
+				},
+			})
+
+			console.log('[GmailSignature] Set response:', response.status)
+
+			return { success: true }
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+			console.error(`Failed to set Gmail signature for ${email}:`, error)
+			return {
+				success: false,
+				error: errorMessage,
+			}
 		}
 	}
 

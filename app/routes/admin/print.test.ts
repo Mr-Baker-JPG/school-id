@@ -9,8 +9,9 @@ vi.mock('#app/utils/permissions.server.ts', () => ({
 
 // Mock person-type
 vi.mock('#app/utils/person-type.ts', () => ({
-	getEmployeePersonType: vi.fn((jobTitle: string) => {
-		if (jobTitle?.toLowerCase().includes('faculty')) return 'FACULTY'
+	getEmployeePersonType: vi.fn((department: string) => {
+		if (['Upper School', 'Lower School', 'Preschool'].includes(department)) return 'FACULTY'
+		if (department?.toLowerCase().includes('faculty')) return 'FACULTY'
 		return 'STAFF'
 	}),
 }))
@@ -206,6 +207,7 @@ describe('Admin Print Route', () => {
 				lastName: 'Member',
 				fullName: 'Faculty Member',
 				jobTitle: 'Faculty',
+				department: 'Upper School',
 				email: 'fac@test.com',
 				status: 'active',
 			},
@@ -217,6 +219,7 @@ describe('Admin Print Route', () => {
 				lastName: 'Member',
 				fullName: 'Staff Member',
 				jobTitle: 'Admin Staff',
+				department: 'Staff',
 				email: 'staff@test.com',
 				status: 'active',
 			},

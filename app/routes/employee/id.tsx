@@ -152,7 +152,7 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 		? new Date(employee.employeeId.expirationDate).toLocaleDateString()
 		: 'Not set'
 
-	const personType = getEmployeePersonType(employee.jobTitle)
+	const personType = getEmployeePersonType(employee.department)
 
 	const employeeCardData = {
 		id: employee.id,

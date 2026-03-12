@@ -244,7 +244,7 @@ export default function AdminEmployeeDetailRoute({
 	})
 
 	// Determine personType based on job title
-	const personType = getEmployeePersonType(employee.jobTitle)
+	const personType = getEmployeePersonType(employee.department)
 
 	// Prepare employee data for ID card component
 	const employeeCardData = {

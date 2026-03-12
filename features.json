@@ -698,8 +698,8 @@
 			"Partial failures handled gracefully (some succeed, some fail)",
 			"Non-admin users cannot access signature push"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F048",

@@ -9,10 +9,10 @@ features.json`.
 
 ## Status Summary
 
-**Last Updated:** 2026-03-06
-**Total Features:** 41
-**Implemented:** 36
-**Tests Passing:** 36
+**Last Updated:** 2026-03-12
+**Total Features:** 48
+**Implemented:** 47
+**Tests Passing:** 47
 
 ---
 
@@ -24,22 +24,18 @@ features.json`.
 **Features:** F001-F028 (28 features)
 **All features complete and passing tests**
 
-### Version 1.1.0 - Student Support (ACTIVE)
+### Version 1.1.0 - Student Support (IMPLEMENTED)
+**Status:** Implemented
+**Features:** F029-F045 (17 features)
+**All features complete and passing tests**
+
+### Version 1.2.0 - Signature Management (ACTIVE)
 **Status:** Active
-**Features:** F029-F041 (13 features)
+**Features:** F046-F048 (3 features)
 **Completion status:**
-- F029: ✅ Complete
-- F030: ✅ Complete
-- F031: ✅ Complete
-- F032: ✅ Complete
-- F033: ✅ Complete
-- F034: ✅ Complete
-- F035: ✅ Complete
-- F036: ✅ Complete
-- F037: ✅ Complete
-- F038: ✅ Complete
-- F039: ✅ Complete
-- F040-F041: ❌ Not implemented
+- F046: ✅ Complete
+- F047: ✅ Complete
+- F048: ❌ Not implemented
 
 ---
 
@@ -1407,9 +1403,76 @@ Completely rewrote `/admin/sync-status` to display both staff and student sync i
 ## PHASE 5 – Post-Feature Version Check
 
 **Active Version:** 1.2.0 (Department Data, Bulk Print & Signature Management)
-**Completed Features:** F044, F045, F046 (3 of 5)
-**Remaining Features:** F047, F048 (2 features)
+**Completed Features:** F044, F045, F046, F047 (4 of 5)
+**Remaining Features:** F048 (1 feature)
 
-**Status:** Active version still NOT complete. 2 features remaining.
+**Status:** Active version still NOT complete. 1 feature remaining.
 
-**Next Feature to Implement:** F047 - Gmail Signature Preview & Push
+**Next Feature to Implement:** F048 - Signature Push History & Status Tracking
+
+---
+
+## 2026-03-12 – F047
+
+**Feature:** Gmail Signature Preview & Push
+
+**Implementation:**
+
+- Added `setSignature()` method to `GmailSignatureService`:
+  - Uses Google Workspace domain-wide delegation with `gmail.settings.sharing` scope
+  - Sets signature via PUT request to `/users/{email}/settings/sendAs/{email}`
+  - Returns success/failure status with error details
+  - Graceful handling when service account not configured
+
+- Created admin UI at `/admin/signatures/push`:
+  - Template selection dropdown
+  - Employee filtering by status, department, and search query
+  - Individual employee selection with checkboxes
+  - Select all / deselect all functionality
+  - Live preview of rendered signature for each employee
+  - Push button to update Gmail signatures
+  - Results summary showing success/failure counts
+  - Detailed error messages for failed pushes
+  - Navigation tabs to switch between Templates and Push pages
+
+- **Push Flow:**
+  1. Admin selects a template
+  2. Filters employees by department/status/search
+  3. Selects individual employees or all
+  4. Previews rendered signatures
+  5. Clicks Push button
+  6. System renders template with each employee's data
+  7. Pushes to Gmail via API
+  8. Updates cached signature in database
+  9. Shows summary with success/failure details
+
+- Rate limiting: 200ms delay between API calls to avoid Gmail rate limits
+
+**Tests:**
+
+- ✅ Admin can select a template and see recipient list
+- ✅ Admin can filter recipients by department
+- ✅ Admin can filter recipients by status
+- ✅ Admin can filter recipients by search query
+- ✅ Preview shows correctly rendered signature for each selected employee
+- ✅ Push action updates Gmail signature for selected employees
+- ✅ Gmail API called with correct scope (gmail.settings.sharing) and PUT method
+- ✅ Partial failures handled gracefully (some succeed, some fail)
+- ✅ Non-admin users cannot access signature push (loader + action)
+- ✅ Returns error when no template selected
+- ✅ Returns error when no employees selected
+- ✅ Returns error when template not found
+- ✅ All 18 tests pass (14 push tests + 4 service tests)
+- ✅ Build succeeds
+
+**Files Created:**
+
+- `app/routes/admin/signatures/push.tsx` - Push UI route
+- `app/routes/admin/signatures/push.test.ts` - Push tests (14 tests)
+
+**Files Modified:**
+
+- `app/utils/gmail-signature.server.ts` - Added setSignature() method
+- `app/utils/gmail-signature.server.test.ts` - Added setSignature tests
+- `app/routes/admin/signatures/templates.tsx` - Added navigation tabs to push page
+- `features.json` - Updated F047 status

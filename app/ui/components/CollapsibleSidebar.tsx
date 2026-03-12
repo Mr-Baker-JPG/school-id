@@ -73,15 +73,15 @@ export function MobileSidebarTrigger({
 				</Button>
 			</SheetTrigger>
 			<SheetContent side="left" className="w-64 bg-card">
-				<nav className="mt-8 flex flex-col gap-4">
+				<nav className="mt-8 flex flex-col gap-5">
 					{allGroups.map((group, groupIndex) => (
 						<div key={group.label || groupIndex}>
 							{group.label && (
-								<div className="mb-2 px-3 font-mono text-[0.6rem] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+								<div className="mb-1.5 px-3 font-mono text-[0.6rem] font-medium uppercase tracking-[0.14em] text-muted-foreground/70">
 									{group.label}
 								</div>
 							)}
-							<div className="flex flex-col gap-0.5">
+							<div className="flex flex-col gap-0">
 								{group.items.map((item) => {
 									const isActive =
 										location.pathname === item.to ||
@@ -113,9 +113,6 @@ export function MobileSidebarTrigger({
 									)
 								})}
 							</div>
-							{groupIndex < allGroups.length - 1 && (
-								<div className="mx-3 my-2 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-							)}
 						</div>
 					))}
 				</nav>
@@ -226,13 +223,13 @@ export function CollapsibleSidebar({
 			onMouseLeave={() => setHovered(false)}
 		>
 			<div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
-				<nav className="flex flex-1 flex-col gap-4 p-2 pt-4">
+				<nav className="flex flex-1 flex-col gap-5 p-2 pt-4">
 					{allGroups.map((group, groupIndex) => (
 						<div key={group.label || groupIndex}>
 							{group.label && (
 								<div
 									className={cn(
-										'mb-2 px-3 font-mono text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-opacity duration-200',
+										'mb-1.5 px-3 font-mono text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70 transition-opacity duration-200',
 										expanded
 											? 'opacity-100'
 											: 'mb-0 h-0 overflow-hidden opacity-0',
@@ -241,14 +238,11 @@ export function CollapsibleSidebar({
 									{group.label}
 								</div>
 							)}
-							<div className="flex flex-col gap-0.5">
+							<div className="flex flex-col gap-0">
 								{group.items.map((item) => (
 									<NavLink key={item.to} item={item} />
 								))}
 							</div>
-							{groupIndex < allGroups.length - 1 && (
-								<div className="mx-2 my-2 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-							)}
 						</div>
 					))}
 				</nav>

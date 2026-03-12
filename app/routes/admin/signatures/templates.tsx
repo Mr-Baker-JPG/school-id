@@ -236,6 +236,22 @@ export default function SignatureTemplatesPage({
 	return (
 		<div className="h-full overflow-y-auto px-6 py-6">
 			<div className="mx-auto max-w-4xl space-y-6">
+				{/* Navigation Tabs */}
+				<div className="flex items-center gap-4 border-b pb-4">
+					<a
+						href="/admin/signatures/templates"
+						className="text-primary font-semibold"
+					>
+						Templates
+					</a>
+					<a
+						href="/admin/signatures/push"
+						className="text-muted-foreground hover:text-foreground"
+					>
+						Push to Gmail
+					</a>
+				</div>
+
 				<div className="flex items-center justify-between">
 					<PageTitle
 						title="Signature Templates"

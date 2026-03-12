@@ -29,16 +29,16 @@ export function AdminShell({ children, headerActions }: AdminShellProps) {
 	const isAdmin = user ? userHasRole(user, 'admin') : false
 
 	const personalNavItems: NavItem[] = [
-		{ to: '/employee/id', label: 'My ID', icon: 'user' },
+		{ to: '/employee/id', label: 'My ID', icon: 'avatar' },
 	]
 
 	const adminNavItems: NavItem[] = isAdmin
 		? [
 				{ to: '/admin', label: 'Dashboard', icon: 'laptop' },
 				{ to: '/admin/employees', label: 'Employees', icon: 'user' },
-				{ to: '/admin/students', label: 'Students', icon: 'user' },
-				{ to: '/admin/print', label: 'Print IDs', icon: 'download' },
-				{ to: '/admin/users', label: 'Users', icon: 'user' },
+				{ to: '/admin/students', label: 'Students', icon: 'pencil-2' },
+				{ to: '/admin/print', label: 'Print IDs', icon: 'file-text' },
+				{ to: '/admin/users', label: 'Users', icon: 'lock-closed' },
 				{ to: '/admin/sync-status', label: 'Sync Status', icon: 'cloud-sync' },
 				{ to: '/admin/signatures/templates', label: 'Signatures', icon: 'mail' },
 				{ to: '/admin/card-designs', label: 'Card Designs', icon: 'pencil-1' },
@@ -48,7 +48,34 @@ export function AdminShell({ children, headerActions }: AdminShellProps) {
 
 	const navGroups: NavGroup[] = [
 		{ label: 'Personal', items: personalNavItems },
-		...(isAdmin ? [{ label: 'Administration', items: adminNavItems }] : []),
+		...(isAdmin
+			? [
+					{
+						label: 'People',
+						items: [
+							adminNavItems[0]!, // Dashboard
+							adminNavItems[1]!, // Employees
+							adminNavItems[2]!, // Students
+						],
+					},
+					{
+						label: 'Tools',
+						items: [
+							adminNavItems[3]!, // Print IDs
+							adminNavItems[6]!, // Signatures
+							adminNavItems[7]!, // Card Designs
+						],
+					},
+					{
+						label: 'System',
+						items: [
+							adminNavItems[4]!, // Users
+							adminNavItems[5]!, // Sync Status
+							adminNavItems[8]!, // Cache
+						],
+					},
+				]
+			: []),
 	]
 
 	return (
