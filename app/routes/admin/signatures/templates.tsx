@@ -8,6 +8,7 @@ import { Input } from '#app/components/ui/input.tsx'
 import { Label } from '#app/components/ui/label.tsx'
 import { Textarea } from '#app/components/ui/textarea.tsx'
 import { Badge } from '#app/components/ui/badge.tsx'
+import { SignatureEditor } from '#app/components/signature-editor.tsx'
 import { PageTitle } from '#app/ui/components/PageTitle.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
@@ -471,6 +472,7 @@ function TemplateForm({
 	const [isDefault, setIsDefault] = React.useState(
 		template?.isDefault ?? false,
 	)
+	const [mode, setMode] = React.useState<'visual' | 'html'>('visual')
 
 	return (
 		<Form method="post" className="space-y-4 p-4">
@@ -478,6 +480,8 @@ function TemplateForm({
 			{template && (
 				<input type="hidden" name="id" value={template.id} />
 			)}
+			{/* Hidden input to submit the HTML content from the WYSIWYG editor */}
+			<input type="hidden" name="htmlContent" value={htmlContent} />
 
 			<div className="space-y-2">
 				<Label htmlFor={`name-${template?.id ?? 'new'}`}>
@@ -499,19 +503,49 @@ function TemplateForm({
 			</div>
 
 			<div className="space-y-2">
-				<Label htmlFor={`html-${template?.id ?? 'new'}`}>
-					HTML Content
-				</Label>
-				<Textarea
-					id={`html-${template?.id ?? 'new'}`}
-					name="htmlContent"
-					value={htmlContent}
-					onChange={(e) => setHtmlContent(e.target.value)}
-					placeholder="<table>...</table>"
-					rows={12}
-					className="font-mono text-sm"
-					required
-				/>
+				<div className="flex items-center justify-between">
+					<Label>Signature Content</Label>
+					<div className="flex rounded-md border text-xs">
+						<button
+							type="button"
+							onClick={() => setMode('visual')}
+							className={`px-3 py-1 transition-colors ${
+								mode === 'visual'
+									? 'bg-accent text-accent-foreground'
+									: 'hover:bg-muted'
+							} rounded-l-md`}
+						>
+							Visual
+						</button>
+						<button
+							type="button"
+							onClick={() => setMode('html')}
+							className={`px-3 py-1 transition-colors ${
+								mode === 'html'
+									? 'bg-accent text-accent-foreground'
+									: 'hover:bg-muted'
+							} rounded-r-md`}
+						>
+							HTML
+						</button>
+					</div>
+				</div>
+
+				{mode === 'visual' ? (
+					<SignatureEditor
+						content={htmlContent}
+						onChange={setHtmlContent}
+					/>
+				) : (
+					<Textarea
+						value={htmlContent}
+						onChange={(e) => setHtmlContent(e.target.value)}
+						placeholder="<table>...</table>"
+						rows={12}
+						className="font-mono text-sm"
+					/>
+				)}
+
 				{errors?.htmlContent && (
 					<p className="text-destructive text-sm">
 						{errors.htmlContent[0]}
