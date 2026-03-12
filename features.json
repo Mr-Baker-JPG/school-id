@@ -650,8 +650,8 @@
 			"Sync preserves department across updates",
 			"Null/empty department handled gracefully with fallback"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F045",

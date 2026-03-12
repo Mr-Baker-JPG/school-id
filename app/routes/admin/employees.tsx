@@ -27,6 +27,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	const status = searchParams.get('status')
 	const photo = searchParams.get('photo')
 	const signature = searchParams.get('signature')
+	const department = searchParams.get('department')
 
 	const where: Record<string, unknown> = {}
 
@@ -38,6 +39,9 @@ export async function loader({ request }: Route.LoaderArgs) {
 	}
 	if (status === 'active' || status === 'inactive') {
 		where.status = status
+	}
+	if (department && department !== 'all') {
+		where.department = department
 	}
 
 	// Build employeeId conditions for photo and signature filters
@@ -71,6 +75,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 			id: true,
 			fullName: true,
 			jobTitle: true,
+			department: true,
 			email: true,
 			status: true,
 			employeeId: {
@@ -93,12 +98,25 @@ export async function loader({ request }: Route.LoaderArgs) {
 			: null,
 	}))
 
+	// Get unique departments for filter dropdown
+	const allDepartments = await prisma.employee.findMany({
+		where: { department: { not: null } },
+		select: { department: true },
+		distinct: ['department'],
+		orderBy: { department: 'asc' },
+	})
+	const departments = allDepartments
+		.map((d) => d.department)
+		.filter((d): d is string => d !== null)
+
 	return {
 		employees: employeesWithStatus,
+		departments,
 		search: search ?? '',
 		status: status ?? 'all',
 		photo: photo ?? 'all',
 		signature: signature ?? 'all',
+		department: department ?? 'all',
 	}
 }
 
@@ -181,7 +199,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function EmployeesLayout({ loaderData }: Route.ComponentProps) {
-	const { employees, search, status, photo, signature } = loaderData
+	const { employees, departments, search, status, photo, signature, department } = loaderData
 	const location = useLocation()
 	const [searchParams] = useSearchParams()
 	const submit = useSubmit()
@@ -204,6 +222,7 @@ export default function EmployeesLayout({ loaderData }: Route.ComponentProps) {
 		if (status !== 'all') params.status = status
 		if (photo !== 'all') params.photo = photo
 		if (signature !== 'all') params.signature = signature
+		if (department !== 'all') params.department = department
 		// Apply overrides, removing 'all' values
 		for (const [k, v] of Object.entries(overrides)) {
 			if (v === 'all') {
@@ -315,6 +334,27 @@ export default function EmployeesLayout({ loaderData }: Route.ComponentProps) {
 								</FilterPill>
 							))}
 						</FilterRow>
+
+						{/* Department */}
+						{departments.length > 0 && (
+							<FilterRow label="Dept">
+								<FilterPill
+									to={filterUrl({ department: 'all' })}
+									active={department === 'all'}
+								>
+									All
+								</FilterPill>
+								{departments.map((d) => (
+									<FilterPill
+										key={d}
+										to={filterUrl({ department: d })}
+										active={department === d}
+									>
+										{d}
+									</FilterPill>
+								))}
+							</FilterRow>
+						)}
 					</div>
 				</div>
 
@@ -366,7 +406,7 @@ export default function EmployeesLayout({ loaderData }: Route.ComponentProps) {
 										)}
 									</div>
 									<div className="truncate font-body text-xs text-muted-foreground">
-										{employee.jobTitle}
+										{employee.jobTitle}{employee.department ? ` · ${employee.department}` : ''}
 									</div>
 								</div>
 								<div className="flex shrink-0 flex-col items-end gap-1">

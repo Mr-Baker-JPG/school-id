@@ -186,14 +186,15 @@ model Passkey {
 }
 
 model Employee {
-  id            String @id @default(cuid())
-  sisEmployeeId String @unique
+  id            String  @id @default(cuid())
+  sisEmployeeId String  @unique
   firstName     String
   lastName      String
-  fullName      String // Kept for backward compatibility
+  fullName      String  // Kept for backward compatibility
   jobTitle      String
-  email         String @unique
-  status        String // 'active' or 'inactive'
+  department    String? // Department from FACTS SIS (stored separately from jobTitle)
+  email         String  @unique
+  status        String  // 'active' or 'inactive'
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -203,6 +204,7 @@ model Employee {
   @@index([email])
   @@index([status])
   @@index([sisEmployeeId])
+  @@index([department])
 }
 
 model EmployeeID {

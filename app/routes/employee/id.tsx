@@ -53,6 +53,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 			lastName: true,
 			fullName: true,
 			jobTitle: true,
+			department: true,
 			email: true,
 			status: true,
 			employeeId: {
@@ -178,7 +179,7 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 			{/* ── DOSSIER HEADER ── */}
 			<DossierHeader
 				name={employee.fullName}
-				subtitle={`${employee.jobTitle} · ${employee.email}`}
+				subtitle={`${employee.jobTitle}${employee.department ? ` · ${employee.department}` : ''} · ${employee.email}`}
 				typeLabel={`Employee · ${personType === 'FACULTY' ? 'Faculty' : 'Staff'}`}
 				photoUrl={displayPhotoUrl}
 				photoAlt={employee.fullName}
@@ -210,6 +211,7 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 						items={[
 							{ key: 'Name', value: employee.fullName },
 							{ key: 'Job Title', value: employee.jobTitle },
+							{ key: 'Department', value: employee.department || 'N/A' },
 							{ key: 'Email', value: employee.email },
 							{
 								key: 'Status',

@@ -83,6 +83,7 @@ export interface FactsEmployeeData {
 	lastName: string
 	fullName: string
 	jobTitle: string
+	department: string | null
 	email: string
 	status: 'active' | 'inactive'
 }
@@ -335,6 +336,9 @@ function transformStaffToEmployee(
 	// Get job title from department
 	const jobTitle = staff.department || 'Staff'
 
+	// Store raw department value separately
+	const department = staff.department?.trim() || null
+
 	// Determine status from active flag
 	const status: 'active' | 'inactive' = staff.active ? 'active' : 'inactive'
 
@@ -344,6 +348,7 @@ function transformStaffToEmployee(
 		lastName,
 		fullName,
 		jobTitle: jobTitle.trim(),
+		department,
 		email: email.trim(),
 		status,
 	}

@@ -52,6 +52,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 			lastName: true,
 			fullName: true,
 			jobTitle: true,
+			department: true,
 			email: true,
 			status: true,
 			createdAt: true,
@@ -275,7 +276,7 @@ export default function AdminEmployeeDetailRoute({
 			{/* ── DOSSIER HEADER ── */}
 			<DossierHeader
 				name={employee.fullName}
-				subtitle={`${employee.jobTitle} · ${employee.email}`}
+				subtitle={`${employee.jobTitle}${employee.department ? ` · ${employee.department}` : ''} · ${employee.email}`}
 				typeLabel={`Employee · ${personType === 'FACULTY' ? 'Faculty' : 'Staff'}`}
 				photoUrl={displayPhotoUrl}
 				photoAlt={employee.fullName}
@@ -339,6 +340,7 @@ export default function AdminEmployeeDetailRoute({
 						items={[
 							{ key: 'Full Name', value: employee.fullName },
 							{ key: 'Job Title', value: employee.jobTitle },
+							{ key: 'Department', value: employee.department || 'N/A' },
 							{ key: 'Email', value: employee.email },
 							{
 								key: 'SIS ID',
