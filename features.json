@@ -666,8 +666,8 @@
 			"Front/back pages render correctly for mixed employee and student cards",
 			"Non-admin users cannot access print route"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F046",

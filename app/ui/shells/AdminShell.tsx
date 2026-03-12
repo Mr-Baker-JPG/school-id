@@ -37,6 +37,7 @@ export function AdminShell({ children, headerActions }: AdminShellProps) {
 				{ to: '/admin', label: 'Dashboard', icon: 'laptop' },
 				{ to: '/admin/employees', label: 'Employees', icon: 'user' },
 				{ to: '/admin/students', label: 'Students', icon: 'user' },
+				{ to: '/admin/print', label: 'Print IDs', icon: 'download' },
 				{ to: '/admin/users', label: 'Users', icon: 'user' },
 				{ to: '/admin/sync-status', label: 'Sync Status', icon: 'cloud-sync' },
 				{ to: '/admin/card-designs', label: 'Card Designs', icon: 'pencil-1' },
