@@ -46,6 +46,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 		where,
 		select: {
 			id: true,
+			firstName: true,
+			lastName: true,
 			fullName: true,
 			email: true,
 			grade: true,
@@ -57,11 +59,12 @@ export async function loader({ request }: Route.LoaderArgs) {
 				},
 			},
 		},
-		orderBy: { fullName: 'asc' },
+		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
 	})
 
 	const studentsWithStatus = students.map((s) => ({
 		...s,
+		displayName: `${s.lastName}, ${s.firstName}`,
 		hasPhoto: !!s.studentId?.photoUrl,
 		expirationStatus: s.studentId?.expirationDate
 			? getExpirationStatus(s.studentId.expirationDate)
@@ -252,12 +255,12 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 									{student.hasPhoto ? (
 										<Icon name="camera" className="size-3.5" />
 									) : (
-										student.fullName.charAt(0)
+										student.lastName.charAt(0)
 									)}
 								</div>
 								<div className="min-w-0 flex-1">
 									<div className="truncate font-body text-sm font-medium">
-										{student.fullName}
+										{student.displayName}
 									</div>
 									<div className="truncate font-body text-xs text-muted-foreground">
 										{student.grade ? `Grade ${student.grade}` : student.email}

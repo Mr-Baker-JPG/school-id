@@ -64,6 +64,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 					where: employeeWhere,
 					select: {
 						id: true,
+						firstName: true,
+						lastName: true,
 						fullName: true,
 						jobTitle: true,
 						department: true,
@@ -77,7 +79,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 							},
 						},
 					},
-					orderBy: { fullName: 'asc' },
+					orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
 				}),
 		peopleType === 'employees'
 			? Promise.resolve([])
@@ -85,6 +87,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 					where: studentWhere,
 					select: {
 						id: true,
+						firstName: true,
+						lastName: true,
 						fullName: true,
 						email: true,
 						grade: true,
@@ -97,7 +101,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 							},
 						},
 					},
-					orderBy: { fullName: 'asc' },
+					orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
 				}),
 	])
 
@@ -117,7 +121,9 @@ export async function loader({ request }: Route.LoaderArgs) {
 		...filteredEmployees.map((e) => ({
 			id: e.id,
 			type: 'employee' as const,
-			fullName: e.fullName,
+			firstName: e.firstName,
+			lastName: e.lastName,
+			displayName: `${e.lastName}, ${e.firstName}`,
 			label: e.department || e.jobTitle,
 			email: e.email,
 			status: e.status,
@@ -128,7 +134,9 @@ export async function loader({ request }: Route.LoaderArgs) {
 		...students.map((s) => ({
 			id: s.id,
 			type: 'student' as const,
-			fullName: s.fullName,
+			firstName: s.firstName,
+			lastName: s.lastName,
+			displayName: `${s.lastName}, ${s.firstName}`,
 			label: s.grade ? `Grade ${s.grade}` : 'Student',
 			email: s.email,
 			status: s.status,
@@ -167,13 +175,15 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 // --- Sort types ---
-type SortField = 'fullName' | 'personType' | 'label' | 'hasPhoto'
+type SortField = 'name' | 'personType' | 'label' | 'hasPhoto'
 type SortDir = 'asc' | 'desc'
 
 type Person = {
 	id: string
 	type: 'employee' | 'student'
-	fullName: string
+	firstName: string
+	lastName: string
+	displayName: string
 	label: string | null
 	email: string
 	status: string
@@ -187,8 +197,8 @@ function sortPeople(people: Person[], field: SortField, dir: SortDir) {
 	sorted.sort((a, b) => {
 		let cmp = 0
 		switch (field) {
-			case 'fullName':
-				cmp = a.fullName.localeCompare(b.fullName)
+			case 'name':
+				cmp = a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)
 				break
 			case 'personType':
 				cmp = a.personType.localeCompare(b.personType)
@@ -223,7 +233,7 @@ export default function AdminPrintRoute({ loaderData }: Route.ComponentProps) {
 	const { people, departments, grades, filters } = loaderData
 	const submit = useSubmit()
 	const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set())
-	const [sortField, setSortField] = React.useState<SortField>('fullName')
+	const [sortField, setSortField] = React.useState<SortField>('name')
 	const [sortDir, setSortDir] = React.useState<SortDir>('asc')
 	const lastClickedIndexRef = React.useRef<number | null>(null)
 
@@ -461,10 +471,10 @@ export default function AdminPrintRoute({ loaderData }: Route.ComponentProps) {
 											className="size-3.5 accent-brand-gold"
 										/>
 									</th>
-									<th className={thClass} onClick={() => handleSort('fullName')}>
+									<th className={thClass} onClick={() => handleSort('name')}>
 										<span className="inline-flex items-center gap-0.5">
 											Name
-											<SortIndicator field="fullName" sortField={sortField} sortDir={sortDir} />
+											<SortIndicator field="name" sortField={sortField} sortDir={sortDir} />
 										</span>
 									</th>
 									<th className={cn(thClass, 'hidden sm:table-cell')} onClick={() => handleSort('personType')}>
@@ -511,7 +521,7 @@ export default function AdminPrintRoute({ loaderData }: Route.ComponentProps) {
 											</td>
 											<td className="px-3 py-2.5">
 												<div className="font-body text-sm font-medium">
-													{person.fullName}
+													{person.displayName}
 												</div>
 												<div className="font-body text-xs text-muted-foreground sm:hidden">
 													{person.type === 'employee' ? person.personType : 'Student'}
