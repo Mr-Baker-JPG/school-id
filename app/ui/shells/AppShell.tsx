@@ -24,7 +24,7 @@ const navGroups = [{ label: 'Personal', items: personalNavItems }]
 
 export function AppShell({ children }: AppShellProps) {
 	return (
-		<div className="flex min-h-screen flex-col">
+		<div className="flex h-screen flex-col overflow-hidden">
 			<BrandHeader
 				variant="app"
 				rightSlot={
@@ -33,9 +33,9 @@ export function AppShell({ children }: AppShellProps) {
 					</div>
 				}
 			/>
-			<div className="flex flex-1">
+			<div className="flex min-h-0 flex-1">
 				<CollapsibleSidebar groups={navGroups} />
-				<main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+				<main className="mx-auto w-full max-w-5xl min-h-0 flex-1 overflow-y-auto px-4 py-8">
 					{children}
 				</main>
 			</div>

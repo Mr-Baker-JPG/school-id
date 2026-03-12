@@ -27,6 +27,7 @@ export default function CardDesignsPage({ loaderData }: Route.ComponentProps) {
 	}
 
 	return (
+		<div className="h-full overflow-y-auto px-6 py-6">
 		<div className="space-y-10">
 			<PageTitle
 				title="ID Card Designs"
@@ -53,6 +54,7 @@ export default function CardDesignsPage({ loaderData }: Route.ComponentProps) {
 					</div>
 				</div>
 			))}
+		</div>
 		</div>
 	)
 }

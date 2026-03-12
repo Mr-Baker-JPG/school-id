@@ -195,6 +195,7 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
 	const { stats, attentionItems } = loaderData
 
 	return (
+		<div className="h-full overflow-y-auto px-6 py-6">
 		<div className="space-y-8">
 			<PageTitle
 				title="Dashboard"
@@ -202,12 +203,20 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
 			/>
 
 			{/* Stat Cards */}
-			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				<StatCard
-					label="Active People"
-					value={`${stats.activeEmployees + stats.activeStudents}`}
-					detail={`${stats.activeEmployees} employees · ${stats.activeStudents} students`}
-					href="/admin/employees"
+					label="Active Employees"
+					value={`${stats.activeEmployees}`}
+					detail={`of ${stats.totalEmployees} total`}
+					href="/admin/employees?status=active"
+					color="green"
+					icon="user"
+				/>
+				<StatCard
+					label="Active Students"
+					value={`${stats.activeStudents}`}
+					detail={`of ${stats.totalStudents} total`}
+					href="/admin/students?status=active"
 					color="green"
 					icon="user"
 				/>
@@ -340,6 +349,7 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
 					</div>
 				</div>
 			)}
+		</div>
 		</div>
 	)
 }

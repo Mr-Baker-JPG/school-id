@@ -22,6 +22,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	const searchParams = new URL(request.url).searchParams
 	const search = searchParams.get('search')
 	const status = searchParams.get('status')
+	const photo = searchParams.get('photo')
 
 	const where: Record<string, unknown> = {}
 
@@ -33,6 +34,11 @@ export async function loader({ request }: Route.LoaderArgs) {
 	}
 	if (status === 'active' || status === 'inactive') {
 		where.status = status
+	}
+	if (photo === 'yes') {
+		where.studentId = { photoUrl: { not: null } }
+	} else if (photo === 'no') {
+		where.studentId = { photoUrl: { equals: null } }
 	}
 
 	const students = await prisma.student.findMany({
@@ -55,6 +61,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 	const studentsWithStatus = students.map((s) => ({
 		...s,
+		hasPhoto: !!s.studentId?.photoUrl,
 		expirationStatus: s.studentId?.expirationDate
 			? getExpirationStatus(s.studentId.expirationDate)
 			: null,
@@ -64,6 +71,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		students: studentsWithStatus,
 		search: search ?? '',
 		status: status ?? 'all',
+		photo: photo ?? 'all',
 	}
 }
 
@@ -101,7 +109,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
-	const { students, search, status } = loaderData
+	const { students, search, status, photo } = loaderData
 	const location = useLocation()
 	const [searchParams] = useSearchParams()
 	const submit = useSubmit()
@@ -116,8 +124,24 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 		await submit(form)
 	}, 400)
 
+	function filterUrl(overrides: Record<string, string>) {
+		const params: Record<string, string> = {}
+		if (search) params.search = search
+		if (status !== 'all') params.status = status
+		if (photo !== 'all') params.photo = photo
+		for (const [k, v] of Object.entries(overrides)) {
+			if (v === 'all') {
+				delete params[k]
+			} else {
+				params[k] = v
+			}
+		}
+		const qs = new URLSearchParams(params).toString()
+		return `/admin/students${qs ? `?${qs}` : ''}`
+	}
+
 	return (
-		<div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+		<div className="flex h-full overflow-hidden">
 			{/* Left panel: Student list */}
 			<div
 				className={cn(
@@ -145,7 +169,7 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 					</Form>
 				</div>
 
-				{/* Filters */}
+				{/* Search + Filters */}
 				<div className="space-y-2 border-b px-3 py-2">
 					<Form
 						method="get"
@@ -159,15 +183,15 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 							className="border-input bg-background h-8 w-full rounded-md border px-3 text-sm"
 						/>
 						<input type="hidden" name="status" value={status} />
+						<input type="hidden" name="photo" value={photo} />
 					</Form>
-					<div className="flex gap-1.5">
+
+					<div className="flex flex-wrap gap-1.5">
+						{/* Status filter */}
 						{['all', 'active', 'inactive'].map((s) => (
 							<Link
 								key={s}
-								to={`/admin/students?${new URLSearchParams({
-									...(search ? { search } : {}),
-									...(s !== 'all' ? { status: s } : {}),
-								}).toString()}`}
+								to={filterUrl({ status: s })}
 								className={cn(
 									'rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors',
 									status === s || (s === 'all' && status === 'all')
@@ -176,6 +200,28 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 								)}
 							>
 								{s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+							</Link>
+						))}
+
+						<span className="text-border mx-0.5">|</span>
+
+						{/* Photo filter */}
+						{[
+							{ value: 'all', label: 'Any Photo' },
+							{ value: 'yes', label: '📷' },
+							{ value: 'no', label: 'No Photo' },
+						].map((f) => (
+							<Link
+								key={f.value}
+								to={filterUrl({ photo: f.value })}
+								className={cn(
+									'rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors',
+									photo === f.value
+										? 'bg-primary/10 text-primary'
+										: 'text-muted-foreground hover:bg-muted',
+								)}
+							>
+								{f.label}
 							</Link>
 						))}
 					</div>
@@ -203,12 +249,12 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 								<div
 									className={cn(
 										'flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
-										student.studentId?.photoUrl
+										student.hasPhoto
 											? 'bg-primary/10 text-primary'
 											: 'bg-muted text-muted-foreground',
 									)}
 								>
-									{student.studentId?.photoUrl ? (
+									{student.hasPhoto ? (
 										<Icon name="camera" className="size-3.5" />
 									) : (
 										student.fullName.charAt(0)

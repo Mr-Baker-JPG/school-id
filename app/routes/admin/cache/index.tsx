@@ -98,6 +98,7 @@ export default function CacheAdminRoute({ loaderData }: Route.ComponentProps) {
 	}, 400)
 
 	return (
+		<div className="h-full overflow-y-auto px-6 py-6">
 		<div>
 			<PageTitle title="Cache Admin" />
 			<div className="mt-6">
@@ -193,6 +194,7 @@ export default function CacheAdminRoute({ loaderData }: Route.ComponentProps) {
 					))}
 				</CardSection>
 			</div>
+		</div>
 		</div>
 	)
 }

@@ -160,6 +160,7 @@ export default function AdminUsersRoute({ loaderData }: Route.ComponentProps) {
 	}
 
 	return (
+		<div className="h-full overflow-y-auto px-6 py-6">
 		<div>
 			<PageTitle title="User Management" />
 
@@ -413,6 +414,7 @@ export default function AdminUsersRoute({ loaderData }: Route.ComponentProps) {
 					)}
 				</div>
 			</div>
+		</div>
 		</div>
 	)
 }

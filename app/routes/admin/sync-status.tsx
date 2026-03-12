@@ -829,6 +829,7 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 		useState(false)
 
 	return (
+		<div className="h-full overflow-y-auto px-6 py-6">
 		<div>
 			<PageTitle title="SIS Sync Status" />
 
@@ -929,6 +930,7 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 					setGoogleConfirmationChecked={setStudentGoogleConfirmationChecked}
 				/>
 			</div>
+		</div>
 		</div>
 	)
 }

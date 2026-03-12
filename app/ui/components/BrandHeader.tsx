@@ -30,8 +30,14 @@ export function BrandHeader({
 	const formRef = React.useRef<HTMLFormElement>(null)
 
 	return (
-		<header className={cn('w-full', headerAccent, className)}>
-			<div className="container flex h-16 items-center justify-between px-4">
+		<header
+			className={cn(
+				'w-full shrink-0',
+				headerAccent,
+				className,
+			)}
+		>
+			<div className="flex h-16 items-center justify-between px-4">
 				<Link to="/" className="flex items-center gap-3">
 					<Img
 						src={HEADER_LOGO_SRC}
@@ -47,53 +53,12 @@ export function BrandHeader({
 						width={64}
 						height={64}
 					/>
-					<span className="md:text-h4 text-lg font-semibold">{APP_NAME}</span>
+					<span className="md:text-h4 text-lg font-semibold">
+						{APP_NAME}
+					</span>
 				</Link>
 
-				<div className="flex items-center gap-4">
-					{(variant === 'app' || variant === 'admin') && (
-						<nav className="hidden items-center gap-4 md:flex">
-							{variant === 'app' && (
-								<>
-									<Link
-										to="/employee/id"
-										className="text-body-sm hover:text-foreground text-muted-foreground transition-colors"
-									>
-										My ID
-									</Link>
-									<Link
-										to="/settings/profile"
-										className="text-body-sm hover:text-foreground text-muted-foreground transition-colors"
-									>
-										Settings
-									</Link>
-								</>
-							)}
-							{variant === 'admin' && (
-								<>
-									<Link
-										to="/employee/id"
-										className="text-body-sm hover:text-foreground text-muted-foreground transition-colors"
-									>
-										My ID
-									</Link>
-									<Link
-										to="/admin/employees"
-										className="text-body-sm hover:text-foreground text-muted-foreground transition-colors"
-									>
-										Employees
-									</Link>
-									<Link
-										to="/admin/sync-status"
-										className="text-body-sm hover:text-foreground text-muted-foreground transition-colors"
-									>
-										Sync Status
-									</Link>
-								</>
-							)}
-						</nav>
-					)}
-
+				<div className="flex items-center gap-2">
 					{rightSlot}
 
 					{user && (
@@ -110,7 +75,9 @@ export function BrandHeader({
 								sideOffset={98}
 								avoidCollisions={false}
 							>
-								<DropdownMenuLabel>{user.name || 'User'}</DropdownMenuLabel>
+								<DropdownMenuLabel>
+									{user.name || 'User'}
+								</DropdownMenuLabel>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem asChild>
 									<Link to="/settings/profile">Settings</Link>

@@ -25,6 +25,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	const search = searchParams.get('search')
 	const status = searchParams.get('status')
 	const photo = searchParams.get('photo')
+	const signature = searchParams.get('signature')
 
 	const where: Record<string, unknown> = {}
 
@@ -37,10 +38,21 @@ export async function loader({ request }: Route.LoaderArgs) {
 	if (status === 'active' || status === 'inactive') {
 		where.status = status
 	}
+
+	// Build employeeId conditions for photo and signature filters
+	const employeeIdConditions: Record<string, unknown> = {}
 	if (photo === 'yes') {
-		where.employeeId = { ...(where.employeeId as object), photoUrl: { not: null } }
+		employeeIdConditions.photoUrl = { not: null }
 	} else if (photo === 'no') {
-		where.employeeId = { ...(where.employeeId as object), photoUrl: { equals: null } }
+		employeeIdConditions.photoUrl = { equals: null }
+	}
+	if (signature === 'yes') {
+		employeeIdConditions.gmailSignature = { not: null }
+	} else if (signature === 'no') {
+		employeeIdConditions.gmailSignature = { equals: null }
+	}
+	if (Object.keys(employeeIdConditions).length > 0) {
+		where.employeeId = employeeIdConditions
 	}
 
 	const employees = await prisma.employee.findMany({
@@ -55,6 +67,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 				select: {
 					expirationDate: true,
 					photoUrl: true,
+					gmailSignature: true,
 				},
 			},
 		},
@@ -63,6 +76,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 	const employeesWithStatus = employees.map((e) => ({
 		...e,
+		hasPhoto: !!e.employeeId?.photoUrl,
+		hasSignature: !!e.employeeId?.gmailSignature,
 		expirationStatus: e.employeeId?.expirationDate
 			? getExpirationStatus(e.employeeId.expirationDate)
 			: null,
@@ -73,6 +88,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		search: search ?? '',
 		status: status ?? 'all',
 		photo: photo ?? 'all',
+		signature: signature ?? 'all',
 	}
 }
 
@@ -155,7 +171,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function EmployeesLayout({ loaderData }: Route.ComponentProps) {
-	const { employees, search, status, photo } = loaderData
+	const { employees, search, status, photo, signature } = loaderData
 	const location = useLocation()
 	const [searchParams] = useSearchParams()
 	const submit = useSubmit()
@@ -171,8 +187,27 @@ export default function EmployeesLayout({ loaderData }: Route.ComponentProps) {
 		await submit(form)
 	}, 400)
 
+	/** Build filter URL preserving other active filters */
+	function filterUrl(overrides: Record<string, string>) {
+		const params: Record<string, string> = {}
+		if (search) params.search = search
+		if (status !== 'all') params.status = status
+		if (photo !== 'all') params.photo = photo
+		if (signature !== 'all') params.signature = signature
+		// Apply overrides, removing 'all' values
+		for (const [k, v] of Object.entries(overrides)) {
+			if (v === 'all') {
+				delete params[k]
+			} else {
+				params[k] = v
+			}
+		}
+		const qs = new URLSearchParams(params).toString()
+		return `/admin/employees${qs ? `?${qs}` : ''}`
+	}
+
 	return (
-		<div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+		<div className="flex h-full overflow-hidden">
 			{/* Left panel: Employee list (desktop only, or mobile when no detail) */}
 			<div
 				className={cn(
@@ -202,7 +237,7 @@ export default function EmployeesLayout({ loaderData }: Route.ComponentProps) {
 					</Form>
 				</div>
 
-				{/* Filters */}
+				{/* Search + Filters */}
 				<div className="space-y-2 border-b px-3 py-2">
 					<Form
 						method="get"
@@ -217,16 +252,15 @@ export default function EmployeesLayout({ loaderData }: Route.ComponentProps) {
 						/>
 						<input type="hidden" name="status" value={status} />
 						<input type="hidden" name="photo" value={photo} />
+						<input type="hidden" name="signature" value={signature} />
 					</Form>
-					<div className="flex gap-1.5">
+
+					{/* Status filter */}
+					<div className="flex flex-wrap gap-1.5">
 						{['all', 'active', 'inactive'].map((s) => (
 							<Link
 								key={s}
-								to={`/admin/employees?${new URLSearchParams({
-									...(search ? { search } : {}),
-									...(s !== 'all' ? { status: s } : {}),
-									...(photo !== 'all' ? { photo } : {}),
-								}).toString()}`}
+								to={filterUrl({ status: s })}
 								className={cn(
 									'rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors',
 									status === s || (s === 'all' && status === 'all')
@@ -235,6 +269,50 @@ export default function EmployeesLayout({ loaderData }: Route.ComponentProps) {
 								)}
 							>
 								{s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+							</Link>
+						))}
+
+						<span className="text-border mx-0.5">|</span>
+
+						{/* Photo filter */}
+						{[
+							{ value: 'all', label: 'Any Photo' },
+							{ value: 'yes', label: '📷' },
+							{ value: 'no', label: 'No Photo' },
+						].map((f) => (
+							<Link
+								key={f.value}
+								to={filterUrl({ photo: f.value })}
+								className={cn(
+									'rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors',
+									photo === f.value
+										? 'bg-primary/10 text-primary'
+										: 'text-muted-foreground hover:bg-muted',
+								)}
+							>
+								{f.label}
+							</Link>
+						))}
+
+						<span className="text-border mx-0.5">|</span>
+
+						{/* Signature filter */}
+						{[
+							{ value: 'all', label: 'Any Sig' },
+							{ value: 'yes', label: '✉️' },
+							{ value: 'no', label: 'No Sig' },
+						].map((f) => (
+							<Link
+								key={f.value}
+								to={filterUrl({ signature: f.value })}
+								className={cn(
+									'rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors',
+									signature === f.value
+										? 'bg-primary/10 text-primary'
+										: 'text-muted-foreground hover:bg-muted',
+								)}
+							>
+								{f.label}
 							</Link>
 						))}
 					</div>
@@ -263,20 +341,29 @@ export default function EmployeesLayout({ loaderData }: Route.ComponentProps) {
 								<div
 									className={cn(
 										'flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
-										employee.employeeId?.photoUrl
+										employee.hasPhoto
 											? 'bg-primary/10 text-primary'
 											: 'bg-muted text-muted-foreground',
 									)}
 								>
-									{employee.employeeId?.photoUrl ? (
+									{employee.hasPhoto ? (
 										<Icon name="camera" className="size-3.5" />
 									) : (
 										employee.fullName.charAt(0)
 									)}
 								</div>
 								<div className="min-w-0 flex-1">
-									<div className="truncate text-sm font-medium">
-										{employee.fullName}
+									<div className="flex items-center gap-1.5">
+										<span className="truncate text-sm font-medium">
+											{employee.fullName}
+										</span>
+										{/* Signature indicator */}
+										{employee.hasSignature && (
+											<Icon
+												name="envelope-closed"
+												className="size-3 shrink-0 text-green-600 dark:text-green-400"
+											/>
+										)}
 									</div>
 									<div className="text-muted-foreground truncate text-xs">
 										{employee.jobTitle}

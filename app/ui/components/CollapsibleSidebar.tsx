@@ -220,7 +220,7 @@ export function CollapsibleSidebar({
 			onMouseEnter={() => setHovered(true)}
 			onMouseLeave={() => setHovered(false)}
 		>
-			<div className="sticky top-16 flex h-[calc(100vh-4rem)] flex-col overflow-y-auto overflow-x-hidden">
+			<div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
 				<nav className="flex flex-1 flex-col gap-4 p-2 pt-4">
 					{allGroups.map((group, groupIndex) => (
 						<div key={group.label || groupIndex}>

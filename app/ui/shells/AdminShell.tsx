@@ -50,7 +50,7 @@ export function AdminShell({ children, headerActions }: AdminShellProps) {
 	]
 
 	return (
-		<div className="flex min-h-screen flex-col">
+		<div className="flex h-screen flex-col overflow-hidden">
 			<BrandHeader
 				variant="admin"
 				rightSlot={
@@ -60,9 +60,9 @@ export function AdminShell({ children, headerActions }: AdminShellProps) {
 					</div>
 				}
 			/>
-			<div className="flex flex-1">
+			<div className="flex min-h-0 flex-1">
 				<CollapsibleSidebar groups={navGroups} />
-				<main className="flex-1 overflow-auto px-6 py-6">{children}</main>
+				<main className="min-h-0 flex-1">{children}</main>
 			</div>
 		</div>
 	)
