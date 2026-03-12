@@ -1,4 +1,4 @@
-import { Document, pdf, Page, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, pdf, Page, View, Svg, Line, StyleSheet } from '@react-pdf/renderer'
 import { getBrandingConfig } from './branding.server.ts'
 import { generateEmployeeQRCodeBuffer } from './qr-code.server.ts'
 import { getSignedGetRequestInfo } from './storage.server.ts'
@@ -7,8 +7,6 @@ import { getCurrentAcademicYear } from './employee.server.ts'
 import { getDomainUrl } from './misc.tsx'
 import { registerFonts } from './fonts.server.ts'
 import {
-	IDCardFrontPDF,
-	IDCardBackPDF,
 	IDCardFrontContentView,
 	IDCardBackContentView,
 	ID_WIDTH,
@@ -21,6 +19,99 @@ export type { EmployeePDFData } from '#app/components/employee-id-card.tsx'
 
 // Register fonts at module load time (safe for server-only code)
 registerFonts()
+
+/**
+ * Crop mark configuration following print industry best practices:
+ * - 0.25pt stroke weight (hairline)
+ * - 9pt (1/8") mark length
+ * - 9pt (1/8") offset from the card edge to avoid interfering with bleed area
+ * - Black color for visibility on any background
+ */
+const CROP_MARK_LENGTH = 9 // 1/8 inch
+const CROP_MARK_OFFSET = 9 // 1/8 inch gap between card edge and mark
+const CROP_MARK_STROKE = 0.25 // hairline weight
+const CROP_MARK_COLOR = '#000000'
+
+/**
+ * Renders crop/cut marks at the four corners of a card.
+ * Each corner has two perpendicular lines (horizontal + vertical)
+ * offset from the card boundary so they don't overlap the card content.
+ *
+ * The SVG is absolutely positioned to cover the full area including marks.
+ *
+ * @param left - x position of the card's left edge on the page
+ * @param top - y position of the card's top edge on the page
+ * @param cardWidth - width of the card in points
+ * @param cardHeight - height of the card in points
+ */
+function CropMarks({
+	left,
+	top,
+	cardWidth,
+	cardHeight,
+}: {
+	left: number
+	top: number
+	cardWidth: number
+	cardHeight: number
+}) {
+	// Total SVG area extends beyond card by offset + mark length on each side
+	const extend = CROP_MARK_OFFSET + CROP_MARK_LENGTH
+	const svgWidth = cardWidth + 2 * extend
+	const svgHeight = cardHeight + 2 * extend
+
+	// Card corners relative to SVG origin
+	const cLeft = extend
+	const cRight = extend + cardWidth
+	const cTop = extend
+	const cBottom = extend + cardHeight
+
+	// Each corner gets two perpendicular lines extending outward from the card edge
+	// with a gap (CROP_MARK_OFFSET) so the marks don't touch the card.
+	const marks = [
+		// Top-left corner
+		{ x1: cLeft - CROP_MARK_OFFSET - CROP_MARK_LENGTH, y1: cTop, x2: cLeft - CROP_MARK_OFFSET, y2: cTop }, // horizontal
+		{ x1: cLeft, y1: cTop - CROP_MARK_OFFSET - CROP_MARK_LENGTH, x2: cLeft, y2: cTop - CROP_MARK_OFFSET }, // vertical
+
+		// Top-right corner
+		{ x1: cRight + CROP_MARK_OFFSET, y1: cTop, x2: cRight + CROP_MARK_OFFSET + CROP_MARK_LENGTH, y2: cTop },
+		{ x1: cRight, y1: cTop - CROP_MARK_OFFSET - CROP_MARK_LENGTH, x2: cRight, y2: cTop - CROP_MARK_OFFSET },
+
+		// Bottom-left corner
+		{ x1: cLeft - CROP_MARK_OFFSET - CROP_MARK_LENGTH, y1: cBottom, x2: cLeft - CROP_MARK_OFFSET, y2: cBottom },
+		{ x1: cLeft, y1: cBottom + CROP_MARK_OFFSET, x2: cLeft, y2: cBottom + CROP_MARK_OFFSET + CROP_MARK_LENGTH },
+
+		// Bottom-right corner
+		{ x1: cRight + CROP_MARK_OFFSET, y1: cBottom, x2: cRight + CROP_MARK_OFFSET + CROP_MARK_LENGTH, y2: cBottom },
+		{ x1: cRight, y1: cBottom + CROP_MARK_OFFSET, x2: cRight, y2: cBottom + CROP_MARK_OFFSET + CROP_MARK_LENGTH },
+	]
+
+	return (
+		<View
+			style={{
+				position: 'absolute',
+				left: left - extend,
+				top: top - extend,
+				width: svgWidth,
+				height: svgHeight,
+			}}
+		>
+			<Svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
+				{marks.map((m, i) => (
+					<Line
+						key={i}
+						x1={m.x1}
+						y1={m.y1}
+						x2={m.x2}
+						y2={m.y2}
+						stroke={CROP_MARK_COLOR}
+						strokeWidth={CROP_MARK_STROKE}
+					/>
+				))}
+			</Svg>
+		</View>
+	)
+}
 
 /**
  * Fetches an image from a URL and converts it to a base64 data URL
@@ -172,18 +263,39 @@ export async function generateEmployeeIDPDF(
 		// Get current academic year
 		const academicYear = getCurrentAcademicYear()
 
-		// Create PDF document
+		// Single-card page size: card + space for crop marks on all sides
+		const singleCardMargin = CROP_MARK_OFFSET + CROP_MARK_LENGTH + 18 // marks + extra padding
+		const singlePageWidth = ID_WIDTH + 2 * singleCardMargin
+		const singlePageHeight = ID_HEIGHT + 2 * singleCardMargin
+		const cardLeft = singleCardMargin
+		const cardTop = singleCardMargin
+
+		// Create PDF document with crop marks around each card
 		const doc = (
 			<Document>
-				<IDCardFrontPDF
-					employee={employee}
-					photoDataURL={photoDataURL}
-					logoDataURL={logoDataURL}
-					branding={branding}
-					academicYear={academicYear}
-					barcodeDataURL={barcodeDataURL}
-				/>
-				<IDCardBackPDF qrCodeDataURL={qrCodeDataURL} branding={branding} logoDataURL={logoDataURL} />
+				<Page size={[singlePageWidth, singlePageHeight]} style={{ padding: 0, fontFamily: 'Times-Roman' }}>
+					<View style={{ position: 'absolute', left: cardLeft, top: cardTop, width: ID_WIDTH, height: ID_HEIGHT }}>
+						<IDCardFrontContentView
+							employee={employee}
+							photoDataURL={photoDataURL}
+							logoDataURL={logoDataURL}
+							branding={branding}
+							academicYear={academicYear}
+							barcodeDataURL={barcodeDataURL}
+						/>
+					</View>
+					<CropMarks left={cardLeft} top={cardTop} cardWidth={ID_WIDTH} cardHeight={ID_HEIGHT} />
+				</Page>
+				<Page size={[singlePageWidth, singlePageHeight]} style={{ padding: 0, fontFamily: 'Times-Roman' }}>
+					<View style={{ position: 'absolute', left: cardLeft, top: cardTop, width: ID_WIDTH, height: ID_HEIGHT }}>
+						<IDCardBackContentView
+							qrCodeDataURL={qrCodeDataURL}
+							branding={branding}
+							logoDataURL={logoDataURL}
+						/>
+					</View>
+					<CropMarks left={cardLeft} top={cardTop} cardWidth={ID_WIDTH} cardHeight={ID_HEIGHT} />
+				</Page>
 			</Document>
 		)
 
@@ -351,7 +463,7 @@ export async function generateBulkEmployeeIDPDF(
 				(pageIndex + 1) * CARDS_PER_PAGE,
 			)
 
-			// Create front page with cards
+			// Create front page with cards and crop marks
 			const frontCardViews = cardsOnThisPage.map((prepared, cardIndex) => {
 				const row = Math.floor(cardIndex / CARDS_PER_ROW)
 				const col = cardIndex % CARDS_PER_ROW
@@ -366,23 +478,25 @@ export async function generateBulkEmployeeIDPDF(
 					(CARD_AREA_HEIGHT - ID_HEIGHT) / 2
 
 				return (
-					<View
-						key={`front-${prepared.employee.id}`}
-						style={[styles.cardContainer, { left, top }]}
-					>
-						<IDCardFrontContentView
-							employee={prepared.employee}
-							photoDataURL={prepared.photoDataURL}
-							logoDataURL={prepared.logoDataURL}
-							branding={prepared.branding}
-							academicYear={prepared.academicYear}
-							barcodeDataURL={prepared.barcodeDataURL}
-						/>
+					<View key={`front-${prepared.employee.id}`}>
+						<View
+							style={[styles.cardContainer, { left, top }]}
+						>
+							<IDCardFrontContentView
+								employee={prepared.employee}
+								photoDataURL={prepared.photoDataURL}
+								logoDataURL={prepared.logoDataURL}
+								branding={prepared.branding}
+								academicYear={prepared.academicYear}
+								barcodeDataURL={prepared.barcodeDataURL}
+							/>
+						</View>
+						<CropMarks left={left} top={top} cardWidth={ID_WIDTH} cardHeight={ID_HEIGHT} />
 					</View>
 				)
 			})
 
-			// Create back page with cards
+			// Create back page with cards and crop marks
 			const backCardViews = cardsOnThisPage.map((prepared, cardIndex) => {
 				const row = Math.floor(cardIndex / CARDS_PER_ROW)
 				const col = cardIndex % CARDS_PER_ROW
@@ -397,15 +511,17 @@ export async function generateBulkEmployeeIDPDF(
 					(CARD_AREA_HEIGHT - ID_HEIGHT) / 2
 
 				return (
-					<View
-						key={`back-${prepared.employee.id}`}
-						style={[styles.cardContainer, { left, top }]}
-					>
-						<IDCardBackContentView
-							qrCodeDataURL={prepared.qrCodeDataURL}
-							branding={prepared.branding}
-							logoDataURL={prepared.logoDataURL}
-						/>
+					<View key={`back-${prepared.employee.id}`}>
+						<View
+							style={[styles.cardContainer, { left, top }]}
+						>
+							<IDCardBackContentView
+								qrCodeDataURL={prepared.qrCodeDataURL}
+								branding={prepared.branding}
+								logoDataURL={prepared.logoDataURL}
+							/>
+						</View>
+						<CropMarks left={left} top={top} cardWidth={ID_WIDTH} cardHeight={ID_HEIGHT} />
 					</View>
 				)
 			})
