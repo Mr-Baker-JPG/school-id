@@ -58,7 +58,7 @@ export function UserSettingsModal({
 					{/* Subtle decorative top border */}
 					<div className="absolute inset-x-0 top-0 h-1 rounded-t-xl bg-gradient-to-r from-transparent via-brand-gold/40 to-transparent" />
 
-					<div className="relative mx-auto mb-4 w-fit">
+					<div className="mx-auto mb-4 w-fit">
 						<div className="size-20 rounded-full border-2 border-brand-gold/30 shadow-md overflow-hidden bg-white dark:bg-slate-900">
 							<Img
 								src={getUserImgSrc(user.image?.objectKey)}
@@ -68,15 +68,6 @@ export function UserSettingsModal({
 								height={256}
 							/>
 						</div>
-						<Link
-							preventScrollReset
-							to="/settings/profile/photo"
-							onClick={() => handleOpenChange(false)}
-							className="absolute -bottom-0.5 -right-0.5 flex size-7 items-center justify-center rounded-full border-2 border-[#FDFBF7] bg-brand-navy text-white shadow-sm transition-transform hover:scale-110 dark:border-slate-950"
-							title="Change photo"
-						>
-							<Icon name="camera" className="size-3.5" />
-						</Link>
 					</div>
 
 					<h2 className="font-display text-lg tracking-wide text-brand-navy dark:text-brand-gold">
