@@ -10,6 +10,11 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from '#app/components/ui/dropdown-menu.tsx'
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from '#app/components/ui/tooltip.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
 import { type ExpirationStatus } from '#app/utils/employee.server.ts'
@@ -24,6 +29,7 @@ export type Employee = {
 	employeeId: {
 		expirationDate: Date | null
 		photoUrl: string | null
+		gmailSignature: string | null
 	} | null
 	expirationStatus: ExpirationStatus | null
 }
@@ -177,6 +183,52 @@ export function createColumns<TEmployee extends Employee>(
 							</>
 						)}
 					</Link>
+				)
+			},
+		},
+		{
+			id: 'signature',
+			header: 'Signature',
+			cell: ({ row }) => {
+				const employee = row.original
+				const hasSignature = !!employee.employeeId?.gmailSignature
+
+				if (hasSignature) {
+					return (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<div className="flex items-center gap-1.5">
+									<Icon
+										name="check"
+										className="size-4 text-green-600 dark:text-green-400"
+									/>
+									<span className="text-sm">Has signature</span>
+								</div>
+							</TooltipTrigger>
+							<TooltipContent
+								side="right"
+								align="start"
+								className="max-w-md p-3"
+							>
+								<div className="text-xs font-semibold text-gray-500 mb-2">
+									Gmail Signature Preview:
+								</div>
+								<div
+									className="prose prose-sm dark:prose-invert max-w-none overflow-auto"
+									dangerouslySetInnerHTML={{
+										__html: employee.employeeId?.gmailSignature || '',
+									}}
+								/>
+							</TooltipContent>
+						</Tooltip>
+					)
+				}
+
+				return (
+					<div className="flex items-center gap-1.5">
+						<Icon name="cross-1" className="text-muted-foreground size-4" />
+						<span className="text-muted-foreground text-sm">No signature</span>
+					</div>
 				)
 			},
 		},

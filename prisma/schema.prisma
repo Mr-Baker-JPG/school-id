@@ -204,10 +204,12 @@ model Employee {
 }
 
 model EmployeeID {
-  id                   String    @id @default(cuid())
-  photoUrl             String?
-  expirationDate       DateTime
-  factsPhotoCheckedAt  DateTime? // When we last checked FACTS for a profile picture
+  id                      String    @id @default(cuid())
+  photoUrl                String?
+  expirationDate          DateTime
+  factsPhotoCheckedAt     DateTime? // When we last checked FACTS for a profile picture
+  gmailSignature          String?   // HTML signature from Gmail
+  gmailSignatureFetchedAt DateTime? // When we last fetched the Gmail signature
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -218,6 +220,7 @@ model EmployeeID {
   @@index([employeeId])
   @@index([expirationDate])
   @@index([factsPhotoCheckedAt])
+  @@index([gmailSignatureFetchedAt])
 }
 
 model SyncHistory {

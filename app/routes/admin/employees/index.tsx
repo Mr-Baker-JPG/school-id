@@ -88,6 +88,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 				select: {
 					expirationDate: true,
 					photoUrl: true,
+					gmailSignature: true,
 				},
 			},
 		},
@@ -605,6 +606,28 @@ export default function AdminEmployeesRoute({
 																		</StatusBadge>
 																	</>
 																)}
+															{(employee.employeeId?.photoUrl ||
+																employee.employeeId?.gmailSignature) && (
+																<>
+																	<span className="text-muted-foreground">·</span>
+																	<div className="flex items-center gap-1">
+																		{employee.employeeId?.photoUrl && (
+																			<Icon
+																				name="camera"
+																				className="size-3.5 text-green-600 dark:text-green-400"
+																				title="Has photo"
+																			/>
+																		)}
+																		{employee.employeeId?.gmailSignature && (
+																			<Icon
+																				name="pencil-1"
+																				className="size-3.5 text-green-600 dark:text-green-400"
+																				title="Has signature"
+																			/>
+																		)}
+																	</div>
+																</>
+															)}
 														</div>
 													</div>
 													<DropdownMenu>

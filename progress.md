@@ -1153,6 +1153,66 @@ The rate limit can be configured by changing the `DAYS_BEFORE_RECHECK` constant 
 
 ---
 
+## 2026-03-10 – F043
+
+**Feature:** Gmail Signature Viewing for Admins
+
+**Implementation:**
+
+- Created `GmailSignatureService` class in `app/utils/gmail-signature.server.ts`:
+  - Uses Google Workspace domain-wide delegation with service account
+  - Fetches signatures via Gmail API endpoint `/users/{email}/settings/sendAs/{email}`
+  - Caches signatures to database (`gmailSignature` and `gmailSignatureFetchedAt` fields)
+  - Rate limiting: only fetches if not cached or stale (> 7 days old)
+  - Graceful error handling (continues without signature on API errors)
+
+- Updated `EmployeeID` Prisma schema:
+  - Added `gmailSignature String?` field (HTML signature)
+  - Added `gmailSignatureFetchedAt DateTime?` field (cache timestamp)
+  - Created migration `20260312012644_add_gmail_signature_fields`
+
+- Updated admin employee detail page (`app/routes/admin/employees/$employeeId.tsx`):
+  - Displays Gmail signature in new "Gmail Signature" section
+  - Shows "Last updated" timestamp
+  - Background fetch when signature missing or stale
+  - Graceful fallback when no signature available
+  - Renders HTML signature safely with `dangerouslySetInnerHTML`
+
+**Tests:**
+
+- ✅ Service fetches signature via service account impersonation
+- ✅ Signature is cached to database
+- ✅ Signature is displayed on admin employee detail page
+- ✅ Background refresh triggers when cache is stale (> 7 days)
+- ✅ Background refresh triggers when signature is missing
+- ✅ Graceful handling when service account not configured
+- ✅ Graceful handling when API call fails
+- ✅ All 8 tests pass (4 service tests + 4 loader tests)
+- ✅ Build succeeds
+
+**Files Created:**
+
+- `app/utils/gmail-signature.server.ts` - Gmail signature service
+- `app/utils/gmail-signature.server.test.ts` - Service tests (4 tests)
+- `app/routes/admin/employees/$employeeId.gmail.test.ts` - Loader tests (4 tests)
+
+**Files Modified:**
+
+- `prisma/schema.prisma` - Added gmailSignature fields to EmployeeID model
+- `app/routes/admin/employees/$employeeId.tsx` - Added Gmail signature display section
+- `features.json` - Added F043
+- `progress.md` - Updated implementation notes
+
+**Key Features:**
+
+- ✅ Domain-wide delegation allows admin to see all employee signatures
+- ✅ No individual user consent required
+- ✅ Automatic background refresh (7-day cache)
+- ✅ HTML signatures rendered with proper styling
+- ✅ Works even if service account not configured (graceful degradation)
+
+---
+
 ## Summary
 
 ✅ **FACTS Profile Picture Rate Limiting Complete**

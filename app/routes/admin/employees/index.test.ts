@@ -60,6 +60,7 @@ async function createEmployee(data?: {
 	status?: 'active' | 'inactive'
 	hasPhoto?: boolean
 	expirationDate?: Date
+	hasSignature?: boolean
 }) {
 	const employee = await prisma.employee.create({
 		data: {
@@ -69,13 +70,16 @@ async function createEmployee(data?: {
 			email: data?.email ?? faker.internet.email(),
 			status: data?.status ?? 'active',
 			employeeId:
-				data?.hasPhoto || data?.expirationDate
+				data?.hasPhoto || data?.expirationDate || data?.hasSignature
 					? {
 							create: {
 								photoUrl: data?.hasPhoto ? faker.internet.url() : null,
 								expirationDate:
 									data?.expirationDate ??
 									new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+								gmailSignature: data?.hasSignature
+									? '<div>Test Signature</div>'
+									: null,
 							},
 						}
 					: undefined,
@@ -90,6 +94,7 @@ async function createEmployee(data?: {
 				select: {
 					expirationDate: true,
 					photoUrl: true,
+					gmailSignature: true,
 				},
 			},
 		},
@@ -192,6 +197,43 @@ test('List displays employee name, job title, status, and expiration date', asyn
 
 	// Cleanup
 	await prisma.employee.delete({ where: { id: employee.id } })
+	await prisma.user.delete({ where: { id: admin.id } })
+})
+
+test('Loader returns Gmail signature for employees', async () => {
+	const admin = await createAdminUser()
+	const employee1 = await createEmployee({
+		fullName: 'Employee With Signature',
+		hasSignature: true,
+	})
+	const employee2 = await createEmployee({
+		fullName: 'Employee Without Signature',
+		hasPhoto: true,
+	})
+
+	const request = await createRequestWithSession(admin.id, '/admin/employees')
+
+	const result = await loader({
+		request,
+		params: {},
+		context: {},
+	} as any)
+
+	const foundEmployee1 = result.employees.find((e) => e.id === employee1.id)
+	const foundEmployee2 = result.employees.find((e) => e.id === employee2.id)
+
+	expect(foundEmployee1).toBeDefined()
+	expect(foundEmployee1?.employeeId?.gmailSignature).toBe(
+		'<div>Test Signature</div>',
+	)
+
+	expect(foundEmployee2).toBeDefined()
+	expect(foundEmployee2?.employeeId?.gmailSignature).toBeNull()
+
+	// Cleanup
+	await prisma.employee.deleteMany({
+		where: { id: { in: [employee1.id, employee2.id] } },
+	})
 	await prisma.user.delete({ where: { id: admin.id } })
 })
 

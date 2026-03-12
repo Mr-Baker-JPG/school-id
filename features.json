@@ -621,5 +621,21 @@
 		],
 		"implemented": true,
 		"tests_passed": true
+	},
+	{
+		"id": "F043",
+		"title": "Gmail Signature Viewing for Admins",
+		"description": "Display Gmail signatures on admin employee detail page using Google Workspace domain-wide delegation. Signatures are fetched via service account impersonation and cached in the database with automatic refresh (> 7 days old).",
+		"tests": [
+			"Service fetches signature via service account impersonation",
+			"Signature is cached to database",
+			"Signature is displayed on admin employee detail page",
+			"Background refresh triggers when cache is stale (> 7 days)",
+			"Background refresh triggers when signature is missing",
+			"Graceful handling when service account not configured",
+			"Graceful handling when API call fails"
+		],
+		"implemented": true,
+		"tests_passed": true
 	}
 ]

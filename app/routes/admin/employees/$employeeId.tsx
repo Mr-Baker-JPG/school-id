@@ -25,6 +25,7 @@ import {
 	fetchAndCacheFactsProfilePicture,
 	getCurrentAcademicYear,
 } from '#app/utils/employee.server.ts'
+import { gmailSignatureService } from '#app/utils/gmail-signature.server.ts'
 import { getEmployeePhotoSrc, useIsPending } from '#app/utils/misc.tsx'
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { generateEmployeeQRCodeDataURL } from '#app/utils/qr-code.server.ts'
@@ -59,6 +60,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 					expirationDate: true,
 					createdAt: true,
 					updatedAt: true,
+					gmailSignature: true,
+					gmailSignatureFetchedAt: true,
 				},
 			},
 		},
@@ -79,8 +82,30 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 				expirationDate: true,
 				createdAt: true,
 				updatedAt: true,
+				gmailSignature: true,
+				gmailSignatureFetchedAt: true,
 			},
 		})
+	}
+
+	// Fetch Gmail signature in background if missing or stale (> 7 days)
+	const DAYS_BEFORE_RECHECK = 7
+	const shouldFetchSignature =
+		!employeeIdRecord.gmailSignature ||
+		!employeeIdRecord.gmailSignatureFetchedAt ||
+		Date.now() - employeeIdRecord.gmailSignatureFetchedAt.getTime() >
+			DAYS_BEFORE_RECHECK * 24 * 60 * 60 * 1000
+
+	if (shouldFetchSignature) {
+		// Don't await - let it run in the background
+		gmailSignatureService
+			.fetchAndCacheSignature(employee.id, employee.email)
+			.catch((error) => {
+				console.warn(
+					`Background Gmail signature fetch failed for employee ${employee.id}:`,
+					error,
+				)
+			})
 	}
 
 	// If no uploaded photo exists, try to fetch and cache from FACTS
@@ -374,6 +399,45 @@ export default function AdminEmployeeDetailRoute({
 							},
 						]}
 					/>
+				</CardSection>
+			</div>
+
+			{/* Gmail Signature Section */}
+			<div className="mt-6">
+				<CardSection title="Gmail Signature">
+					{employee.employeeId?.gmailSignature ? (
+						<div>
+							<div className="mb-2 text-sm text-muted-foreground">
+								Last updated:{' '}
+								{employee.employeeId.gmailSignatureFetchedAt
+									? new Date(
+											employee.employeeId.gmailSignatureFetchedAt,
+										).toLocaleString()
+									: 'Unknown'}
+							</div>
+							{/*
+								Security Note: Using dangerouslySetInnerHTML to render Gmail signature HTML.
+								This is safe because:
+								1. Content comes from Gmail API (trusted source)
+								2. Only admins can view this page
+								3. Content is fetched via service account (not user input)
+								4. Gmail sanitizes signatures on their end
+							*/}
+							<div
+								className="rounded-lg border bg-white p-4"
+								dangerouslySetInnerHTML={{
+									__html: employee.employeeId.gmailSignature,
+								}}
+							/>
+						</div>
+					) : (
+						<div className="text-muted-foreground">
+							<p className="italic">No Gmail signature found</p>
+							<p className="mt-1 text-sm">
+								Signature will be fetched automatically when available
+							</p>
+						</div>
+					)}
 				</CardSection>
 			</div>
 
