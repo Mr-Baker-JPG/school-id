@@ -1,4 +1,4 @@
-import { Document, pdf, Page, View, Svg, Line, StyleSheet } from '@react-pdf/renderer'
+import { Document, pdf, Page, View, Svg, Line, Text, StyleSheet } from '@react-pdf/renderer'
 import { getBrandingConfig } from './branding.server.ts'
 import { generateEmployeeQRCodeBuffer } from './qr-code.server.ts'
 import { getSignedGetRequestInfo } from './storage.server.ts'
@@ -450,8 +450,97 @@ export async function generateBulkEmployeeIDPDF(
 
 		const styles = createBulkPrintStyles()
 
+		// Build title page with school name and print date
+		const branding = getBrandingConfig()
+		const printDate = new Date().toLocaleDateString('en-US', {
+			weekday: 'long',
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric',
+		})
+		const printTime = new Date().toLocaleTimeString('en-US', {
+			hour: 'numeric',
+			minute: '2-digit',
+		})
+
+		// Count employees vs students for summary
+		const employeeCount = preparedCards.filter(
+			(c) => c.employee.personType !== 'STUDENT',
+		).length
+		const studentCount = preparedCards.filter(
+			(c) => c.employee.personType === 'STUDENT',
+		).length
+
+		const titlePage = (
+			<Page
+				key="title-page"
+				size={[PAGE_WIDTH, PAGE_HEIGHT]}
+				style={{ padding: 0, fontFamily: 'Times-Roman' }}
+			>
+				<View
+					style={{
+						flex: 1,
+						justifyContent: 'center',
+						alignItems: 'center',
+						paddingHorizontal: 72,
+					}}
+				>
+					<Text
+						style={{
+							fontSize: 24,
+							fontWeight: 'bold',
+							marginBottom: 8,
+							textAlign: 'center',
+						}}
+					>
+						{branding.schoolName}
+					</Text>
+					<Text
+						style={{
+							fontSize: 18,
+							marginBottom: 32,
+							textAlign: 'center',
+							color: '#444444',
+						}}
+					>
+						ID Cards
+					</Text>
+					<View
+						style={{
+							width: 60,
+							height: 1,
+							backgroundColor: '#cccccc',
+							marginBottom: 32,
+						}}
+					/>
+					<Text
+						style={{
+							fontSize: 11,
+							color: '#666666',
+							marginBottom: 6,
+							textAlign: 'center',
+						}}
+					>
+						{preparedCards.length} card{preparedCards.length !== 1 ? 's' : ''}
+						{employeeCount > 0 && studentCount > 0
+							? ` · ${employeeCount} employee${employeeCount !== 1 ? 's' : ''} · ${studentCount} student${studentCount !== 1 ? 's' : ''}`
+							: ''}
+					</Text>
+					<Text
+						style={{
+							fontSize: 11,
+							color: '#666666',
+							textAlign: 'center',
+						}}
+					>
+						Printed {printDate} at {printTime}
+					</Text>
+				</View>
+			</Page>
+		)
+
 		// Split cards into pages (6 per page) and create alternating front/back pages
-		const pages: React.JSX.Element[] = []
+		const pages: React.JSX.Element[] = [titlePage]
 
 		for (
 			let pageIndex = 0;
