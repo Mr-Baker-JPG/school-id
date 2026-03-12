@@ -171,6 +171,8 @@ export default function EmployeeIdRoute({ loaderData }: Route.ComponentProps) {
 	// Prepare employee data for ID card component
 	const employeeCardData = {
 		id: employee.id,
+		firstName: employee.firstName,
+		lastName: employee.lastName,
 		fullName: employee.fullName,
 		jobTitle: employee.jobTitle,
 		personType: getEmployeePersonType(employee.jobTitle),

@@ -52,6 +52,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 		select: {
 			id: true,
 			sisStudentId: true,
+			firstName: true,
+			lastName: true,
 			fullName: true,
 			email: true,
 			status: true,
@@ -180,6 +182,8 @@ export default function StudentIdRoute({ loaderData }: Route.ComponentProps) {
 	// Students use "STUDENT" as their personType label
 	const studentCardData = {
 		id: student.id,
+		firstName: student.firstName,
+		lastName: student.lastName,
 		fullName: student.fullName,
 		personType: 'STUDENT' as const,
 		email: student.email,

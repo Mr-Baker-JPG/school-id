@@ -50,6 +50,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		select: {
 			id: true,
 			sisStudentId: true,
+			firstName: true,
+			lastName: true,
 			fullName: true,
 			email: true,
 			grade: true,
@@ -268,6 +270,8 @@ export default function AdminStudentDetailRoute({
 	// Prepare student data for ID card component
 	const studentCardData = {
 		id: student.id,
+		firstName: student.firstName,
+		lastName: student.lastName,
 		fullName: student.fullName,
 		personType: 'STUDENT' as const,
 		email: student.email,

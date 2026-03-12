@@ -16,7 +16,6 @@
 import { Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer'
 import { type BrandingConfig } from '#app/utils/branding.server.ts'
 export type { BrandingConfig } from '#app/utils/branding.server.ts'
-import { getFirstTwoNames } from '#app/utils/misc.tsx'
 import { FontFamilies, CSSFontStacks } from '#app/utils/font-families.ts'
 
 // Note: Font registration happens in pdf-id.server.tsx (server-only)
@@ -35,7 +34,9 @@ export type PersonType = 'FACULTY' | 'STAFF' | 'STUDENT'
  */
 export interface EmployeePDFData {
 	id: string
-	fullName: string
+	firstName: string
+	lastName: string
+	fullName: string // Kept for backward compatibility
 	jobTitle?: string // Kept for backward compatibility, but personType takes precedence
 	personType: PersonType
 	email: string
@@ -347,7 +348,7 @@ export function IDCardFrontContentView({
 	academicYear,
 }: IDCardFrontPDFProps) {
 	const styles = createIDCardPDFStyles(branding)
-	const displayName = getFirstTwoNames(employee.fullName).toUpperCase()
+	const displayName = `${employee.firstName} ${employee.lastName}`.toUpperCase()
 
 	return (
 		<View style={styles.frontCard}>
@@ -515,7 +516,7 @@ export function IDCardFrontPreview({
 	branding,
 	academicYear,
 }: IDCardFrontPreviewProps) {
-	const displayName = getFirstTwoNames(employee.fullName).toUpperCase()
+	const displayName = `${employee.firstName} ${employee.lastName}`.toUpperCase()
 
 	return (
 		<div

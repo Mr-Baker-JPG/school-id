@@ -34,6 +34,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 			where: { id: studentId },
 			select: {
 				id: true,
+				firstName: true,
+				lastName: true,
 				fullName: true,
 				email: true,
 				status: true,
@@ -99,6 +101,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		// Prepare student data for PDF generation
 		const studentPDFData = {
 			id: student.id,
+			firstName: student.firstName,
+			lastName: student.lastName,
 			fullName: student.fullName,
 			personType: 'STUDENT' as const,
 			email: student.email,

@@ -125,6 +125,8 @@ async function syncSingleStudent(
 			email: string
 			grade: string
 			status: string
+			firstName?: string
+			lastName?: string
 			fullName?: string
 		} = {
 			email: factsStudent.email,
@@ -132,8 +134,10 @@ async function syncSingleStudent(
 			status: factsStudent.status,
 		}
 
-		// Only update fullName if it hasn't been edited by admin
+		// Only update name fields if it hasn't been edited by admin
 		if (!existingStudent.isNameEdited) {
+			updateData.firstName = factsStudent.firstName
+			updateData.lastName = factsStudent.lastName
 			updateData.fullName = factsStudent.fullName
 		}
 
@@ -148,6 +152,8 @@ async function syncSingleStudent(
 		const newStudent = await prisma.student.create({
 			data: {
 				sisStudentId: factsStudent.sisStudentId,
+				firstName: factsStudent.firstName,
+				lastName: factsStudent.lastName,
 				fullName: factsStudent.fullName,
 				email: factsStudent.email,
 				grade: factsStudent.grade,

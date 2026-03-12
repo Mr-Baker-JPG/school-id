@@ -78,6 +78,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 	// Prepare employee data for wallet pass generation
 	const employeeData: EmployeePDFData = {
 		id: employee.id,
+		firstName: employee.firstName,
+		lastName: employee.lastName,
 		fullName: employee.fullName,
 		jobTitle: employee.jobTitle,
 		personType: getEmployeePersonType(employee.jobTitle),

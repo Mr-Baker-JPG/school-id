@@ -27,6 +27,8 @@ describe('ID Card Layout - Person Type Display (F039)', () => {
 	it('Employee ID cards display "FACULTY" label', () => {
 		const facultyData: EmployeePDFData = {
 			id: 'emp-1',
+			firstName: 'John',
+			lastName: 'Doe',
 			fullName: 'John Doe',
 			jobTitle: 'Teacher', // Kept for backward compatibility
 			personType: 'FACULTY',
@@ -57,6 +59,8 @@ describe('ID Card Layout - Person Type Display (F039)', () => {
 	it('Student ID cards display "STUDENT" label', () => {
 		const studentData: EmployeePDFData = {
 			id: 'stu-1',
+			firstName: 'Jane',
+			lastName: 'Smith',
 			fullName: 'Jane Smith',
 			personType: 'STUDENT',
 			email: 'jane.smith@school.org',
@@ -81,10 +85,12 @@ describe('ID Card Layout - Person Type Display (F039)', () => {
 		expect(container.textContent).toContain('STUDENT')
 	})
 
-	it('Displays first two names for multi-part names', () => {
-		// Test case: person with middle name(s) should show first two names
+	it('Displays firstName + lastName on ID cards', () => {
+		// Test case: ID cards show firstName + lastName from database
 		const multiPartNameData: EmployeePDFData = {
 			id: 'emp-1',
+			firstName: 'Mary Jane',
+			lastName: 'Smith',
 			fullName: 'Mary Jane Watson Smith',
 			personType: 'FACULTY',
 			email: 'mary.jane@example.com',
@@ -105,17 +111,17 @@ describe('ID Card Layout - Person Type Display (F039)', () => {
 			/>,
 		)
 
-		// Should display first two names: "MARY JANE"
+		// Should display firstName + lastName: "MARY JANE SMITH"
 		expect(container.textContent).toContain('MARY JANE')
-		// Should NOT display the last name(s)
-		expect(container.textContent).not.toContain('WATSON')
-		expect(container.textContent).not.toContain('SMITH')
+		expect(container.textContent).toContain('SMITH')
 	})
 
 	it('Displays both names for two-part names', () => {
 		// Test case: person with just first and last name should show both
 		const twoPartNameData: EmployeePDFData = {
 			id: 'emp-1',
+			firstName: 'John',
+			lastName: 'Smith',
 			fullName: 'John Smith',
 			personType: 'STAFF',
 			email: 'john.smith@example.com',
@@ -136,13 +142,15 @@ describe('ID Card Layout - Person Type Display (F039)', () => {
 			/>,
 		)
 
-		// Should display both names: "JOHN SMITH"
+		// Should display firstName + lastName: "JOHN SMITH"
 		expect(container.textContent).toContain('JOHN SMITH')
 	})
 
 	it('Academic year displays correctly for both types', () => {
 		const facultyData: EmployeePDFData = {
 			id: 'emp-1',
+			firstName: 'John',
+			lastName: 'Doe',
 			fullName: 'John Doe',
 			personType: 'FACULTY',
 			email: 'john.doe@example.com',
@@ -195,6 +203,8 @@ describe('ID Card Layout - Person Type Display (F039)', () => {
 
 		const facultyData: EmployeePDFData = {
 			id: 'emp-1',
+			firstName: 'John',
+			lastName: 'Doe',
 			fullName: 'John Doe',
 			personType: 'FACULTY',
 			email: 'john.doe@example.com',
@@ -248,6 +258,8 @@ describe('ID Card Layout - Person Type Display (F039)', () => {
 
 		const facultyData: EmployeePDFData = {
 			id: 'emp-1',
+			firstName: 'John',
+			lastName: 'Doe',
 			fullName: 'John Doe',
 			personType: 'FACULTY',
 			email: 'john.doe@example.com',

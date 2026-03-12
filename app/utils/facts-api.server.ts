@@ -79,6 +79,8 @@ export interface FactsPagedResult<T> {
 
 export interface FactsEmployeeData {
 	sisEmployeeId: string
+	firstName: string
+	lastName: string
 	fullName: string
 	jobTitle: string
 	email: string
@@ -87,6 +89,8 @@ export interface FactsEmployeeData {
 
 export interface FactsStudentData {
 	sisStudentId: string
+	firstName: string
+	lastName: string
 	fullName: string
 	email: string
 	grade: string
@@ -257,8 +261,8 @@ function transformStaffToEmployee(
 	}
 
 	// Build full name from available fields
-	const firstName = staff.firstName || ''
-	const lastName = staff.lastName || ''
+	const firstName = (staff.firstName || '').trim()
+	const lastName = (staff.lastName || '').trim()
 	const middleName = staff.middleName || ''
 	const name = staff.name || ''
 
@@ -278,6 +282,8 @@ function transformStaffToEmployee(
 
 	return {
 		sisEmployeeId: staff.staffId.toString(),
+		firstName: firstName || 'Unknown',
+		lastName: lastName || 'Unknown',
 		fullName: fullName.trim(),
 		jobTitle: jobTitle.trim(),
 		email: email.trim(),
@@ -697,6 +703,8 @@ function transformStudentToStudent(
 
 	return {
 		sisStudentId: student.studentId.toString(),
+		firstName: firstName || 'Unknown',
+		lastName: lastName || 'Unknown',
 		fullName: normalizedFullName,
 		email: email.trim(),
 		grade,

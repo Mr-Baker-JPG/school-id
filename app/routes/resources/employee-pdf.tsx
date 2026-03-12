@@ -36,6 +36,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 			where: { email: user.email },
 			select: {
 				id: true,
+				firstName: true,
+				lastName: true,
 				fullName: true,
 				jobTitle: true,
 				email: true,
@@ -84,6 +86,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 		// Prepare employee data for PDF generation
 		const employeePDFData = {
 			id: employee.id,
+			firstName: employee.firstName,
+			lastName: employee.lastName,
 			fullName: employee.fullName,
 			jobTitle: employee.jobTitle,
 			personType: getEmployeePersonType(employee.jobTitle),

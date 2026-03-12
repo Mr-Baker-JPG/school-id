@@ -188,7 +188,9 @@ model Passkey {
 model Employee {
   id            String @id @default(cuid())
   sisEmployeeId String @unique
-  fullName      String
+  firstName     String
+  lastName      String
+  fullName      String // Kept for backward compatibility
   jobTitle      String
   email         String @unique
   status        String // 'active' or 'inactive'
@@ -241,7 +243,9 @@ model SyncHistory {
 model Student {
   id            String @id @default(cuid())
   sisStudentId  String @unique
-  fullName      String
+  firstName     String
+  lastName      String
+  fullName      String // Kept for backward compatibility, can be edited by admin
   email         String @unique
   grade         String?
   status        String // 'active' or 'inactive'

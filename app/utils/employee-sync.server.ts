@@ -154,6 +154,8 @@ async function syncSingleEmployee(
 		await prisma.employee.update({
 			where: { sisEmployeeId: factsEmployee.sisEmployeeId },
 			data: {
+				firstName: factsEmployee.firstName,
+				lastName: factsEmployee.lastName,
 				fullName: factsEmployee.fullName,
 				jobTitle: factsEmployee.jobTitle,
 				email: factsEmployee.email,
@@ -167,6 +169,8 @@ async function syncSingleEmployee(
 		const newEmployee = await prisma.employee.create({
 			data: {
 				sisEmployeeId: factsEmployee.sisEmployeeId,
+				firstName: factsEmployee.firstName,
+				lastName: factsEmployee.lastName,
 				fullName: factsEmployee.fullName,
 				jobTitle: factsEmployee.jobTitle,
 				email: factsEmployee.email,
