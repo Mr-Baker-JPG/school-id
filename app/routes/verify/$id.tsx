@@ -266,7 +266,7 @@ export default function VerifyId({ loaderData }: Route.ComponentProps) {
 											<img
 												src={photoSrc}
 												alt={`${person.fullName}'s photo`}
-												className="size-36 object-cover"
+												className="size-36 object-cover object-top"
 											/>
 										) : (
 											<div className="bg-muted flex size-36 items-center justify-center">
@@ -385,7 +385,7 @@ export function ErrorBoundary() {
 							<Img
 								src={LOGO_SRC}
 								alt={SCHOOL_NAME}
-								className="h-12 w-auto object-contain"
+								className="h-12 w-auto object-contain object-top"
 								width={96}
 								height={96}
 							/>
@@ -405,7 +405,7 @@ export function ErrorBoundary() {
 							<Img
 								src={LOGO_SRC}
 								alt={SCHOOL_NAME}
-								className="h-12 w-auto object-contain"
+								className="h-12 w-auto object-contain object-top"
 								width={96}
 								height={96}
 							/>
