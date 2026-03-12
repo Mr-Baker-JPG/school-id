@@ -83,7 +83,27 @@ export function createColumns<TEmployee extends Employee>(
 		},
 		{
 			accessorKey: 'fullName',
-			header: 'Employee',
+			header: ({ column }) => {
+				return (
+					<Button
+						variant="ghost"
+						onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+						className="-ml-4"
+					>
+						Employee
+						<Icon
+							name="chevron-up"
+							className={`ml-2 size-4 ${
+								column.getIsSorted() === 'asc'
+									? ''
+									: column.getIsSorted() === 'desc'
+										? 'rotate-180'
+										: 'opacity-40'
+							}`}
+						/>
+					</Button>
+				)
+			},
 			cell: ({ row }) => {
 				const employee = row.original
 				return (
@@ -109,7 +129,27 @@ export function createColumns<TEmployee extends Employee>(
 		},
 		{
 			accessorKey: 'status',
-			header: 'Status',
+			header: ({ column }) => {
+				return (
+					<Button
+						variant="ghost"
+						onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+						className="-ml-4"
+					>
+						Status
+						<Icon
+							name="chevron-up"
+							className={`ml-2 size-4 ${
+								column.getIsSorted() === 'asc'
+									? ''
+									: column.getIsSorted() === 'desc'
+										? 'rotate-180'
+										: 'opacity-40'
+							}`}
+						/>
+					</Button>
+				)
+			},
 			cell: ({ row }) => {
 				const employee = row.original
 				return (
@@ -123,7 +163,32 @@ export function createColumns<TEmployee extends Employee>(
 		},
 		{
 			id: 'expirationDate',
-			header: 'Expiration Date',
+			accessorFn: (row) => {
+				return row.employeeId?.expirationDate
+					? new Date(row.employeeId.expirationDate).getTime()
+					: 0
+			},
+			header: ({ column }) => {
+				return (
+					<Button
+						variant="ghost"
+						onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+						className="-ml-4"
+					>
+						Expiration Date
+						<Icon
+							name="chevron-up"
+							className={`ml-2 size-4 ${
+								column.getIsSorted() === 'asc'
+									? ''
+									: column.getIsSorted() === 'desc'
+										? 'rotate-180'
+										: 'opacity-40'
+							}`}
+						/>
+					</Button>
+				)
+			},
 			cell: ({ row }) => {
 				const employee = row.original
 				return (
@@ -159,7 +224,28 @@ export function createColumns<TEmployee extends Employee>(
 		},
 		{
 			id: 'photo',
-			header: 'Photo',
+			accessorFn: (row) => (row.employeeId?.photoUrl ? 1 : 0),
+			header: ({ column }) => {
+				return (
+					<Button
+						variant="ghost"
+						onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+						className="-ml-4"
+					>
+						Photo
+						<Icon
+							name="chevron-up"
+							className={`ml-2 size-4 ${
+								column.getIsSorted() === 'asc'
+									? ''
+									: column.getIsSorted() === 'desc'
+										? 'rotate-180'
+										: 'opacity-40'
+							}`}
+						/>
+					</Button>
+				)
+			},
 			cell: ({ row }) => {
 				const employee = row.original
 				return (
@@ -188,7 +274,28 @@ export function createColumns<TEmployee extends Employee>(
 		},
 		{
 			id: 'signature',
-			header: 'Signature',
+			accessorFn: (row) => (row.employeeId?.gmailSignature ? 1 : 0),
+			header: ({ column }) => {
+				return (
+					<Button
+						variant="ghost"
+						onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+						className="-ml-4"
+					>
+						Signature
+						<Icon
+							name="chevron-up"
+							className={`ml-2 size-4 ${
+								column.getIsSorted() === 'asc'
+									? ''
+									: column.getIsSorted() === 'desc'
+										? 'rotate-180'
+										: 'opacity-40'
+							}`}
+						/>
+					</Button>
+				)
+			},
 			cell: ({ row }) => {
 				const employee = row.original
 				const hasSignature = !!employee.employeeId?.gmailSignature

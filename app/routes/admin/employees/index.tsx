@@ -46,6 +46,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 	const searchParams = new URL(request.url).searchParams
 	const search = searchParams.get('search')
 	const status = searchParams.get('status') // 'active', 'inactive', or null for all
+	const photo = searchParams.get('photo') // 'yes', 'no', or null for all
+	const signature = searchParams.get('signature') // 'yes', 'no', or null for all
 
 	// Redirect if search is empty string
 	if (search === '') {
@@ -59,6 +61,10 @@ export async function loader({ request }: Route.LoaderArgs) {
 			{ fullName: { contains: string } } | { email: { contains: string } }
 		>
 		status?: string
+		employeeId?: {
+			photoUrl?: { not: string | null } | null | { equals: null }
+			gmailSignature?: { not: string | null } | null | { equals: null }
+		}
 	} = {}
 
 	// Add search filter (name or email)
@@ -72,6 +78,24 @@ export async function loader({ request }: Route.LoaderArgs) {
 	// Add status filter
 	if (status === 'active' || status === 'inactive') {
 		where.status = status
+	}
+
+	// Add photo filter
+	if (photo === 'yes') {
+		where.employeeId = where.employeeId || {}
+		where.employeeId.photoUrl = { not: null }
+	} else if (photo === 'no') {
+		where.employeeId = where.employeeId || {}
+		where.employeeId.photoUrl = { equals: null }
+	}
+
+	// Add signature filter
+	if (signature === 'yes') {
+		where.employeeId = where.employeeId || {}
+		where.employeeId.gmailSignature = { not: null }
+	} else if (signature === 'no') {
+		where.employeeId = where.employeeId || {}
+		where.employeeId.gmailSignature = { equals: null }
 	}
 
 	// Fetch employees with their EmployeeID data
@@ -122,6 +146,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 		employees: employeesWithExpirationStatus,
 		search: search ?? '',
 		status: status ?? 'all',
+		photo: photo ?? 'all',
+		signature: signature ?? 'all',
 		expiringCount,
 		expiredCount,
 	}
@@ -513,6 +539,36 @@ export default function AdminEmployeesRoute({
 								<option value="all">All</option>
 								<option value="active">Active</option>
 								<option value="inactive">Inactive</option>
+							</select>
+						</div>
+						<div className="flex flex-col gap-1 sm:w-auto">
+							<label htmlFor="photo-filter" className="text-body-xs">
+								Photo
+							</label>
+							<select
+								id="photo-filter"
+								name="photo"
+								defaultValue={loaderData.photo}
+								className="border-input bg-background h-10 rounded-md border px-3 py-2"
+							>
+								<option value="all">All</option>
+								<option value="yes">Has Photo</option>
+								<option value="no">No Photo</option>
+							</select>
+						</div>
+						<div className="flex flex-col gap-1 sm:w-auto">
+							<label htmlFor="signature-filter" className="text-body-xs">
+								Signature
+							</label>
+							<select
+								id="signature-filter"
+								name="signature"
+								defaultValue={loaderData.signature}
+								className="border-input bg-background h-10 rounded-md border px-3 py-2"
+							>
+								<option value="all">All</option>
+								<option value="yes">Has Signature</option>
+								<option value="no">No Signature</option>
 							</select>
 						</div>
 					</div>

@@ -252,6 +252,32 @@ export async function action({ request }: Route.ActionArgs) {
 		}
 	}
 
+	if (intent === 'sync-gmail-signatures') {
+		const result = await gmailSignatureService.syncAllSignatures()
+
+		if (result.success) {
+			const message =
+				result.fetched > 0
+					? `Gmail signature sync completed: ${result.fetched} fetched, ${result.skipped} skipped (no signature)`
+					: 'Gmail signature sync completed: No signatures found'
+
+			return redirectWithToast('/admin/sync-status', {
+				type: 'success',
+				title: 'Gmail Signature Sync Successful',
+				description: message,
+			})
+		} else {
+			return redirectWithToast('/admin/sync-status', {
+				type: 'error',
+				title: 'Gmail Signature Sync Failed',
+				description:
+					result.errorMessages.length > 0
+						? result.errorMessages.slice(0, 3).join('; ')
+						: 'An error occurred during sync',
+			})
+		}
+	}
+
 	return redirect('/admin/sync-status')
 }
 
@@ -264,8 +290,10 @@ function SyncStatusCard({
 	personType,
 	syncPending,
 	googleSyncPending,
+	gmailSyncPending,
 	onSyncClick,
 	onGoogleSyncClick,
+	onGmailSyncClick,
 	confirmDialogOpen,
 	setConfirmDialogOpen,
 	confirmationChecked,
@@ -276,6 +304,11 @@ function SyncStatusCard({
 	setGoogleDialogOpen,
 	googleConfirmationChecked,
 	setGoogleConfirmationChecked,
+	gmailDialogOpen,
+	setGmailDialogOpen,
+	gmailConfirmationChecked,
+	setGmailConfirmationChecked,
+	gmailFormAction,
 }: {
 	title: string
 	lastSync: any
@@ -285,8 +318,10 @@ function SyncStatusCard({
 	personType: 'staff' | 'students'
 	syncPending: boolean
 	googleSyncPending: boolean
+	gmailSyncPending?: boolean
 	onSyncClick: () => void
 	onGoogleSyncClick: () => void
+	onGmailSyncClick?: () => void
 	confirmDialogOpen: boolean
 	setConfirmDialogOpen: (open: boolean) => void
 	confirmationChecked: boolean
@@ -297,6 +332,11 @@ function SyncStatusCard({
 	setGoogleDialogOpen: (open: boolean) => void
 	googleConfirmationChecked: boolean
 	setGoogleConfirmationChecked: (checked: boolean) => void
+	gmailDialogOpen?: boolean
+	setGmailDialogOpen?: (open: boolean) => void
+	gmailConfirmationChecked?: boolean
+	setGmailConfirmationChecked?: (checked: boolean) => void
+	gmailFormAction?: string
 }) {
 	const revalidator = useRevalidator()
 	const personLinkBase = personType === 'staff' ? '/admin/employees' : '/admin/students'
@@ -332,6 +372,18 @@ function SyncStatusCard({
 					<Icon name="update" className="mr-2" />
 					Sync to Google
 				</StatusButton>
+				{personType === 'staff' && (
+					<StatusButton
+						type="button"
+						variant="outline"
+						status={gmailSyncPending ? 'pending' : 'idle'}
+						disabled={gmailSyncPending}
+						onClick={onGmailSyncClick}
+					>
+						<Icon name="mail" className="mr-2" />
+						Sync Gmail Signatures
+					</StatusButton>
+				)}
 			</div>
 
 			{/* Last Sync Status */}
@@ -657,6 +709,86 @@ function SyncStatusCard({
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			{/* Gmail Signature Sync Confirmation Dialog */}
+			{personType === 'staff' && gmailDialogOpen !== undefined && setGmailDialogOpen && (
+				<Dialog
+					open={gmailDialogOpen}
+					onOpenChange={(open) => {
+						setGmailDialogOpen(open)
+						if (!open && setGmailConfirmationChecked) {
+							setGmailConfirmationChecked(false)
+						}
+					}}
+				>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>Sync Gmail Signatures</DialogTitle>
+							<DialogDescription>
+								This will fetch Gmail signatures for all active staff and faculty members and cache them in the ID system.
+							</DialogDescription>
+						</DialogHeader>
+
+						<div className="bg-muted/50 border-border rounded-md border p-3 text-sm">
+							<p className="text-foreground font-medium">
+								<strong>What will happen:</strong>
+							</p>
+							<ul className="text-muted-foreground mt-2 list-disc space-y-1 pl-5">
+								<li>Gmail signatures will be fetched via Google Workspace API</li>
+								<li>Signatures will be cached in the database for 7 days</li>
+								<li>Staff and faculty without Gmail signatures will be skipped</li>
+								<li>This may take a few minutes for large batches</li>
+							</ul>
+						</div>
+
+						{/* Confirmation Checkbox */}
+						<div className="flex items-start gap-2">
+							<input
+								type="checkbox"
+								id="gmail-sync-confirmation"
+								checked={gmailConfirmationChecked ?? false}
+								onChange={(e) => setGmailConfirmationChecked?.(e.target.checked)}
+								className="mt-1 h-4 w-4 rounded border-gray-300"
+							/>
+							<label
+								htmlFor="gmail-sync-confirmation"
+								className="text-foreground text-sm leading-relaxed"
+							>
+								I understand that Gmail signatures will be fetched and cached in the ID system.
+							</label>
+						</div>
+
+						<DialogFooter>
+							<Button
+								variant="outline"
+								onClick={() => {
+									setGmailDialogOpen(false)
+									setGmailConfirmationChecked?.(false)
+								}}
+								disabled={gmailSyncPending}
+							>
+								Cancel
+							</Button>
+							<Form method="post" action="/admin/sync-status">
+								<input type="hidden" name="intent" value={gmailFormAction ?? 'sync-gmail-signatures'} />
+								<Button
+									type="submit"
+									disabled={gmailSyncPending || !gmailConfirmationChecked}
+								>
+									{gmailSyncPending ? (
+										<>
+											<Icon name="update" className="mr-2 animate-spin" />
+											Syncing...
+										</>
+									) : (
+										'Sync Gmail Signatures'
+									)}
+								</Button>
+							</Form>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
+			)}
 		</div>
 	)
 }
@@ -688,6 +820,12 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 
 	const [studentGoogleDialogOpen, setStudentGoogleDialogOpen] = useState(false)
 	const [studentGoogleConfirmationChecked, setStudentGoogleConfirmationChecked] =
+		useState(false)
+
+	// Gmail signature sync
+	const gmailSyncPending = useIsPending({ formAction: '/admin/sync-status' })
+	const [staffGmailDialogOpen, setStaffGmailDialogOpen] = useState(false)
+	const [staffGmailConfirmationChecked, setStaffGmailConfirmationChecked] =
 		useState(false)
 
 	return (
@@ -743,8 +881,10 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 					personType="staff"
 					syncPending={staffSyncPending}
 					googleSyncPending={staffSyncPending}
+					gmailSyncPending={staffSyncPending}
 					onSyncClick={() => setStaffDialogOpen(true)}
 					onGoogleSyncClick={() => setStaffGoogleDialogOpen(true)}
+					onGmailSyncClick={() => setStaffGmailDialogOpen(true)}
 					confirmDialogOpen={staffDialogOpen}
 					setConfirmDialogOpen={setStaffDialogOpen}
 					confirmationChecked={staffConfirmationChecked}
@@ -755,6 +895,11 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 					setGoogleDialogOpen={setStaffGoogleDialogOpen}
 					googleConfirmationChecked={staffGoogleConfirmationChecked}
 					setGoogleConfirmationChecked={setStaffGoogleConfirmationChecked}
+					gmailDialogOpen={staffGmailDialogOpen}
+					setGmailDialogOpen={setStaffGmailDialogOpen}
+					gmailConfirmationChecked={staffGmailConfirmationChecked}
+					setGmailConfirmationChecked={setStaffGmailConfirmationChecked}
+					gmailFormAction="sync-gmail-signatures"
 				/>
 			</div>
 

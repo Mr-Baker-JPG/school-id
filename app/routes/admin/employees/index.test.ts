@@ -62,6 +62,15 @@ async function createEmployee(data?: {
 	expirationDate?: Date
 	hasSignature?: boolean
 }) {
+	// Determine if we need to create an EmployeeID record
+	// We need one if any of these are explicitly set or if we need to filter by null values
+	const needsEmployeeId =
+		data?.hasPhoto ||
+		data?.hasPhoto === false ||
+		data?.expirationDate ||
+		data?.hasSignature ||
+		data?.hasSignature === false
+
 	const employee = await prisma.employee.create({
 		data: {
 			sisEmployeeId: faker.string.alphanumeric(10),
@@ -69,20 +78,19 @@ async function createEmployee(data?: {
 			jobTitle: data?.jobTitle ?? faker.person.jobTitle(),
 			email: data?.email ?? faker.internet.email(),
 			status: data?.status ?? 'active',
-			employeeId:
-				data?.hasPhoto || data?.expirationDate || data?.hasSignature
-					? {
-							create: {
-								photoUrl: data?.hasPhoto ? faker.internet.url() : null,
-								expirationDate:
-									data?.expirationDate ??
-									new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
-								gmailSignature: data?.hasSignature
-									? '<div>Test Signature</div>'
-									: null,
-							},
-						}
-					: undefined,
+			employeeId: needsEmployeeId
+				? {
+						create: {
+							photoUrl: data?.hasPhoto ? faker.internet.url() : null,
+							expirationDate:
+								data?.expirationDate ??
+								new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+							gmailSignature: data?.hasSignature
+								? '<div>Test Signature</div>'
+								: null,
+						},
+					}
+				: undefined,
 		},
 		select: {
 			id: true,
@@ -567,6 +575,138 @@ test('Expiration calculation uses correct date logic', async () => {
 	// Cleanup
 	await prisma.employee.deleteMany({
 		where: { id: { in: [employee30.id, employee31.id] } },
+	})
+	await prisma.user.delete({ where: { id: admin.id } })
+})
+
+test('Filter by photo (yes) works correctly', async () => {
+	const admin = await createAdminUser()
+	const employee1 = await createEmployee({
+		fullName: 'Employee With Photo',
+		hasPhoto: true,
+	})
+	const employee2 = await createEmployee({
+		fullName: 'Employee Without Photo',
+		hasPhoto: false,
+	})
+
+	const request = await createRequestWithSession(
+		admin.id,
+		'/admin/employees?photo=yes',
+	)
+
+	const result = await loader({
+		request,
+		params: {},
+		context: {},
+	} as any)
+
+	expect(result.employees).toHaveLength(1)
+	expect(result.employees[0].fullName).toBe('Employee With Photo')
+	expect(result.employees[0].employeeId?.photoUrl).toBeTruthy()
+
+	// Cleanup
+	await prisma.employee.deleteMany({
+		where: { id: { in: [employee1.id, employee2.id] } },
+	})
+	await prisma.user.delete({ where: { id: admin.id } })
+})
+
+test('Filter by photo (no) works correctly', async () => {
+	const admin = await createAdminUser()
+	const employee1 = await createEmployee({
+		fullName: 'Employee With Photo',
+		hasPhoto: true,
+	})
+	const employee2 = await createEmployee({
+		fullName: 'Employee Without Photo',
+		hasPhoto: false,
+	})
+
+	const request = await createRequestWithSession(
+		admin.id,
+		'/admin/employees?photo=no',
+	)
+
+	const result = await loader({
+		request,
+		params: {},
+		context: {},
+	} as any)
+
+	expect(result.employees).toHaveLength(1)
+	expect(result.employees[0].fullName).toBe('Employee Without Photo')
+	expect(result.employees[0].employeeId?.photoUrl).toBeNull()
+
+	// Cleanup
+	await prisma.employee.deleteMany({
+		where: { id: { in: [employee1.id, employee2.id] } },
+	})
+	await prisma.user.delete({ where: { id: admin.id } })
+})
+
+test('Filter by signature (yes) works correctly', async () => {
+	const admin = await createAdminUser()
+	const employee1 = await createEmployee({
+		fullName: 'Employee With Signature',
+		hasSignature: true,
+	})
+	const employee2 = await createEmployee({
+		fullName: 'Employee Without Signature',
+		hasSignature: false,
+	})
+
+	const request = await createRequestWithSession(
+		admin.id,
+		'/admin/employees?signature=yes',
+	)
+
+	const result = await loader({
+		request,
+		params: {},
+		context: {},
+	} as any)
+
+	expect(result.employees).toHaveLength(1)
+	expect(result.employees[0].fullName).toBe('Employee With Signature')
+	expect(result.employees[0].employeeId?.gmailSignature).toBeTruthy()
+
+	// Cleanup
+	await prisma.employee.deleteMany({
+		where: { id: { in: [employee1.id, employee2.id] } },
+	})
+	await prisma.user.delete({ where: { id: admin.id } })
+})
+
+test('Filter by signature (no) works correctly', async () => {
+	const admin = await createAdminUser()
+	const employee1 = await createEmployee({
+		fullName: 'Employee With Signature',
+		hasSignature: true,
+	})
+	const employee2 = await createEmployee({
+		fullName: 'Employee Without Signature',
+		hasSignature: false,
+	})
+
+	const request = await createRequestWithSession(
+		admin.id,
+		'/admin/employees?signature=no',
+	)
+
+	const result = await loader({
+		request,
+		params: {},
+		context: {},
+	} as any)
+
+	expect(result.employees).toHaveLength(1)
+	expect(result.employees[0].fullName).toBe('Employee Without Signature')
+	expect(result.employees[0].employeeId?.gmailSignature).toBeNull()
+
+	// Cleanup
+	await prisma.employee.deleteMany({
+		where: { id: { in: [employee1.id, employee2.id] } },
 	})
 	await prisma.user.delete({ where: { id: admin.id } })
 })
