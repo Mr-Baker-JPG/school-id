@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
-import { Form, useSearchParams, useSubmit } from 'react-router'
+import { Form, useSubmit } from 'react-router'
 import { Button } from '#app/components/ui/button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
@@ -106,7 +106,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		classification === 'all'
 			? employees
 			: employees.filter((e) => {
-					const pType = getEmployeePersonType(e.jobTitle)
+					const pType = getEmployeePersonType(e.department)
 					return classification === 'faculty'
 						? pType === 'FACULTY'
 						: pType === 'STAFF'
@@ -123,7 +123,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 			status: e.status,
 			sisId: e.sisEmployeeId,
 			hasPhoto: !!e.employeeId?.photoUrl,
-			personType: getEmployeePersonType(e.jobTitle),
+			personType: getEmployeePersonType(e.department),
 		})),
 		...students.map((s) => ({
 			id: s.id,
@@ -166,35 +166,124 @@ export async function loader({ request }: Route.LoaderArgs) {
 	}
 }
 
+// --- Sort types ---
+type SortField = 'fullName' | 'personType' | 'label' | 'hasPhoto'
+type SortDir = 'asc' | 'desc'
+
+type Person = {
+	id: string
+	type: 'employee' | 'student'
+	fullName: string
+	label: string | null
+	email: string
+	status: string
+	sisId: string
+	hasPhoto: boolean
+	personType: string
+}
+
+function sortPeople(people: Person[], field: SortField, dir: SortDir) {
+	const sorted = [...people]
+	sorted.sort((a, b) => {
+		let cmp = 0
+		switch (field) {
+			case 'fullName':
+				cmp = a.fullName.localeCompare(b.fullName)
+				break
+			case 'personType':
+				cmp = a.personType.localeCompare(b.personType)
+				break
+			case 'label':
+				cmp = (a.label ?? '').localeCompare(b.label ?? '')
+				break
+			case 'hasPhoto':
+				cmp = Number(a.hasPhoto) - Number(b.hasPhoto)
+				break
+		}
+		return dir === 'asc' ? cmp : -cmp
+	})
+	return sorted
+}
+
+function SortIndicator({ field, sortField, sortDir }: { field: SortField; sortField: SortField; sortDir: SortDir }) {
+	const isActive = field === sortField
+	return (
+		<span className="ml-1 inline-flex flex-col leading-none">
+			<svg width="8" height="5" viewBox="0 0 8 5" className={cn('-mb-px', isActive && sortDir === 'asc' ? 'text-foreground' : 'text-muted-foreground/30')}>
+				<path d="M4 0L8 5H0L4 0Z" fill="currentColor" />
+			</svg>
+			<svg width="8" height="5" viewBox="0 0 8 5" className={cn(isActive && sortDir === 'desc' ? 'text-foreground' : 'text-muted-foreground/30')}>
+				<path d="M4 5L0 0H8L4 5Z" fill="currentColor" />
+			</svg>
+		</span>
+	)
+}
+
 export default function AdminPrintRoute({ loaderData }: Route.ComponentProps) {
 	const { people, departments, grades, filters } = loaderData
 	const [searchParams] = useSearchParams()
 	const submit = useSubmit()
 	const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set())
+	const [sortField, setSortField] = React.useState<SortField>('fullName')
+	const [sortDir, setSortDir] = React.useState<SortDir>('asc')
+	const lastClickedIndexRef = React.useRef<number | null>(null)
+
+	// Sort people client-side
+	const sortedPeople = React.useMemo(
+		() => sortPeople(people, sortField, sortDir),
+		[people, sortField, sortDir],
+	)
+
+	function handleSort(field: SortField) {
+		if (sortField === field) {
+			setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+		} else {
+			setSortField(field)
+			setSortDir('asc')
+		}
+	}
 
 	const allSelected =
-		people.length > 0 && selectedIds.size === people.length
+		sortedPeople.length > 0 && selectedIds.size === sortedPeople.length
 	const someSelected = selectedIds.size > 0
 
 	function toggleAll() {
 		if (allSelected) {
 			setSelectedIds(new Set())
 		} else {
-			setSelectedIds(new Set(people.map((p) => `${p.type}:${p.id}`)))
+			setSelectedIds(new Set(sortedPeople.map((p) => `${p.type}:${p.id}`)))
 		}
 	}
 
-	function toggleOne(type: string, id: string) {
-		const key = `${type}:${id}`
-		setSelectedIds((prev) => {
-			const next = new Set(prev)
-			if (next.has(key)) {
-				next.delete(key)
-			} else {
-				next.add(key)
-			}
-			return next
-		})
+	function handleRowClick(index: number, event: React.MouseEvent) {
+		const person = sortedPeople[index]!
+		const key = `${person.type}:${person.id}`
+
+		if (event.shiftKey && lastClickedIndexRef.current !== null) {
+			// Shift+click: select range between last clicked and current
+			const start = Math.min(lastClickedIndexRef.current, index)
+			const end = Math.max(lastClickedIndexRef.current, index)
+			setSelectedIds((prev) => {
+				const next = new Set(prev)
+				for (let i = start; i <= end; i++) {
+					const p = sortedPeople[i]!
+					next.add(`${p.type}:${p.id}`)
+				}
+				return next
+			})
+		} else {
+			// Normal click: toggle single row
+			setSelectedIds((prev) => {
+				const next = new Set(prev)
+				if (next.has(key)) {
+					next.delete(key)
+				} else {
+					next.add(key)
+				}
+				return next
+			})
+		}
+		lastClickedIndexRef.current = index
 	}
 
 	const handleSearchChange = useDebounce(async (form: HTMLFormElement) => {
@@ -234,6 +323,9 @@ export default function AdminPrintRoute({ loaderData }: Route.ComponentProps) {
 		for (const id of studentIds) params.append('studentIds', id)
 		return `/admin/print/generate?${params.toString()}`
 	}
+
+	const thClass =
+		'px-3 py-2 text-left font-mono text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors'
 
 	return (
 		<div className="h-full overflow-y-auto px-6 py-6 font-body">
@@ -333,7 +425,7 @@ export default function AdminPrintRoute({ loaderData }: Route.ComponentProps) {
 							<span className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
 								{someSelected
 									? `${selectedIds.size} selected`
-									: `${people.length} people`}
+									: `${sortedPeople.length} people`}
 							</span>
 						</label>
 					</div>
@@ -350,7 +442,7 @@ export default function AdminPrintRoute({ loaderData }: Route.ComponentProps) {
 				</div>
 
 				{/* People list */}
-				{people.length === 0 ? (
+				{sortedPeople.length === 0 ? (
 					<div className="flex flex-col items-center justify-center border border-border p-12 text-center">
 						<Icon name="user" className="mb-3 size-10 text-muted-foreground" />
 						<p className="font-body text-sm text-muted-foreground">
@@ -370,29 +462,42 @@ export default function AdminPrintRoute({ loaderData }: Route.ComponentProps) {
 											className="size-3.5 accent-brand-gold"
 										/>
 									</th>
-									<th className="px-3 py-2 text-left font-mono text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-										Name
+									<th className={thClass} onClick={() => handleSort('fullName')}>
+										<span className="inline-flex items-center gap-0.5">
+											Name
+											<SortIndicator field="fullName" sortField={sortField} sortDir={sortDir} />
+										</span>
 									</th>
-									<th className="hidden px-3 py-2 text-left font-mono text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground sm:table-cell">
-										Type
+									<th className={cn(thClass, 'hidden sm:table-cell')} onClick={() => handleSort('personType')}>
+										<span className="inline-flex items-center gap-0.5">
+											Type
+											<SortIndicator field="personType" sortField={sortField} sortDir={sortDir} />
+										</span>
 									</th>
-									<th className="hidden px-3 py-2 text-left font-mono text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground md:table-cell">
-										Details
+									<th className={cn(thClass, 'hidden md:table-cell')} onClick={() => handleSort('label')}>
+										<span className="inline-flex items-center gap-0.5">
+											Details
+											<SortIndicator field="label" sortField={sortField} sortDir={sortDir} />
+										</span>
 									</th>
-									<th className="hidden px-3 py-2 text-left font-mono text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground lg:table-cell">
-										Photo
+									<th className={cn(thClass, 'hidden lg:table-cell')} onClick={() => handleSort('hasPhoto')}>
+										<span className="inline-flex items-center gap-0.5">
+											Photo
+											<SortIndicator field="hasPhoto" sortField={sortField} sortDir={sortDir} />
+										</span>
 									</th>
 								</tr>
 							</thead>
 							<tbody>
-								{people.map((person) => {
+								{sortedPeople.map((person, index) => {
 									const key = `${person.type}:${person.id}`
 									const isSelected = selectedIds.has(key)
 									return (
 										<tr
 											key={key}
+											onClick={(e) => handleRowClick(index, e)}
 											className={cn(
-												'border-b border-border transition-colors last:border-0',
+												'cursor-pointer border-b border-border transition-colors last:border-0 select-none',
 												isSelected ? 'bg-brand-gold/5' : 'hover:bg-muted/30',
 											)}
 										>
@@ -400,8 +505,9 @@ export default function AdminPrintRoute({ loaderData }: Route.ComponentProps) {
 												<input
 													type="checkbox"
 													checked={isSelected}
-													onChange={() => toggleOne(person.type, person.id)}
-													className="size-3.5 accent-brand-gold"
+													readOnly
+													tabIndex={-1}
+													className="size-3.5 accent-brand-gold pointer-events-none"
 												/>
 											</td>
 											<td className="px-3 py-2.5">
@@ -444,9 +550,14 @@ export default function AdminPrintRoute({ loaderData }: Route.ComponentProps) {
 					</div>
 				)}
 
-				{/* Footer count */}
-				<div className="font-mono text-[0.65rem] uppercase tracking-[0.08em] text-muted-foreground">
-					{people.length} people · {people.filter((p) => p.type === 'employee').length} employees · {people.filter((p) => p.type === 'student').length} students
+				{/* Shift-click hint */}
+				<div className="flex items-center justify-between">
+					<div className="font-mono text-[0.65rem] uppercase tracking-[0.08em] text-muted-foreground">
+						{sortedPeople.length} people · {sortedPeople.filter((p) => p.type === 'employee').length} employees · {sortedPeople.filter((p) => p.type === 'student').length} students
+					</div>
+					<div className="font-mono text-[0.6rem] tracking-wide text-muted-foreground/60">
+						Shift+click to select a range
+					</div>
 				</div>
 			</div>
 		</div>
