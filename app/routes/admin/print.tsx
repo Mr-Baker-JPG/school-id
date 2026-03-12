@@ -221,7 +221,6 @@ function SortIndicator({ field, sortField, sortDir }: { field: SortField; sortFi
 
 export default function AdminPrintRoute({ loaderData }: Route.ComponentProps) {
 	const { people, departments, grades, filters } = loaderData
-	const [searchParams] = useSearchParams()
 	const submit = useSubmit()
 	const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set())
 	const [sortField, setSortField] = React.useState<SortField>('fullName')
