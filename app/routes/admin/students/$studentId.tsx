@@ -230,6 +230,22 @@ export async function action({ request, params }: Route.ActionArgs) {
 		})
 	}
 
+	if (intent === 'reset-name-sync') {
+		// Reset the isNameEdited flag to allow name to be updated from SIS on next sync
+		await prisma.student.update({
+			where: { id: studentId },
+			data: {
+				isNameEdited: false,
+			},
+		})
+
+		return redirectWithToast(`/admin/students/${studentId}`, {
+			type: 'success',
+			title: 'Name Sync Reset',
+			description: 'Name will be updated from FACTS SIS on the next sync.',
+		})
+	}
+
 	return redirectWithToast(`/admin/students/${studentId}`, {
 		type: 'error',
 		title: 'Error',
@@ -491,6 +507,21 @@ export default function AdminStudentDetailRoute({
 							},
 						]}
 					/>
+					{student.isNameEdited && (
+						<div className="mt-4">
+							<Form method="post">
+								<input type="hidden" name="intent" value="reset-name-sync" />
+								<StatusButton
+									type="submit"
+									variant="outline"
+									size="sm"
+									status={useIsPending({ intent: 'reset-name-sync' }) ? 'pending' : 'idle'}
+								>
+									<Icon name="refresh">Allow Name Sync from SIS</Icon>
+								</StatusButton>
+							</Form>
+						</div>
+					)}
 				</CardSection>
 			</div>
 
