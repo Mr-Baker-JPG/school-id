@@ -24,10 +24,11 @@ import { FontFamilies, CSSFontStacks } from '#app/utils/font-families.ts'
 /**
  * Person type for ID card display
  * - FACULTY: Teaching staff (teachers, professors, instructors)
- * - STAFF: Non-teaching staff (administration, support, etc.)
+ * - STAFF: Non-teaching support staff
+ * - ADMINISTRATION: Administrators
  * - STUDENT: Students
  */
-export type PersonType = 'FACULTY' | 'STAFF' | 'STUDENT'
+export type PersonType = 'FACULTY' | 'STAFF' | 'ADMINISTRATION' | 'STUDENT'
 
 /**
  * Employee data required for ID card generation

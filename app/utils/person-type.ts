@@ -5,18 +5,19 @@
 import type { PersonType } from '#app/components/employee-id-card.tsx'
 
 /**
- * Determines if an employee should be classified as FACULTY or STAFF
+ * Determines if an employee should be classified as FACULTY, STAFF, or ADMINISTRATION
  * based on their department.
  *
  * Business rules:
  * - Department is "Upper School", "Lower School", or "Preschool" → FACULTY
- * - Department is "Administrator" or "Staff" → STAFF
+ * - Department is "Administrator" → ADMINISTRATION
+ * - Department is "Staff" or anything else → STAFF
  * - Everything else → STAFF (default)
  *
  * @param department - The employee's department (derived from FACTS department string + boolean flags)
- * @returns 'FACULTY' or 'STAFF'
+ * @returns 'FACULTY', 'STAFF', or 'ADMINISTRATION'
  */
-export function getEmployeePersonType(department: string | undefined | null): 'FACULTY' | 'STAFF' {
+export function getEmployeePersonType(department: string | undefined | null): 'FACULTY' | 'STAFF' | 'ADMINISTRATION' {
 	// Handle null/undefined/empty
 	if (!department) {
 		return 'STAFF'
@@ -29,7 +30,11 @@ export function getEmployeePersonType(department: string | undefined | null): 'F
 		return 'FACULTY'
 	}
 
-	// Administrator and Staff → STAFF
+	// Administrator → ADMINISTRATION
+	if (dept === 'Administrator') {
+		return 'ADMINISTRATION'
+	}
+
 	// Also handle legacy values that contain "faculty"
 	if (dept.toLowerCase().includes('faculty')) {
 		return 'FACULTY'
@@ -41,6 +46,6 @@ export function getEmployeePersonType(department: string | undefined | null): 'F
 /**
  * Type guard to check if a PersonType is valid for an employee
  */
-export function isEmployeePersonType(type: PersonType): type is 'FACULTY' | 'STAFF' {
-	return type === 'FACULTY' || type === 'STAFF'
+export function isEmployeePersonType(type: PersonType): type is 'FACULTY' | 'STAFF' | 'ADMINISTRATION' {
+	return type === 'FACULTY' || type === 'STAFF' || type === 'ADMINISTRATION'
 }
