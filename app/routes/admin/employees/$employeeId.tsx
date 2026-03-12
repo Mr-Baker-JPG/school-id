@@ -48,6 +48,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		select: {
 			id: true,
 			sisEmployeeId: true,
+			firstName: true,
+			lastName: true,
 			fullName: true,
 			jobTitle: true,
 			email: true,

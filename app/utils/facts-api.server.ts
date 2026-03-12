@@ -239,6 +239,46 @@ async function fetchStaffPage(
 }
 
 /**
+ * Parse a name string into first and last name parts
+ * Handles both "First Last" and "Last, First" formats
+ * Preserves multi-word first names (e.g., "Mary Jane Watson" -> firstName: "Mary Jane", lastName: "Watson")
+ */
+function parseNameParts(nameStr: string): { firstName: string; lastName: string } {
+	const trimmed = nameStr.trim()
+	
+	// Check if name is in "Last, First Middle" format
+	if (trimmed.includes(',')) {
+		const parts = trimmed.split(',').map(p => p.trim())
+		if (parts.length >= 2) {
+			const lastName = parts[0] || ''
+			const firstMiddle = parts[1] || ''
+			// Split first/middle on space, but keep multi-word first names if only two parts
+			const firstMiddleParts = firstMiddle.split(/\s+/).filter(Boolean)
+			// Take everything as firstName (including middle names)
+			// This preserves names like "Mary Jane" in the firstName field
+			const firstName = firstMiddleParts.join(' ')
+			return { firstName, lastName }
+		}
+	}
+	
+	// Handle "First Middle Last" format
+	const parts = trimmed.split(/\s+/).filter(Boolean)
+	if (parts.length === 0) {
+		return { firstName: '', lastName: '' }
+	} else if (parts.length === 1) {
+		return { firstName: parts[0], lastName: '' }
+	} else if (parts.length === 2) {
+		return { firstName: parts[0], lastName: parts[1] }
+	} else {
+		// Multiple parts: assume last word is lastName, everything else is firstName
+		// This preserves multi-word first names like "Mary Jane"
+		const lastName = parts[parts.length - 1]
+		const firstName = parts.slice(0, -1).join(' ')
+		return { firstName, lastName }
+	}
+}
+
+/**
  * Transform FACTS API staff data to Employee schema format
  */
 function transformStaffToEmployee(
@@ -260,19 +300,37 @@ function transformStaffToEmployee(
 		return null
 	}
 
-	// Build full name from available fields
-	const firstName = (staff.firstName || '').trim()
-	const lastName = (staff.lastName || '').trim()
-	const middleName = staff.middleName || ''
-	const name = staff.name || ''
+	// Build name fields from available data
+	// Priority: use individual fields if available, otherwise parse from name field
+	let firstName = (staff.firstName || '').trim()
+	let lastName = (staff.lastName || '').trim()
+	const middleName = (staff.middleName || '').trim()
+	const name = (staff.name || '').trim()
 
+	// If firstName or lastName are missing, try to parse from the name field
+	if ((!firstName || !lastName) && name) {
+		const parsed = parseNameParts(name)
+		if (!firstName && parsed.firstName) {
+			firstName = parsed.firstName
+		}
+		if (!lastName && parsed.lastName) {
+			lastName = parsed.lastName
+		}
+	}
+
+	// Build fullName - prefer the name field if available, otherwise construct from parts
 	let fullName = name
 	if (!fullName) {
-		const nameParts = [firstName, middleName, lastName]
-			.filter(Boolean)
-			.join(' ')
+		const nameParts = [firstName, middleName, lastName].filter(Boolean).join(' ')
 		fullName = nameParts || 'Unknown'
 	}
+
+	// Normalize multiple spaces to single space
+	fullName = fullName.replace(/\s+/g, ' ').trim()
+
+	// Fallback to 'Unknown' if still empty
+	if (!firstName) firstName = 'Unknown'
+	if (!lastName) lastName = 'Unknown'
 
 	// Get job title from department
 	const jobTitle = staff.department || 'Staff'
@@ -282,9 +340,9 @@ function transformStaffToEmployee(
 
 	return {
 		sisEmployeeId: staff.staffId.toString(),
-		firstName: firstName || 'Unknown',
-		lastName: lastName || 'Unknown',
-		fullName: fullName.trim(),
+		firstName,
+		lastName,
+		fullName,
 		jobTitle: jobTitle.trim(),
 		email: email.trim(),
 		status,
@@ -685,16 +743,23 @@ function transformStudentToStudent(
 		return null
 	}
 
-	// Build full name from demographics.person fields
-	const firstName = (student.demographics?.person?.firstName || '').trim()
-	const lastName = (student.demographics?.person?.lastName || '').trim()
+	// Build name fields from demographics.person
+	// Priority: use individual fields if available
+	let firstName = (student.demographics?.person?.firstName || '').trim()
+	let lastName = (student.demographics?.person?.lastName || '').trim()
 	const middleName = (student.demographics?.person?.middleName || '').trim()
 
+	// For students, we don't have a separate name field, so we build from parts
+	// If firstName or lastName are missing, we still need to provide defaults
+	if (!firstName) firstName = 'Unknown'
+	if (!lastName) lastName = 'Unknown'
+
+	// Build fullName from all available parts
 	const nameParts = [firstName, middleName, lastName].filter(Boolean).join(' ')
-	const fullName = nameParts || 'Unknown'
+	let fullName = nameParts || 'Unknown'
 
 	// Normalize multiple spaces to single space and trim
-	const normalizedFullName = fullName.replace(/\s+/g, ' ').trim()
+	fullName = fullName.replace(/\s+/g, ' ').trim()
 
 	// Determine status from school.status
 	// Active if status is "Enrolled" (FACTS SIS uses "Enrolled" for active students)
@@ -703,9 +768,9 @@ function transformStudentToStudent(
 
 	return {
 		sisStudentId: student.studentId.toString(),
-		firstName: firstName || 'Unknown',
-		lastName: lastName || 'Unknown',
-		fullName: normalizedFullName,
+		firstName,
+		lastName,
+		fullName,
 		email: email.trim(),
 		grade,
 		status,
