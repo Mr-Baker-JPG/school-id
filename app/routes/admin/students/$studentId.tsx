@@ -312,7 +312,8 @@ export default function AdminStudentDetailRoute({
 
 	return (
 		<div>
-			<div className="mb-4">
+			{/* Back link — visible only on mobile where the list panel is hidden */}
+			<div className="mb-4 md:hidden">
 				<Link
 					to="/admin/students"
 					className="text-muted-foreground hover:text-foreground flex items-center gap-2"
