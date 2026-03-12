@@ -196,9 +196,14 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
 				/>
 				{/* Dialog content with scale + fade animation */}
 				<div
-					ref={ref || contentRef}
+					ref={(node) => {
+						// Handle both refs
+						if (typeof ref === 'function') ref(node)
+						else if (ref) ref.current = node
+						;(contentRef as React.MutableRefObject<HTMLDivElement | null>).current = node
+					}}
 					className={cn(
-						'dialog-content bg-background fixed top-1/2 left-1/2 z-50 w-full max-w-lg rounded-lg border shadow-lg',
+						'dialog-content bg-background fixed top-1/2 left-1/2 z-50 w-full max-w-lg overflow-hidden border border-border shadow-lg',
 						className,
 					)}
 					role="dialog"
@@ -206,6 +211,8 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
 					onClick={handleContentClick}
 					{...props}
 				>
+					{/* Gold accent bar */}
+					<div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-brand-gold via-brand-gold/70 to-brand-gold" />
 					{children}
 					<Button
 						variant="ghost"
@@ -242,7 +249,7 @@ const DialogTitle = React.forwardRef<
 	<h2
 		ref={ref}
 		className={cn(
-			'text-lg leading-none font-semibold tracking-tight',
+			'font-display text-lg leading-none font-semibold tracking-tight text-primary',
 			className,
 		)}
 		{...props}
@@ -256,7 +263,7 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
 	<p
 		ref={ref}
-		className={cn('text-muted-foreground text-sm', className)}
+		className={cn('font-body text-muted-foreground text-sm', className)}
 		{...props}
 	/>
 ))
@@ -268,7 +275,7 @@ const DialogFooter = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
 	<div
 		className={cn(
-			'flex flex-col-reverse p-6 pt-4 sm:flex-row sm:justify-end sm:space-x-2',
+			'flex flex-col-reverse border-t border-border bg-muted/30 p-6 pt-4 sm:flex-row sm:justify-end sm:space-x-2',
 			className,
 		)}
 		{...props}
