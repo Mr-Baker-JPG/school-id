@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept 5 — The Accordion Stack</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Libre+Franklin:wght@300;400;500;600&family=Inconsolata:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f2f0ec;
+    --surface: #faf9f6;
+    --surface-raised: #ffffff;
+    --border: #ddd9d0;
+    --border-dark: #bbb5a8;
+    --text: #1f1e1b;
+    --text-2: #4a4740;
+    --muted: #918b7e;
+    --teal: #0d7377;
+    --teal-light: #e6f5f5;
+    --terra: #a0522d;
+    --terra-light: #fdf3ed;
+    --green: #2e7d32;
+    --green-light: #f1f8f1;
+    --amber: #b8860b;
+    --amber-light: #fef9ee;
+    --radius: 0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Libre Franklin', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* CONCEPT: "The Accordion Stack" — Warm, structured, collapsible.
+     A photo+name banner at top, then stacked accordion panels.
+     Each section is a labeled drawer you can open/close.
+     Feels organized like a filing system. Square corners. Tactile. */
+
+  .shell {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 1.5rem 1.5rem 4rem;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 1.5rem;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--text); }
+
+  /* ---- BANNER ---- */
+  .banner {
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    margin-bottom: 0;
+  }
+
+  .banner-photo {
+    width: 130px;
+    height: 160px;
+    background: var(--teal-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--teal);
+    position: relative;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
+  }
+  .banner-photo .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    background: rgba(0,0,0,0.55);
+    opacity: 0;
+    transition: opacity 0.2s;
+    cursor: pointer;
+  }
+  .banner-photo:hover .overlay { opacity: 1; }
+  .overlay-btn {
+    background: rgba(255,255,255,0.9);
+    border: none;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    color: var(--text);
+    font-family: inherit;
+  }
+
+  .banner-info {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .person-type-tag {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    gap: 0.3rem;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--teal);
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    background: var(--teal-light);
+    margin-bottom: 0.5rem;
+  }
+
+  .banner-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 0.15rem;
+    color: var(--text);
+  }
+
+  .banner-sub {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .banner-pills {
+    display: flex;
+    gap: 0.4rem;
+  }
+  .mini-pill {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.15rem 0.45rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .mini-pill--green { background: var(--green-light); color: var(--green); }
+  .mini-pill--amber { background: var(--amber-light); color: var(--amber); }
+
+  /* ---- ACTION BAR ---- */
+  .action-bar {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-top: none;
+    margin-bottom: 1rem;
+  }
+  .action-bar button {
+    flex: 1;
+    padding: 0.6rem;
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: none;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-2);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .action-bar button:last-child { border-right: none; }
+  .action-bar button:hover { background: var(--surface-raised); }
+  .action-bar button.primary { background: var(--teal); color: #fff; }
+  .action-bar button.primary:hover { background: #0a5f63; }
+
+  /* ---- ACCORDION ---- */
+  .accordion {
+    margin-bottom: 0.5rem;
+  }
+
+  .accordion-item {
+    border: 1px solid var(--border);
+    margin-bottom: -1px;
+    background: var(--surface-raised);
+  }
+
+  .accordion-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-2);
+    background: var(--surface);
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .accordion-trigger:hover { background: var(--bg); }
+  .accordion-trigger .arrow {
+    transition: transform 0.2s;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+  .accordion-item.open .accordion-trigger .arrow { transform: rotate(180deg); }
+
+  .accordion-body {
+    padding: 1rem 1.25rem 1.25rem;
+    display: none;
+  }
+  .accordion-item.open .accordion-body { display: block; }
+
+  /* ---- FIELD ROWS ---- */
+  .field-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 0.85rem;
+  }
+  .field-row:last-child { border-bottom: none; }
+  .field-label { color: var(--muted); font-size: 0.78rem; }
+  .field-value { font-weight: 500; text-align: right; }
+  .field-value.mono {
+    font-family: 'Inconsolata', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+  }
+  .field-value .inline-action {
+    font-size: 0.68rem;
+    color: var(--teal);
+    text-decoration: none;
+    font-weight: 500;
+    margin-left: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .field-value .inline-action:hover { text-decoration: underline; }
+
+  /* ---- EDIT INLINE ---- */
+  .edit-inline {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-top: 0.75rem;
+  }
+  .edit-inline input {
+    flex: 1;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--border);
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--text);
+    background: var(--surface);
+  }
+  .edit-inline input:focus {
+    outline: none;
+    border-color: var(--teal);
+  }
+  .edit-inline button {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: var(--teal);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s;
+  }
+  .edit-inline button:hover { background: #0a5f63; }
+
+  /* ---- SIGNATURE ---- */
+  .sig-box {
+    background: #fff;
+    border: 1px solid var(--border);
+    padding: 0.85rem 1rem;
+    font-size: 0.82rem;
+    color: #444;
+    line-height: 1.5;
+    margin-top: 0.5rem;
+  }
+
+  /* ---- ID PREVIEW ---- */
+  .id-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .id-slot { text-align: center; }
+  .id-mock {
+    aspect-ratio: 3.375 / 2.125;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: transform 0.15s;
+    margin-bottom: 0.4rem;
+  }
+  .id-mock:hover { transform: translateY(-2px); }
+  .id-mock--front {
+    background: linear-gradient(135deg, #1b3854, #0a1929);
+    color: rgba(255,255,255,0.35);
+  }
+  .id-mock--back {
+    background: linear-gradient(135deg, #f5f2ec, #e4dfd5);
+    color: rgba(0,0,0,0.2);
+    border: 1px solid var(--border);
+  }
+  .id-slot-label {
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* ---- NOTICE ---- */
+  .notice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.78rem;
+    margin-bottom: 1rem;
+    border-left: 3px solid;
+  }
+  .notice--green { background: var(--green-light); border-color: var(--green); color: var(--green); }
+  .notice--amber { background: var(--amber-light); border-color: var(--amber); color: var(--amber); }
+
+  @media (max-width: 640px) {
+    .banner { grid-template-columns: 1fr; }
+    .banner-photo { width: 100%; height: 120px; border-right: none; border-bottom: 1px solid var(--border); }
+    .id-pair { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <a href="#" class="back-link">← Back to Employees</a>
+
+  <div class="notice notice--green">✓ Photo refreshed from FACTS successfully.</div>
+
+  <!-- BANNER -->
+  <div class="banner">
+    <div class="banner-photo">
+      SM
+      <div class="overlay">
+        <button class="overlay-btn">Upload Photo</button>
+        <button class="overlay-btn">Refresh FACTS</button>
+      </div>
+    </div>
+    <div class="banner-info">
+      <span class="person-type-tag">Employee · Faculty</span>
+      <h1 class="banner-name">Sarah Mitchell</h1>
+      <div class="banner-sub">Upper School Math Teacher · smitchell@jpgacademy.org</div>
+      <div class="banner-pills">
+        <span class="mini-pill mini-pill--green">Active</span>
+        <span class="mini-pill mini-pill--green">ID Valid</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTION BAR -->
+  <div class="action-bar">
+    <button class="primary">↓ Download ID Card</button>
+    <button>✎ Edit Expiration</button>
+    <button>⟳ Sync SIS</button>
+  </div>
+
+  <!-- ACCORDIONS -->
+  <div class="accordion">
+    <!-- Personnel Info -->
+    <div class="accordion-item open">
+      <button class="accordion-trigger" onclick="this.parentElement.classList.toggle('open')">
+        Personnel Information
+        <span class="arrow">▼</span>
+      </button>
+      <div class="accordion-body">
+        <div class="field-row">
+          <span class="field-label">Full Name</span>
+          <span class="field-value">Sarah Mitchell</span>
+        </div>
+        <div class="field-row">
+          <span class="field-label">Job Title</span>
+          <span class="field-value">Upper School Math Teacher</span>
+        </div>
+        <div class="field-row">
+          <span class="field-label">Email</span>
+          <span class="field-value">smitchell@jpgacademy.org</span>
+        </div>
+        <div class="field-row">
+          <span class="field-label">SIS Employee ID</span>
+          <span class="field-value mono">EMP-00482</span>
+        </div>
+        <div class="field-row">
+          <span class="field-label">Status</span>
+          <span class="field-value"><span class="mini-pill mini-pill--green">Active</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Name -->
+    <div class="accordion-item open">
+      <button class="accordion-trigger" onclick="this.parentElement.classList.toggle('open')">
+        Edit Display Name
+        <span class="arrow">▼</span>
+      </button>
+      <div class="accordion-body">
+        <p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem;">Edited names are preserved during SIS syncs.</p>
+        <div class="edit-inline">
+          <input type="text" value="Sarah Mitchell" />
+          <button>Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ID Card -->
+    <div class="accordion-item open">
+      <button class="accordion-trigger" onclick="this.parentElement.classList.toggle('open')">
+        ID Card Details
+        <span class="arrow">▼</span>
+      </button>
+      <div class="accordion-body">
+        <div class="field-row">
+          <span class="field-label">Expiration Date</span>
+          <span class="field-value mono">07/01/2026 <a href="#" class="inline-action">Edit</a></span>
+        </div>
+        <div class="field-row">
+          <span class="field-label">Card Status</span>
+          <span class="field-value"><span class="mini-pill mini-pill--green">Valid</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIS Sync -->
+    <div class="accordion-item">
+      <button class="accordion-trigger" onclick="this.parentElement.classList.toggle('open')">
+        SIS Sync Status
+        <span class="arrow">▼</span>
+      </button>
+      <div class="accordion-body">
+        <div class="field-row">
+          <span class="field-label">Last Updated</span>
+          <span class="field-value mono">03/12/2026, 8:14 AM</span>
+        </div>
+        <div class="field-row">
+          <span class="field-label">Name Protected</span>
+          <span class="field-value">No — updated from SIS</span>
+        </div>
+        <div class="field-row">
+          <span class="field-label">FACTS Photo</span>
+          <span class="field-value">Last checked <span class="mono">03/10/2026</span> <a href="#" class="inline-action">Force</a></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gmail -->
+    <div class="accordion-item">
+      <button class="accordion-trigger" onclick="this.parentElement.classList.toggle('open')">
+        Gmail Signature
+        <span class="arrow">▼</span>
+      </button>
+      <div class="accordion-body">
+        <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.4rem;">Last fetched: 03/10/2026, 2:30 PM</div>
+        <div class="sig-box">
+          <strong>Sarah Mitchell</strong><br>
+          Upper School Math Teacher<br>
+          John Paul the Great Academy<br>
+          <span style="color:var(--teal);">smitchell@jpgacademy.org</span> · (555) 123-4567
+        </div>
+      </div>
+    </div>
+
+    <!-- ID Preview -->
+    <div class="accordion-item open">
+      <button class="accordion-trigger" onclick="this.parentElement.classList.toggle('open')">
+        ID Card Preview
+        <span class="arrow">▼</span>
+      </button>
+      <div class="accordion-body">
+        <div class="id-pair">
+          <div class="id-slot">
+            <div class="id-mock id-mock--front">Front of ID</div>
+            <span class="id-slot-label">Front</span>
+          </div>
+          <div class="id-slot">
+            <div class="id-mock id-mock--back">Back of ID</div>
+            <span class="id-slot-label">Back</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

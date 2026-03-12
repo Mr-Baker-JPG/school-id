@@ -1,3 +1,4 @@
+import * as React from 'react'
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
 import { Outlet, Link, useLocation, Form, useSearchParams, useSubmit } from 'react-router'
 import { Icon } from '#app/components/ui/icon.tsx'
@@ -170,7 +171,7 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 				</div>
 
 				{/* Search + Filters */}
-				<div className="space-y-2 border-b px-3 py-2">
+				<div className="space-y-2.5 border-b px-3 py-3">
 					<Form
 						method="get"
 						onChange={(e) => handleSearchChange(e.currentTarget)}
@@ -186,44 +187,36 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 						<input type="hidden" name="photo" value={photo} />
 					</Form>
 
-					<div className="flex flex-wrap gap-1.5">
-						{/* Status filter */}
-						{['all', 'active', 'inactive'].map((s) => (
-							<Link
-								key={s}
-								to={filterUrl({ status: s })}
-								className={cn(
-									'rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors',
-									status === s || (s === 'all' && status === 'all')
-										? 'bg-primary/10 text-primary'
-										: 'text-muted-foreground hover:bg-muted',
-								)}
-							>
-								{s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
-							</Link>
-						))}
+					<div className="space-y-1.5">
+						{/* Status */}
+						<FilterRow label="Status">
+							{['all', 'active', 'inactive'].map((s) => (
+								<FilterPill
+									key={s}
+									to={filterUrl({ status: s })}
+									active={status === s}
+								>
+									{s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+								</FilterPill>
+							))}
+						</FilterRow>
 
-						<span className="text-border mx-0.5">|</span>
-
-						{/* Photo filter */}
-						{[
-							{ value: 'all', label: 'Any Photo' },
-							{ value: 'yes', label: '📷' },
-							{ value: 'no', label: 'No Photo' },
-						].map((f) => (
-							<Link
-								key={f.value}
-								to={filterUrl({ photo: f.value })}
-								className={cn(
-									'rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors',
-									photo === f.value
-										? 'bg-primary/10 text-primary'
-										: 'text-muted-foreground hover:bg-muted',
-								)}
-							>
-								{f.label}
-							</Link>
-						))}
+						{/* Photo */}
+						<FilterRow label="Photo">
+							{[
+								{ value: 'all', label: 'All' },
+								{ value: 'yes', label: 'Has Photo' },
+								{ value: 'no', label: 'Missing' },
+							].map((f) => (
+								<FilterPill
+									key={f.value}
+									to={filterUrl({ photo: f.value })}
+									active={photo === f.value}
+								>
+									{f.label}
+								</FilterPill>
+							))}
+						</FilterRow>
 					</div>
 				</div>
 
@@ -316,5 +309,50 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 				</div>
 			</div>
 		</div>
+	)
+}
+
+/* ----------------------------------------------------------------
+ * Filter UI helpers
+ * ---------------------------------------------------------------- */
+
+function FilterRow({
+	label,
+	children,
+}: {
+	label: string
+	children: React.ReactNode
+}) {
+	return (
+		<div className="flex items-center gap-2">
+			<span className="text-muted-foreground w-11 shrink-0 text-[10px] font-semibold uppercase tracking-wider">
+				{label}
+			</span>
+			<div className="flex gap-1">{children}</div>
+		</div>
+	)
+}
+
+function FilterPill({
+	to,
+	active,
+	children,
+}: {
+	to: string
+	active: boolean
+	children: React.ReactNode
+}) {
+	return (
+		<Link
+			to={to}
+			className={cn(
+				'rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors',
+				active
+					? 'bg-primary/10 text-primary'
+					: 'text-muted-foreground hover:bg-muted',
+			)}
+		>
+			{children}
+		</Link>
 	)
 }

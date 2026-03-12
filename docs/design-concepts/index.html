@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Detail View — Design Concepts</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: #0f1117;
+    color: #e4e6f0;
+    min-height: 100vh;
+    padding: 3rem 2rem;
+  }
+  .header {
+    max-width: 900px;
+    margin: 0 auto 3rem;
+    text-align: center;
+  }
+  h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+  }
+  .subtitle {
+    font-size: 1rem;
+    color: #6b7194;
+    font-weight: 300;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  .grid {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    gap: 1.25rem;
+  }
+  .card {
+    background: #181a24;
+    border: 1px solid #2a2d3e;
+    border-radius: 12px;
+    padding: 1.75rem 2rem;
+    display: grid;
+    grid-template-columns: 60px 1fr auto;
+    gap: 1.5rem;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+  }
+  .card:hover {
+    border-color: #3a3e55;
+    background: #1e2030;
+    transform: translateY(-1px);
+  }
+  .card-num {
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .n1 { background: linear-gradient(135deg, #8b2500, #c4451a); color: #fff; }
+  .n2 { background: linear-gradient(135deg, #4338ca, #6366f1); color: #fff; }
+  .n3 { background: linear-gradient(135deg, #1b2838, #2d4a6f); color: #c9944a; }
+  .n4 { background: linear-gradient(135deg, #1e40af, #2563eb); color: #fff; }
+  .n5 { background: linear-gradient(135deg, #0d7377, #10908f); color: #fff; }
+  .card-info h2 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+  }
+  .card-desc {
+    font-size: 0.85rem;
+    color: #6b7194;
+    line-height: 1.5;
+  }
+  .card-tags {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .tag {
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 500;
+    background: rgba(99,102,241,0.1);
+    color: #818cf8;
+    white-space: nowrap;
+  }
+  .card-arrow {
+    font-size: 1.2rem;
+    color: #3a3e55;
+    transition: color 0.2s;
+  }
+  .card:hover .card-arrow { color: #6b7194; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Admin Detail View Concepts</h1>
+  <p class="subtitle">5 design approaches for the employee & student individual admin view in the JPG ID System. Click any to preview.</p>
+</div>
+<div class="grid">
+  <a href="concept-1-dossier.html" class="card">
+    <div class="card-num n1">1</div>
+    <div class="card-info">
+      <h2>The Dossier</h2>
+      <p class="card-desc">Editorial, file-folder aesthetic. Warm cream palette, DM Serif Display headings, stamp-like status badges, numbered sections. Feels like opening a personnel file.</p>
+      <div class="card-tags" style="margin-top:0.5rem;">
+        <span class="tag">Light Theme</span>
+        <span class="tag">Single Column</span>
+        <span class="tag">Editorial</span>
+      </div>
+    </div>
+    <span class="card-arrow">→</span>
+  </a>
+
+  <a href="concept-2-dashboard.html" class="card">
+    <div class="card-num n2">2</div>
+    <div class="card-info">
+      <h2>The Dashboard Card</h2>
+      <p class="card-desc">Dark glassmorphic UI with a hero card at top and bento grid below. Accent gradient stripe, glow effects, JetBrains Mono data. Feels like a monitoring dashboard.</p>
+      <div class="card-tags" style="margin-top:0.5rem;">
+        <span class="tag">Dark Theme</span>
+        <span class="tag">Bento Grid</span>
+        <span class="tag">Data-Dense</span>
+      </div>
+    </div>
+    <span class="card-arrow">→</span>
+  </a>
+
+  <a href="concept-3-sidebar-profile.html" class="card">
+    <div class="card-num n3">3</div>
+    <div class="card-info">
+      <h2>The Sidebar Profile</h2>
+      <p class="card-desc">Split layout: dark left panel (photo, name, quick actions) + light scrollable content area with tab navigation. CRM/HR tool aesthetic with Fraunces serif headings.</p>
+      <div class="card-tags" style="margin-top:0.5rem;">
+        <span class="tag">Split Layout</span>
+        <span class="tag">Tabbed</span>
+        <span class="tag">Dark + Light</span>
+      </div>
+    </div>
+    <span class="card-arrow">→</span>
+  </a>
+
+  <a href="concept-4-compact-record.html" class="card">
+    <div class="card-num n4">4</div>
+    <div class="card-info">
+      <h2>The Compact Record</h2>
+      <p class="card-desc">Clean, utilitarian, information-dense. Notion/Linear-inspired property rows with inline editing. Minimal chrome, maximum scanability. Newsreader serif name, everything on one scroll.</p>
+      <div class="card-tags" style="margin-top:0.5rem;">
+        <span class="tag">Light Theme</span>
+        <span class="tag">Property Rows</span>
+        <span class="tag">Minimal</span>
+      </div>
+    </div>
+    <span class="card-arrow">→</span>
+  </a>
+
+  <a href="concept-5-accordion-stack.html" class="card">
+    <div class="card-num n5">5</div>
+    <div class="card-info">
+      <h2>The Accordion Stack</h2>
+      <p class="card-desc">Warm, structured, collapsible. Photo banner + action bar + stacked accordion drawers. Square corners, dashed dividers, teal accents. Filing system energy.</p>
+      <div class="card-tags" style="margin-top:0.5rem;">
+        <span class="tag">Light Theme</span>
+        <span class="tag">Collapsible</span>
+        <span class="tag">Structured</span>
+      </div>
+    </div>
+    <span class="card-arrow">→</span>
+  </a>
+</div>
+</body>
+</html>
