@@ -373,6 +373,45 @@ async function prepareEmployeeCard(
 }
 
 /**
+ * Small header rendered in the top margin of each bulk-print page.
+ * Uses absolute positioning so it doesn't affect card layout.
+ */
+function PageHeader({
+	schoolName,
+	label,
+	printDate,
+	pageNum,
+	totalPages,
+}: {
+	schoolName: string
+	label: string
+	printDate: string
+	pageNum: number
+	totalPages: number
+}) {
+	return (
+		<View
+			style={{
+				position: 'absolute',
+				top: 12,
+				left: PAGE_MARGIN,
+				right: PAGE_MARGIN,
+				flexDirection: 'row',
+				justifyContent: 'space-between',
+				alignItems: 'baseline',
+			}}
+		>
+			<Text style={{ fontSize: 7, color: '#999999' }}>
+				{schoolName} — {label}
+			</Text>
+			<Text style={{ fontSize: 7, color: '#999999' }}>
+				Printed {printDate}  ·  Page {pageNum}/{totalPages}
+			</Text>
+		</View>
+	)
+}
+
+/**
  * Cards per page configuration
  * Layout: 2 columns x 3 rows = 6 cards per page
  */
@@ -450,97 +489,18 @@ export async function generateBulkEmployeeIDPDF(
 
 		const styles = createBulkPrintStyles()
 
-		// Build title page with school name and print date
+		// Build page header info
 		const branding = getBrandingConfig()
 		const printDate = new Date().toLocaleDateString('en-US', {
-			weekday: 'long',
 			year: 'numeric',
-			month: 'long',
+			month: 'short',
 			day: 'numeric',
 		})
-		const printTime = new Date().toLocaleTimeString('en-US', {
-			hour: 'numeric',
-			minute: '2-digit',
-		})
-
-		// Count employees vs students for summary
-		const employeeCount = preparedCards.filter(
-			(c) => c.employee.personType !== 'STUDENT',
-		).length
-		const studentCount = preparedCards.filter(
-			(c) => c.employee.personType === 'STUDENT',
-		).length
-
-		const titlePage = (
-			<Page
-				key="title-page"
-				size={[PAGE_WIDTH, PAGE_HEIGHT]}
-				style={{ padding: 0, fontFamily: 'Times-Roman' }}
-			>
-				<View
-					style={{
-						flex: 1,
-						justifyContent: 'center',
-						alignItems: 'center',
-						paddingHorizontal: 72,
-					}}
-				>
-					<Text
-						style={{
-							fontSize: 24,
-							fontWeight: 'bold',
-							marginBottom: 8,
-							textAlign: 'center',
-						}}
-					>
-						{branding.schoolName}
-					</Text>
-					<Text
-						style={{
-							fontSize: 18,
-							marginBottom: 32,
-							textAlign: 'center',
-							color: '#444444',
-						}}
-					>
-						ID Cards
-					</Text>
-					<View
-						style={{
-							width: 60,
-							height: 1,
-							backgroundColor: '#cccccc',
-							marginBottom: 32,
-						}}
-					/>
-					<Text
-						style={{
-							fontSize: 11,
-							color: '#666666',
-							marginBottom: 6,
-							textAlign: 'center',
-						}}
-					>
-						{preparedCards.length} card{preparedCards.length !== 1 ? 's' : ''}
-						{employeeCount > 0 && studentCount > 0
-							? ` · ${employeeCount} employee${employeeCount !== 1 ? 's' : ''} · ${studentCount} student${studentCount !== 1 ? 's' : ''}`
-							: ''}
-					</Text>
-					<Text
-						style={{
-							fontSize: 11,
-							color: '#666666',
-							textAlign: 'center',
-						}}
-					>
-						Printed {printDate} at {printTime}
-					</Text>
-				</View>
-			</Page>
-		)
 
 		// Split cards into pages (6 per page) and create alternating front/back pages
-		const pages: React.JSX.Element[] = [titlePage]
+		const pages: React.JSX.Element[] = []
+		const totalSheets = Math.ceil(preparedCards.length / CARDS_PER_PAGE)
+		const totalPages = totalSheets * 2 // front + back per sheet
 
 		for (
 			let pageIndex = 0;
@@ -616,23 +576,39 @@ export async function generateBulkEmployeeIDPDF(
 			})
 
 			// Add front page (odd pages: 1, 3, 5, ...)
+			const frontPageNum = pageIndex * 2 + 1
 			pages.push(
 				<Page
 					key={`front-page-${pageIndex}`}
 					size={[PAGE_WIDTH, PAGE_HEIGHT]}
 					style={styles.page}
 				>
+					<PageHeader
+						schoolName={branding.schoolName}
+						label="ID Cards — Front"
+						printDate={printDate}
+						pageNum={frontPageNum}
+						totalPages={totalPages}
+					/>
 					{frontCardViews}
 				</Page>,
 			)
 
 			// Add back page immediately after front (even pages: 2, 4, 6, ...)
+			const backPageNum = pageIndex * 2 + 2
 			pages.push(
 				<Page
 					key={`back-page-${pageIndex}`}
 					size={[PAGE_WIDTH, PAGE_HEIGHT]}
 					style={styles.page}
 				>
+					<PageHeader
+						schoolName={branding.schoolName}
+						label="ID Cards — Back"
+						printDate={printDate}
+						pageNum={backPageNum}
+						totalPages={totalPages}
+					/>
 					{backCardViews}
 				</Page>,
 			)
