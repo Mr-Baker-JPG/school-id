@@ -36,11 +36,15 @@ export function AdminShell({ children, headerActions }: AdminShellProps) {
 		? [
 				{ to: '/admin', label: 'Dashboard', icon: 'laptop' },
 				{ to: '/admin/employees', label: 'Employees', icon: 'user' },
-				{ to: '/admin/students', label: 'Students', icon: 'pencil-2' },
+				{ to: '/admin/students', label: 'Students', icon: 'graduation-cap' },
 				{ to: '/admin/print', label: 'Print IDs', icon: 'file-text' },
 				{ to: '/admin/users', label: 'Users', icon: 'lock-closed' },
 				{ to: '/admin/sync-status', label: 'Sync Status', icon: 'cloud-sync' },
-				{ to: '/admin/signatures/templates', label: 'Signatures', icon: 'mail' },
+				{
+					to: '/admin/signatures/templates',
+					label: 'Signatures',
+					icon: 'mail',
+				},
 				{ to: '/admin/card-designs', label: 'Card Designs', icon: 'pencil-1' },
 				{ to: '/admin/cache', label: 'Cache', icon: 'settings' },
 			]
@@ -91,7 +95,9 @@ export function AdminShell({ children, headerActions }: AdminShellProps) {
 			/>
 			<div className="flex min-h-0 flex-1">
 				<CollapsibleSidebar groups={navGroups} />
-				<main className="min-h-0 min-w-0 flex-1 overflow-hidden">{children}</main>
+				<main className="min-h-0 min-w-0 flex-1 overflow-hidden">
+					{children}
+				</main>
 			</div>
 		</div>
 	)

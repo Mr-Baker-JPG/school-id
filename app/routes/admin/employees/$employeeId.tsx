@@ -146,6 +146,18 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	// Get current academic year
 	const academicYear = getCurrentAcademicYear()
 
+	// Fetch recent signature push logs for this employee
+	const signaturePushLogs = await prisma.signaturePushLog.findMany({
+		where: { employeeId: employee.id },
+		include: {
+			template: {
+				select: { name: true },
+			},
+		},
+		orderBy: { pushedAt: 'desc' },
+		take: 10,
+	})
+
 	return {
 		employee: {
 			...employee,
@@ -162,6 +174,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		qrCodeDataURL,
 		barcodeDataURL,
 		academicYear,
+		signaturePushLogs,
 	}
 }
 
@@ -232,6 +245,7 @@ export default function AdminEmployeeDetailRoute({
 		qrCodeDataURL,
 		barcodeDataURL,
 		academicYear,
+		signaturePushLogs,
 	} = loaderData
 	const hasPhoto = !!photoUrl
 	const displayPhotoUrl = photoUrl ? getEmployeePhotoSrc(photoUrl) : null
@@ -429,6 +443,44 @@ export default function AdminEmployeeDetailRoute({
 							Signature will be fetched automatically when available
 						</p>
 					</div>
+				)}
+			</div>
+
+			{/* ── 03b SIGNATURE PUSH HISTORY ── */}
+			<div className="mt-6">
+				<h3 className="mb-3 font-mono text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+					Signature Push History
+				</h3>
+				{signaturePushLogs.length > 0 ? (
+					<div className="space-y-2">
+						{signaturePushLogs.map((log) => (
+							<div
+								key={log.id}
+								className="flex items-center justify-between rounded border border-border bg-card p-3 text-sm"
+							>
+								<div className="flex items-center gap-3">
+									{log.success ? (
+										<Icon name="check-circle" className="size-4 text-green-500" />
+									) : (
+										<Icon name="cross-circle" className="size-4 text-red-500" />
+									)}
+									<div>
+										<p className="font-medium">{log.template?.name || 'Unknown Template'}</p>
+										{log.error && (
+											<p className="text-destructive text-xs">{log.error}</p>
+										)}
+									</div>
+								</div>
+								<p className="font-mono text-xs text-muted-foreground">
+									{new Date(log.pushedAt).toLocaleString()}
+								</p>
+							</div>
+						))}
+					</div>
+				) : (
+					<p className="text-muted-foreground text-sm italic">
+						No signature push history found
+					</p>
 				)}
 			</div>
 

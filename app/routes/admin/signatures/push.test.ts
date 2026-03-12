@@ -17,6 +17,9 @@ vi.mock('#app/utils/db.server.ts', () => ({
 		employeeID: {
 			updateMany: vi.fn(),
 		},
+		signaturePushLog: {
+			create: vi.fn(),
+		},
 	},
 }))
 
@@ -371,6 +374,7 @@ describe('Signature Push Route', () => {
 			] as any)
 			vi.mocked(gmailSignatureService.setSignature).mockResolvedValue({ success: true })
 			vi.mocked(prisma.employeeID.updateMany).mockResolvedValue({ count: 1 })
+			vi.mocked(prisma.signaturePushLog.create).mockResolvedValue({ id: 'log1' } as any)
 
 			const formData = new FormData()
 			formData.append('intent', 'push')
@@ -385,6 +389,104 @@ describe('Signature Push Route', () => {
 
 			// Verify setSignature was called (the actual scope is in the service implementation)
 			expect(gmailSignatureService.setSignature).toHaveBeenCalled()
+		})
+
+		it('creates log entry for each push operation', async () => {
+			vi.mocked(requireUserWithRole).mockResolvedValue({ id: 'admin1' } as any)
+			vi.mocked(prisma.signatureTemplate.findUnique).mockResolvedValue({
+				id: 't1',
+				name: 'Default',
+				htmlContent: '<p>{{fullName}}</p>',
+				isDefault: true,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+			vi.mocked(prisma.employee.findMany).mockResolvedValue([
+				{
+					id: 'e1',
+					fullName: 'John Doe',
+					firstName: 'John',
+					lastName: 'Doe',
+					email: 'john@example.com',
+					jobTitle: 'Teacher',
+					department: 'Math',
+					status: 'active',
+					employeeId: { id: 'eid1' },
+				},
+			] as any)
+			vi.mocked(gmailSignatureService.setSignature).mockResolvedValue({ success: true })
+			vi.mocked(prisma.employeeID.updateMany).mockResolvedValue({ count: 1 })
+			vi.mocked(prisma.signaturePushLog.create).mockResolvedValue({ id: 'log1' } as any)
+
+			const formData = new FormData()
+			formData.append('intent', 'push')
+			formData.append('templateId', 't1')
+			formData.append('employeeIds', 'e1')
+
+			const request = new Request('http://localhost/admin/signatures/push', {
+				method: 'POST',
+				body: formData,
+			})
+			await action({ request, params: {}, context: {} })
+
+			expect(prisma.signaturePushLog.create).toHaveBeenCalledWith({
+				data: {
+					employeeId: 'e1',
+					templateId: 't1',
+					success: true,
+					error: undefined,
+				},
+			})
+		})
+
+		it('logs failed pushes with error details', async () => {
+			vi.mocked(requireUserWithRole).mockResolvedValue({ id: 'admin1' } as any)
+			vi.mocked(prisma.signatureTemplate.findUnique).mockResolvedValue({
+				id: 't1',
+				name: 'Default',
+				htmlContent: '<p>{{fullName}}</p>',
+				isDefault: true,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+			vi.mocked(prisma.employee.findMany).mockResolvedValue([
+				{
+					id: 'e1',
+					fullName: 'John Doe',
+					firstName: 'John',
+					lastName: 'Doe',
+					email: 'john@example.com',
+					jobTitle: 'Teacher',
+					department: 'Math',
+					status: 'active',
+					employeeId: { id: 'eid1' },
+				},
+			] as any)
+			vi.mocked(gmailSignatureService.setSignature).mockResolvedValue({
+				success: false,
+				error: 'Permission denied',
+			})
+			vi.mocked(prisma.signaturePushLog.create).mockResolvedValue({ id: 'log1' } as any)
+
+			const formData = new FormData()
+			formData.append('intent', 'push')
+			formData.append('templateId', 't1')
+			formData.append('employeeIds', 'e1')
+
+			const request = new Request('http://localhost/admin/signatures/push', {
+				method: 'POST',
+				body: formData,
+			})
+			await action({ request, params: {}, context: {} })
+
+			expect(prisma.signaturePushLog.create).toHaveBeenCalledWith({
+				data: {
+					employeeId: 'e1',
+					templateId: 't1',
+					success: false,
+					error: 'Permission denied',
+				},
+			})
 		})
 
 		it('non-admin users cannot access action', async () => {

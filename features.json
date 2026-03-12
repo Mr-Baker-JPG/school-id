@@ -713,7 +713,7 @@
 			"Push history is queryable by employee, template, or date",
 			"Failed pushes are logged with error details"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	}
 ]

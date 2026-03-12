@@ -199,7 +199,8 @@ model Employee {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  employeeId EmployeeID?
+  employeeId        EmployeeID?
+  signaturePushLogs SignaturePushLog[]
 
   @@index([email])
   @@index([status])
@@ -290,5 +291,25 @@ model SignatureTemplate {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  pushLogs SignaturePushLog[]
+
   @@index([isDefault])
+}
+
+model SignaturePushLog {
+  id         String  @id @default(cuid())
+  employeeId String
+  templateId String
+  success    Boolean
+  error      String?
+
+  pushedAt DateTime @default(now())
+
+  employee   Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  template   SignatureTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@index([templateId])
+  @@index([pushedAt])
+  @@index([success])
 }

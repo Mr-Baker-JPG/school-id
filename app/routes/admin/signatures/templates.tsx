@@ -250,6 +250,12 @@ export default function SignatureTemplatesPage({
 					>
 						Push to Gmail
 					</a>
+					<a
+						href="/admin/signatures/history"
+						className="text-muted-foreground hover:text-foreground"
+					>
+						Push History
+					</a>
 				</div>
 
 				<div className="flex items-center justify-between">

@@ -156,6 +156,16 @@ export async function action({ request }: Route.ActionArgs) {
 				error: pushResult.error,
 			})
 
+			// Create push log entry
+			await prisma.signaturePushLog.create({
+				data: {
+					employeeId: employee.id,
+					templateId: template.id,
+					success: pushResult.success,
+					error: pushResult.error,
+				},
+			})
+
 			// Update cached signature in database if successful
 			if (pushResult.success) {
 				await prisma.employeeID.updateMany({
@@ -270,6 +280,12 @@ export default function SignaturePushPage({ loaderData }: Route.ComponentProps) 
 						className="text-primary font-semibold"
 					>
 						Push to Gmail
+					</a>
+					<a
+						href="/admin/signatures/history"
+						className="text-muted-foreground hover:text-foreground"
+					>
+						Push History
 					</a>
 				</div>
 
