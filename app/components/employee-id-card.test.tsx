@@ -81,6 +81,65 @@ describe('ID Card Layout - Person Type Display (F039)', () => {
 		expect(container.textContent).toContain('STUDENT')
 	})
 
+	it('Displays first two names for multi-part names', () => {
+		// Test case: person with middle name(s) should show first two names
+		const multiPartNameData: EmployeePDFData = {
+			id: 'emp-1',
+			fullName: 'Mary Jane Watson Smith',
+			personType: 'FACULTY',
+			email: 'mary.jane@example.com',
+			status: 'active',
+			sisEmployeeId: 'EMP001',
+			photoUrl: null,
+			expirationDate: new Date('2024-07-01'),
+		}
+
+		const { container } = render(
+			<IDCardFrontPreview
+				employee={multiPartNameData}
+				photoUrl={null}
+				logoUrl={mockBranding.logoUrl || null}
+				branding={mockBranding}
+				academicYear="2023-2024"
+				barcodeDataURL={mockBarcodeDataURL}
+			/>,
+		)
+
+		// Should display first two names: "MARY JANE"
+		expect(container.textContent).toContain('MARY JANE')
+		// Should NOT display the last name(s)
+		expect(container.textContent).not.toContain('WATSON')
+		expect(container.textContent).not.toContain('SMITH')
+	})
+
+	it('Displays both names for two-part names', () => {
+		// Test case: person with just first and last name should show both
+		const twoPartNameData: EmployeePDFData = {
+			id: 'emp-1',
+			fullName: 'John Smith',
+			personType: 'STAFF',
+			email: 'john.smith@example.com',
+			status: 'active',
+			sisEmployeeId: 'EMP002',
+			photoUrl: null,
+			expirationDate: new Date('2024-07-01'),
+		}
+
+		const { container } = render(
+			<IDCardFrontPreview
+				employee={twoPartNameData}
+				photoUrl={null}
+				logoUrl={mockBranding.logoUrl || null}
+				branding={mockBranding}
+				academicYear="2023-2024"
+				barcodeDataURL={mockBarcodeDataURL}
+			/>,
+		)
+
+		// Should display both names: "JOHN SMITH"
+		expect(container.textContent).toContain('JOHN SMITH')
+	})
+
 	it('Academic year displays correctly for both types', () => {
 		const facultyData: EmployeePDFData = {
 			id: 'emp-1',

@@ -16,7 +16,7 @@
 import { Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer'
 import { type BrandingConfig } from '#app/utils/branding.server.ts'
 export type { BrandingConfig } from '#app/utils/branding.server.ts'
-import { getFirstAndLastName } from '#app/utils/misc.tsx'
+import { getFirstTwoNames } from '#app/utils/misc.tsx'
 import { FontFamilies, CSSFontStacks } from '#app/utils/font-families.ts'
 
 // Note: Font registration happens in pdf-id.server.tsx (server-only)
@@ -139,7 +139,7 @@ export function createIDCardPDFStyles(_branding: BrandingConfig) {
 		// Photo column (left)
 		photoColumn: {
 			display: 'flex',
-			alignItems: 'center',
+			alignItems: 'flex-start',
 			justifyContent: 'center',
 			paddingLeft: 10,
 			paddingTop: 10,
@@ -151,11 +151,17 @@ export function createIDCardPDFStyles(_branding: BrandingConfig) {
 			border: `1.5pt solid ${NAVY}`,
 			borderRadius: 3,
 			overflow: 'hidden',
+			display: 'flex',
+			flexDirection: 'column',
+			alignItems: 'center',
+			justifyContent: 'flex-start',
 		},
 		photo: {
 			width: 54,
 			height: 68,
 			objectFit: 'cover',
+			// React PDF doesn't support objectPosition, so we use a wrapper approach
+			// The photoFrame wrapper has overflow: hidden to clip from top
 		},
 		photoPlaceholder: {
 			width: 54,
@@ -341,7 +347,7 @@ export function IDCardFrontContentView({
 	academicYear,
 }: IDCardFrontPDFProps) {
 	const styles = createIDCardPDFStyles(branding)
-	const displayName = getFirstAndLastName(employee.fullName).toUpperCase()
+	const displayName = getFirstTwoNames(employee.fullName).toUpperCase()
 
 	return (
 		<View style={styles.frontCard}>
@@ -509,7 +515,7 @@ export function IDCardFrontPreview({
 	branding,
 	academicYear,
 }: IDCardFrontPreviewProps) {
-	const displayName = getFirstAndLastName(employee.fullName).toUpperCase()
+	const displayName = getFirstTwoNames(employee.fullName).toUpperCase()
 
 	return (
 		<div
@@ -557,7 +563,7 @@ export function IDCardFrontPreview({
 				<div
 					style={{
 						display: 'flex',
-						alignItems: 'center',
+						alignItems: 'flex-start',
 						justifyContent: 'center',
 						paddingLeft: 10,
 						paddingTop: 10,
@@ -579,7 +585,7 @@ export function IDCardFrontPreview({
 							<img
 								src={photoUrl}
 								alt={employee.fullName}
-								style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+								style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
 							/>
 						) : (
 							<div

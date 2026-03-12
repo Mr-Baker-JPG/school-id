@@ -66,6 +66,51 @@ export function getFirstAndLastName(fullName: string): string {
 	return `${nameParts[0]} ${nameParts[nameParts.length - 1]}`
 }
 
+/**
+ * Get the first two names from a full name.
+ * Used for ID cards to display names like "Mary Jane" for people with middle names.
+ *
+ * Examples:
+ * - "Mary Jane Watson Smith" -> "Mary Jane"
+ * - "John Smith" -> "John Smith"
+ * - "John" -> "John"
+ * - "Smith, Mary Jane" -> "Mary Jane"
+ */
+export function getFirstTwoNames(fullName: string): string {
+	const trimmed = fullName.trim()
+	if (!trimmed) {
+		return trimmed
+	}
+
+	// Handle comma-separated format: "Last, First Middle" -> "First Middle" (first two after comma)
+	if (trimmed.includes(',')) {
+		const parts = trimmed.split(',').map((p) => p.trim())
+		if (parts.length >= 2) {
+			const firstParts = parts[1]?.split(/\s+/).filter(Boolean) ?? []
+			if (firstParts.length >= 2) {
+				// Return first two names after comma
+				return `${firstParts[0]} ${firstParts[1]}`
+			} else if (firstParts.length === 1) {
+				return firstParts[0] ?? ''
+			}
+		}
+	}
+
+	// Handle space-separated format
+	const nameParts = trimmed.split(/\s+/).filter(Boolean)
+	if (nameParts.length === 0) {
+		return trimmed
+	}
+	if (nameParts.length === 1) {
+		return nameParts[0] ?? ''
+	}
+	if (nameParts.length === 2) {
+		return `${nameParts[0]} ${nameParts[1]}`
+	}
+	// Return first two names only (for 3+ names like "Mary Jane Watson Smith" -> "Mary Jane")
+	return `${nameParts[0]} ${nameParts[1]}`
+}
+
 export function getImgSrc({
 	height,
 	optimizerEndpoint,
