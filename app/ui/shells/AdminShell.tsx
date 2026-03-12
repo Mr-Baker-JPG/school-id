@@ -40,6 +40,7 @@ export function AdminShell({ children, headerActions }: AdminShellProps) {
 				{ to: '/admin/print', label: 'Print IDs', icon: 'download' },
 				{ to: '/admin/users', label: 'Users', icon: 'user' },
 				{ to: '/admin/sync-status', label: 'Sync Status', icon: 'cloud-sync' },
+				{ to: '/admin/signatures/templates', label: 'Signatures', icon: 'mail' },
 				{ to: '/admin/card-designs', label: 'Card Designs', icon: 'pencil-1' },
 				{ to: '/admin/cache', label: 'Cache', icon: 'settings' },
 			]

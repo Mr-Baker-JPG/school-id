@@ -682,8 +682,8 @@
 			"Live preview renders template with sample employee data",
 			"Non-admin users cannot access template management"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F047",

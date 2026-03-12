@@ -1350,3 +1350,66 @@ Completely rewrote `/admin/sync-status` to display both staff and student sync i
 - `app/routes/admin/employees/$employeeId/download.tsx` - Use helper function
 - `features.json` - Added F042
 - `progress.md` - Updated implementation notes
+
+---
+
+## 2026-03-12 – F046
+
+**Feature:** Gmail Signature Template CRUD
+
+**Implementation:**
+
+- Created `SignatureTemplate` Prisma model with fields: `id`, `name` (unique), `htmlContent`, `isDefault`, `createdAt`, `updatedAt`
+- Created migration `20260312214124_add_signature_template`
+- Built admin UI at `/admin/signatures/templates` with full CRUD support:
+  - **Create:** New template form with name, HTML content, and isDefault checkbox
+  - **Edit:** Inline editing of existing templates
+  - **Delete:** Delete with confirmation dialog
+  - **Preview:** Live preview rendering with sample employee data
+  - **Default management:** Setting a template as default unsets previous default
+  - **Validation:** Name uniqueness, required fields, Zod schema validation
+- Added `renderTemplate()` utility function for placeholder substitution
+- Supported placeholders: `{{fullName}}`, `{{firstName}}`, `{{lastName}}`, `{{jobTitle}}`, `{{department}}`, `{{email}}`, `{{phone}}`, `{{schoolName}}`
+- Added placeholder reference panel in the UI
+- Added "Signatures" link to admin sidebar navigation
+
+**Tests:**
+
+- ✅ SignatureTemplate model created with correct fields and constraints (migration applied, Prisma validate passes)
+- ✅ Admin can create a new signature template
+- ✅ Admin can create a default template (isDefault flag)
+- ✅ Setting new default unsets previous default
+- ✅ Admin can edit an existing signature template
+- ✅ Rejects duplicate template name on create
+- ✅ Rejects duplicate template name on update (excluding self)
+- ✅ Rejects empty name / empty HTML content
+- ✅ Admin can delete a signature template
+- ✅ Returns error for non-existent template on delete
+- ✅ Template placeholders are listed and documented in the UI
+- ✅ Live preview renders template with sample employee data (renderTemplate unit tests)
+- ✅ Non-admin users cannot access template management (loader + action)
+- ✅ All 17 tests pass
+- ✅ Build succeeds
+
+**Files Created:**
+
+- `app/routes/admin/signatures/templates.tsx` - Template CRUD route (loader, action, component)
+- `app/routes/admin/signatures/templates.test.ts` - Comprehensive test suite (17 tests)
+- `prisma/migrations/20260312214124_add_signature_template/migration.sql` - Migration
+
+**Files Modified:**
+
+- `prisma/schema.prisma` - Added SignatureTemplate model
+- `app/ui/shells/AdminShell.tsx` - Added "Signatures" navigation link
+
+---
+
+## PHASE 5 – Post-Feature Version Check
+
+**Active Version:** 1.2.0 (Department Data, Bulk Print & Signature Management)
+**Completed Features:** F044, F045, F046 (3 of 5)
+**Remaining Features:** F047, F048 (2 features)
+
+**Status:** Active version still NOT complete. 2 features remaining.
+
+**Next Feature to Implement:** F047 - Gmail Signature Preview & Push
