@@ -604,8 +604,8 @@
 			"Already expired student IDs are identified separately",
 			"Notifications work for both employees and students"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F042",

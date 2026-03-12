@@ -25,6 +25,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		lastStudentSync,
 		employeesWithoutPhoto,
 		studentsWithoutPhoto,
+		employeesWithoutSignature,
 		expiringEmployeeIds,
 		expiredEmployeeIds,
 		expiringStudentIds,
@@ -59,6 +60,16 @@ export async function loader({ request }: Route.LoaderArgs) {
 				OR: [
 					{ studentId: null },
 					{ studentId: { photoUrl: null } },
+				],
+			},
+		}),
+		// Active employees without Gmail signature
+		prisma.employee.count({
+			where: {
+				status: 'active',
+				OR: [
+					{ employeeId: null },
+					{ employeeId: { gmailSignature: null } },
 				],
 			},
 		}),
@@ -138,7 +149,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 		expiringEmployeeIds + expiringStudentIds
 	const expiredCount =
 		expiredEmployeeIds + expiredStudentIds
-	const missingPhotos = employeesWithoutPhoto + studentsWithoutPhoto
 
 	// Format "last sync" as relative time
 	const formatRelativeTime = (date: Date | null | undefined) => {
@@ -161,7 +171,9 @@ export async function loader({ request }: Route.LoaderArgs) {
 			totalStudents,
 			expiringCount,
 			expiredCount,
-			missingPhotos,
+			employeesWithoutPhoto,
+			studentsWithoutPhoto,
+			employeesWithoutSignature,
 			lastStaffSync: formatRelativeTime(lastStaffSync?.createdAt),
 			lastStudentSync: formatRelativeTime(lastStudentSync?.createdAt),
 			lastSyncSuccess:
@@ -195,14 +207,14 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
 	const { stats, attentionItems } = loaderData
 
 	return (
-		<div className="h-full overflow-y-auto px-6 py-6">
+		<div className="h-full overflow-y-auto px-6 py-6 font-body">
 		<div className="space-y-8">
 			<PageTitle
 				title="Dashboard"
 				subtitle="Overview of the JPG ID System"
 			/>
 
-			{/* Stat Cards */}
+			{/* Stat Cards - Row 1: People Counts */}
 			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				<StatCard
 					label="Active Employees"
@@ -238,14 +250,38 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
 					}
 					icon="calendar"
 				/>
+			</div>
+
+			{/* Stat Cards - Row 2: Attention Items */}
+			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				<StatCard
-					label="Missing Photos"
-					value={`${stats.missingPhotos}`}
-					detail="Active people without a photo"
+					label="Faculty Missing Photos"
+					value={`${stats.employeesWithoutPhoto}`}
+					detail="Active employees without a photo"
 					href="/admin/employees?photo=no"
-					color={stats.missingPhotos > 0 ? 'amber' : 'green'}
+					color={stats.employeesWithoutPhoto > 0 ? 'amber' : 'green'}
 					icon="camera"
 				/>
+				<StatCard
+					label="Students Missing Photos"
+					value={`${stats.studentsWithoutPhoto}`}
+					detail="Active students without a photo"
+					href="/admin/students?photo=no"
+					color={stats.studentsWithoutPhoto > 0 ? 'amber' : 'green'}
+					icon="camera"
+				/>
+				<StatCard
+					label="Missing Signatures"
+					value={`${stats.employeesWithoutSignature}`}
+					detail="Active employees without Gmail signature"
+					href="/admin/employees?signature=no"
+					color={stats.employeesWithoutSignature > 0 ? 'amber' : 'green'}
+					icon="pencil-1"
+				/>
+			</div>
+
+			{/* Stat Cards - Row 3: System Status */}
+			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				<StatCard
 					label="Last Sync"
 					value={stats.lastStaffSync}
@@ -288,21 +324,23 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
 			{/* Needs Attention */}
 			{attentionItems.length > 0 && (
 				<div>
-					<h2 className="text-h4 mb-3 font-semibold">Needs Attention</h2>
-					<div className="overflow-hidden rounded-lg border">
+					<h2 className="mb-3 font-display text-lg font-semibold text-primary">
+						Needs Attention
+					</h2>
+					<div className="overflow-hidden border border-border">
 						<table className="w-full">
 							<thead>
-								<tr className="bg-muted/60 border-b">
-									<th className="text-muted-foreground px-4 py-2 text-left text-xs font-semibold">
+								<tr className="border-b border-border bg-muted/60">
+									<th className="px-4 py-2 text-left font-mono text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
 										Name
 									</th>
-									<th className="text-muted-foreground px-4 py-2 text-left text-xs font-semibold">
+									<th className="px-4 py-2 text-left font-mono text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
 										Type
 									</th>
-									<th className="text-muted-foreground px-4 py-2 text-left text-xs font-semibold">
+									<th className="px-4 py-2 text-left font-mono text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
 										Expiration
 									</th>
-									<th className="text-muted-foreground px-4 py-2 text-left text-xs font-semibold">
+									<th className="px-4 py-2 text-left font-mono text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
 										Status
 									</th>
 								</tr>
@@ -314,23 +352,23 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
 									return (
 										<tr
 											key={`${item.type}-${item.id}`}
-											className="hover:bg-muted/30 border-b last:border-0 transition-colors"
+											className="border-b border-border transition-colors last:border-0 hover:bg-muted/30"
 										>
 											<td className="px-4 py-2.5">
 												<Link
 													to={item.href}
-													className="text-foreground text-sm font-medium hover:underline"
+													className="font-body text-sm font-medium text-foreground hover:underline"
 												>
 													{item.name}
 												</Link>
 											</td>
 											<td className="px-4 py-2.5">
-												<span className="text-muted-foreground text-sm capitalize">
+												<span className="font-body text-sm capitalize text-muted-foreground">
 													{item.type}
 												</span>
 											</td>
 											<td className="px-4 py-2.5">
-												<span className="text-sm font-mono">
+												<span className="font-mono text-sm">
 													{expDate.toLocaleDateString()}
 												</span>
 											</td>
@@ -391,25 +429,27 @@ function StatCard({
 		<Link
 			to={href}
 			className={cn(
-				'group rounded-xl border p-4 transition-shadow hover:shadow-md',
+				'group border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md',
 				colorMap[color],
 			)}
 		>
 			<div className="flex items-start justify-between">
 				<div>
-					<div className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+					<div className="font-mono text-[0.6rem] font-medium uppercase tracking-[0.1em] text-muted-foreground">
 						{label}
 					</div>
-					<div className="text-foreground mt-1 text-2xl font-bold leading-tight">
+					<div className="mt-1 font-display text-2xl font-bold leading-tight text-foreground">
 						{value}
 					</div>
 				</div>
 				<Icon
 					name={icon}
-					className={cn('size-5 mt-0.5', iconColorMap[color])}
+					className={cn('mt-0.5 size-5', iconColorMap[color])}
 				/>
 			</div>
-			<div className="text-muted-foreground mt-1.5 text-xs">{detail}</div>
+			<div className="mt-1.5 font-body text-xs text-muted-foreground">
+				{detail}
+			</div>
 		</Link>
 	)
 }
@@ -430,14 +470,18 @@ function SectionCard({
 	return (
 		<Link
 			to={href}
-			className="group rounded-xl border bg-card p-4 shadow-sm transition-all hover:border-primary/30 hover:shadow-md"
+			className="group border border-border bg-card p-4 shadow-sm transition-all hover:border-brand-gold/40 hover:shadow-md"
 		>
-			<div className="bg-primary/10 mb-3 inline-flex rounded-lg p-2">
-				<Icon name={icon} className="text-primary size-5" />
+			<div className="mb-3 inline-flex bg-brand-navy/10 p-2">
+				<Icon name={icon} className="size-5 text-brand-navy" />
 			</div>
-			<div className="text-foreground text-sm font-semibold">{title}</div>
-			<div className="text-muted-foreground mt-1 text-xs">{description}</div>
-			<div className="text-muted-foreground mt-3 border-t pt-2 text-xs font-medium">
+			<div className="font-display text-sm font-semibold text-foreground">
+				{title}
+			</div>
+			<div className="mt-1 font-body text-xs text-muted-foreground">
+				{description}
+			</div>
+			<div className="mt-3 border-t border-border pt-2 font-mono text-[0.6rem] uppercase tracking-[0.08em] text-muted-foreground">
 				{stat}
 			</div>
 		</Link>

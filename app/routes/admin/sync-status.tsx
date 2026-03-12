@@ -339,7 +339,8 @@ function SyncStatusCard({
 	gmailFormAction?: string
 }) {
 	const revalidator = useRevalidator()
-	const personLinkBase = personType === 'staff' ? '/admin/employees' : '/admin/students'
+	const personLinkBase =
+		personType === 'staff' ? '/admin/employees' : '/admin/students'
 
 	return (
 		<div className="space-y-6">
@@ -560,7 +561,9 @@ function SyncStatusCard({
 						<div className="flex items-start gap-2">
 							<Icon name="cross-1" className="mt-0.5 size-4 flex-shrink-0" />
 							<div>
-								<p className="font-semibold">Warning: Potential Data Overwrite</p>
+								<p className="font-semibold">
+									Warning: Potential Data Overwrite
+								</p>
 								<p className="mt-1">
 									Local changes to {title.toLowerCase()} records may be
 									overwritten by data from FACTS SIS. This action cannot be
@@ -711,84 +714,98 @@ function SyncStatusCard({
 			</Dialog>
 
 			{/* Gmail Signature Sync Confirmation Dialog */}
-			{personType === 'staff' && gmailDialogOpen !== undefined && setGmailDialogOpen && (
-				<Dialog
-					open={gmailDialogOpen}
-					onOpenChange={(open) => {
-						setGmailDialogOpen(open)
-						if (!open && setGmailConfirmationChecked) {
-							setGmailConfirmationChecked(false)
-						}
-					}}
-				>
-					<DialogContent>
-						<DialogHeader>
-							<DialogTitle>Sync Gmail Signatures</DialogTitle>
-							<DialogDescription>
-								This will fetch Gmail signatures for all active staff and faculty members and cache them in the ID system.
-							</DialogDescription>
-						</DialogHeader>
+			{personType === 'staff' &&
+				gmailDialogOpen !== undefined &&
+				setGmailDialogOpen && (
+					<Dialog
+						open={gmailDialogOpen}
+						onOpenChange={(open) => {
+							setGmailDialogOpen(open)
+							if (!open && setGmailConfirmationChecked) {
+								setGmailConfirmationChecked(false)
+							}
+						}}
+					>
+						<DialogContent>
+							<DialogHeader>
+								<DialogTitle>Sync Gmail Signatures</DialogTitle>
+								<DialogDescription>
+									This will fetch Gmail signatures for all active staff and
+									faculty members and cache them in the ID system.
+								</DialogDescription>
+							</DialogHeader>
 
-						<div className="bg-muted/50 border-border rounded-md border p-3 text-sm">
-							<p className="text-foreground font-medium">
-								<strong>What will happen:</strong>
-							</p>
-							<ul className="text-muted-foreground mt-2 list-disc space-y-1 pl-5">
-								<li>Gmail signatures will be fetched via Google Workspace API</li>
-								<li>Signatures will be cached in the database for 7 days</li>
-								<li>Staff and faculty without Gmail signatures will be skipped</li>
-								<li>This may take a few minutes for large batches</li>
-							</ul>
-						</div>
+							<div className="bg-muted/50 border-border rounded-md border p-3 text-sm">
+								<p className="text-foreground font-medium">
+									<strong>What will happen:</strong>
+								</p>
+								<ul className="text-muted-foreground mt-2 list-disc space-y-1 pl-5">
+									<li>
+										Gmail signatures will be fetched via Google Workspace API
+									</li>
+									<li>Signatures will be cached in the database for 7 days</li>
+									<li>
+										Staff and faculty without Gmail signatures will be skipped
+									</li>
+									<li>This may take a few minutes for large batches</li>
+								</ul>
+							</div>
 
-						{/* Confirmation Checkbox */}
-						<div className="flex items-start gap-2">
-							<input
-								type="checkbox"
-								id="gmail-sync-confirmation"
-								checked={gmailConfirmationChecked ?? false}
-								onChange={(e) => setGmailConfirmationChecked?.(e.target.checked)}
-								className="mt-1 h-4 w-4 rounded border-gray-300"
-							/>
-							<label
-								htmlFor="gmail-sync-confirmation"
-								className="text-foreground text-sm leading-relaxed"
-							>
-								I understand that Gmail signatures will be fetched and cached in the ID system.
-							</label>
-						</div>
-
-						<DialogFooter>
-							<Button
-								variant="outline"
-								onClick={() => {
-									setGmailDialogOpen(false)
-									setGmailConfirmationChecked?.(false)
-								}}
-								disabled={gmailSyncPending}
-							>
-								Cancel
-							</Button>
-							<Form method="post" action="/admin/sync-status">
-								<input type="hidden" name="intent" value={gmailFormAction ?? 'sync-gmail-signatures'} />
-								<Button
-									type="submit"
-									disabled={gmailSyncPending || !gmailConfirmationChecked}
+							{/* Confirmation Checkbox */}
+							<div className="flex items-start gap-2">
+								<input
+									type="checkbox"
+									id="gmail-sync-confirmation"
+									checked={gmailConfirmationChecked ?? false}
+									onChange={(e) =>
+										setGmailConfirmationChecked?.(e.target.checked)
+									}
+									className="mt-1 h-4 w-4 rounded border-gray-300"
+								/>
+								<label
+									htmlFor="gmail-sync-confirmation"
+									className="text-foreground text-sm leading-relaxed"
 								>
-									{gmailSyncPending ? (
-										<>
-											<Icon name="update" className="mr-2 animate-spin" />
-											Syncing...
-										</>
-									) : (
-										'Sync Gmail Signatures'
-									)}
+									I understand that Gmail signatures will be fetched and cached
+									in the ID system.
+								</label>
+							</div>
+
+							<DialogFooter>
+								<Button
+									variant="outline"
+									onClick={() => {
+										setGmailDialogOpen(false)
+										setGmailConfirmationChecked?.(false)
+									}}
+									disabled={gmailSyncPending}
+								>
+									Cancel
 								</Button>
-							</Form>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
-			)}
+								<Form method="post" action="/admin/sync-status">
+									<input
+										type="hidden"
+										name="intent"
+										value={gmailFormAction ?? 'sync-gmail-signatures'}
+									/>
+									<Button
+										type="submit"
+										disabled={gmailSyncPending || !gmailConfirmationChecked}
+									>
+										{gmailSyncPending ? (
+											<>
+												<Icon name="update" className="mr-2 animate-spin" />
+												Syncing...
+											</>
+										) : (
+											'Sync Gmail Signatures'
+										)}
+									</Button>
+								</Form>
+							</DialogFooter>
+						</DialogContent>
+					</Dialog>
+				)}
 		</div>
 	)
 }
@@ -807,7 +824,8 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 
 	const staffSyncPending = useIsPending({ formAction: '/admin/sync-status' })
 	const [staffDialogOpen, setStaffDialogOpen] = useState(false)
-	const [staffConfirmationChecked, setStaffConfirmationChecked] = useState(false)
+	const [staffConfirmationChecked, setStaffConfirmationChecked] =
+		useState(false)
 
 	const [studentDialogOpen, setStudentDialogOpen] = useState(false)
 	const [studentConfirmationChecked, setStudentConfirmationChecked] =
@@ -819,8 +837,10 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 		useState(false)
 
 	const [studentGoogleDialogOpen, setStudentGoogleDialogOpen] = useState(false)
-	const [studentGoogleConfirmationChecked, setStudentGoogleConfirmationChecked] =
-		useState(false)
+	const [
+		studentGoogleConfirmationChecked,
+		setStudentGoogleConfirmationChecked,
+	] = useState(false)
 
 	// Gmail signature sync
 	const gmailSyncPending = useIsPending({ formAction: '/admin/sync-status' })
@@ -830,107 +850,107 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 
 	return (
 		<div className="h-full overflow-y-auto px-6 py-6">
-		<div>
-			<PageTitle title="SIS Sync Status" />
+			<div>
+				<PageTitle title="FACTS Sync Status" />
 
-			{/* Help text */}
-			<div className="bg-muted/30 border-border mt-4 rounded-md border p-3 text-sm">
-				<p className="text-muted-foreground">
-					<strong>Refresh</strong> reloads the status page without making
-					changes. <strong>Sync Now</strong> pulls the latest data from FACTS
-					and may overwrite local changes.
-				</p>
-			</div>
+				{/* Help text */}
+				<div className="bg-muted/30 border-border mt-4 rounded-md border p-3 text-sm">
+					<p className="text-muted-foreground">
+						<strong>Refresh</strong> reloads the status page without making
+						changes. <strong>Sync Now</strong> pulls the latest data from FACTS
+						and may overwrite local changes.
+					</p>
+				</div>
 
-			{/* Tabs for Staff and Students */}
-			<div className="mt-6">
-				<div className="border-b border-gray-200">
-					<nav className="-mb-px flex space-x-8" aria-label="Tabs">
-						<button
-							onClick={() => {
-								document
-									.getElementById('staff-section')
-									?.scrollIntoView({ behavior: 'smooth' })
-							}}
-							className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium"
-						>
-							Staff ({staffStatistics.total})
-						</button>
-						<button
-							onClick={() => {
-								document
-									.getElementById('students-section')
-									?.scrollIntoView({ behavior: 'smooth' })
-							}}
-							className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium"
-						>
-							Students ({studentStatistics.total})
-						</button>
-					</nav>
+				{/* Tabs for Staff and Students */}
+				<div className="mt-6">
+					<div className="border-b border-gray-200">
+						<nav className="-mb-px flex space-x-8" aria-label="Tabs">
+							<button
+								onClick={() => {
+									document
+										.getElementById('staff-section')
+										?.scrollIntoView({ behavior: 'smooth' })
+								}}
+								className="border-b-2 border-transparent px-1 py-4 text-sm font-medium whitespace-nowrap text-gray-500 hover:border-gray-300 hover:text-gray-700"
+							>
+								Staff ({staffStatistics.total})
+							</button>
+							<button
+								onClick={() => {
+									document
+										.getElementById('students-section')
+										?.scrollIntoView({ behavior: 'smooth' })
+								}}
+								className="border-b-2 border-transparent px-1 py-4 text-sm font-medium whitespace-nowrap text-gray-500 hover:border-gray-300 hover:text-gray-700"
+							>
+								Students ({studentStatistics.total})
+							</button>
+						</nav>
+					</div>
+				</div>
+
+				{/* Staff Section */}
+				<div id="staff-section" className="mt-6">
+					<h2 className="mb-4 text-xl font-semibold">Staff Sync</h2>
+					<SyncStatusCard
+						title="Staff"
+						lastSync={lastStaffSync}
+						statistics={staffStatistics}
+						recentErrors={recentStaffErrors}
+						personsWithSyncIssues={staffWithSyncIssues}
+						personType="staff"
+						syncPending={staffSyncPending}
+						googleSyncPending={staffSyncPending}
+						gmailSyncPending={staffSyncPending}
+						onSyncClick={() => setStaffDialogOpen(true)}
+						onGoogleSyncClick={() => setStaffGoogleDialogOpen(true)}
+						onGmailSyncClick={() => setStaffGmailDialogOpen(true)}
+						confirmDialogOpen={staffDialogOpen}
+						setConfirmDialogOpen={setStaffDialogOpen}
+						confirmationChecked={staffConfirmationChecked}
+						setConfirmationChecked={setStaffConfirmationChecked}
+						formAction="sync-staff"
+						googleFormAction="sync-google-photos-staff"
+						googleDialogOpen={staffGoogleDialogOpen}
+						setGoogleDialogOpen={setStaffGoogleDialogOpen}
+						googleConfirmationChecked={staffGoogleConfirmationChecked}
+						setGoogleConfirmationChecked={setStaffGoogleConfirmationChecked}
+						gmailDialogOpen={staffGmailDialogOpen}
+						setGmailDialogOpen={setStaffGmailDialogOpen}
+						gmailConfirmationChecked={staffGmailConfirmationChecked}
+						setGmailConfirmationChecked={setStaffGmailConfirmationChecked}
+						gmailFormAction="sync-gmail-signatures"
+					/>
+				</div>
+
+				{/* Students Section */}
+				<div id="students-section" className="mt-12">
+					<h2 className="mb-4 text-xl font-semibold">Student Sync</h2>
+					<SyncStatusCard
+						title="Students"
+						lastSync={lastStudentSync}
+						statistics={studentStatistics}
+						recentErrors={recentStudentErrors}
+						personsWithSyncIssues={studentsWithSyncIssues}
+						personType="students"
+						syncPending={staffSyncPending}
+						googleSyncPending={staffSyncPending}
+						onSyncClick={() => setStudentDialogOpen(true)}
+						onGoogleSyncClick={() => setStudentGoogleDialogOpen(true)}
+						confirmDialogOpen={studentDialogOpen}
+						setConfirmDialogOpen={setStudentDialogOpen}
+						confirmationChecked={studentConfirmationChecked}
+						setConfirmationChecked={setStudentConfirmationChecked}
+						formAction="sync-students"
+						googleFormAction="sync-google-photos-students"
+						googleDialogOpen={studentGoogleDialogOpen}
+						setGoogleDialogOpen={setStudentGoogleDialogOpen}
+						googleConfirmationChecked={studentGoogleConfirmationChecked}
+						setGoogleConfirmationChecked={setStudentGoogleConfirmationChecked}
+					/>
 				</div>
 			</div>
-
-			{/* Staff Section */}
-			<div id="staff-section" className="mt-6">
-				<h2 className="mb-4 text-xl font-semibold">Staff Sync</h2>
-				<SyncStatusCard
-					title="Staff"
-					lastSync={lastStaffSync}
-					statistics={staffStatistics}
-					recentErrors={recentStaffErrors}
-					personsWithSyncIssues={staffWithSyncIssues}
-					personType="staff"
-					syncPending={staffSyncPending}
-					googleSyncPending={staffSyncPending}
-					gmailSyncPending={staffSyncPending}
-					onSyncClick={() => setStaffDialogOpen(true)}
-					onGoogleSyncClick={() => setStaffGoogleDialogOpen(true)}
-					onGmailSyncClick={() => setStaffGmailDialogOpen(true)}
-					confirmDialogOpen={staffDialogOpen}
-					setConfirmDialogOpen={setStaffDialogOpen}
-					confirmationChecked={staffConfirmationChecked}
-					setConfirmationChecked={setStaffConfirmationChecked}
-					formAction="sync-staff"
-					googleFormAction="sync-google-photos-staff"
-					googleDialogOpen={staffGoogleDialogOpen}
-					setGoogleDialogOpen={setStaffGoogleDialogOpen}
-					googleConfirmationChecked={staffGoogleConfirmationChecked}
-					setGoogleConfirmationChecked={setStaffGoogleConfirmationChecked}
-					gmailDialogOpen={staffGmailDialogOpen}
-					setGmailDialogOpen={setStaffGmailDialogOpen}
-					gmailConfirmationChecked={staffGmailConfirmationChecked}
-					setGmailConfirmationChecked={setStaffGmailConfirmationChecked}
-					gmailFormAction="sync-gmail-signatures"
-				/>
-			</div>
-
-			{/* Students Section */}
-			<div id="students-section" className="mt-12">
-				<h2 className="mb-4 text-xl font-semibold">Student Sync</h2>
-				<SyncStatusCard
-					title="Students"
-					lastSync={lastStudentSync}
-					statistics={studentStatistics}
-					recentErrors={recentStudentErrors}
-					personsWithSyncIssues={studentsWithSyncIssues}
-					personType="students"
-					syncPending={staffSyncPending}
-					googleSyncPending={staffSyncPending}
-					onSyncClick={() => setStudentDialogOpen(true)}
-					onGoogleSyncClick={() => setStudentGoogleDialogOpen(true)}
-					confirmDialogOpen={studentDialogOpen}
-					setConfirmDialogOpen={setStudentDialogOpen}
-					confirmationChecked={studentConfirmationChecked}
-					setConfirmationChecked={setStudentConfirmationChecked}
-					formAction="sync-students"
-					googleFormAction="sync-google-photos-students"
-					googleDialogOpen={studentGoogleDialogOpen}
-					setGoogleDialogOpen={setStudentGoogleDialogOpen}
-					googleConfirmationChecked={studentGoogleConfirmationChecked}
-					setGoogleConfirmationChecked={setStudentGoogleConfirmationChecked}
-				/>
-			</div>
-		</div>
 		</div>
 	)
 }

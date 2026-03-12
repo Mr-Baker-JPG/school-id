@@ -7,7 +7,8 @@ import { loader } from './$employeeId.tsx'
 
 // Mock the FACTS profile picture fetcher to prevent API calls during tests
 vi.mock('#app/utils/employee.server.ts', async (importOriginal) => {
-	const original = await importOriginal<typeof import('#app/utils/employee.server.ts')>()
+	const original =
+		await importOriginal<typeof import('#app/utils/employee.server.ts')>()
 	return {
 		...original,
 		fetchAndCacheFactsProfilePicture: vi.fn(() => Promise.resolve(null)),
@@ -72,6 +73,8 @@ async function createEmployee(data?: {
 }) {
 	const employee = await prisma.employee.create({
 		data: {
+			firstName: faker.person.firstName(),
+			lastName: faker.person.lastName(),
 			sisEmployeeId: faker.string.alphanumeric(10),
 			fullName: data?.fullName ?? faker.person.fullName(),
 			jobTitle: data?.jobTitle ?? faker.person.jobTitle(),
@@ -346,7 +349,7 @@ test('Creates EmployeeID record if missing', async () => {
 	await prisma.user.delete({ where: { id: admin.id } })
 })
 
-test('Shows SIS sync status (last updated time)', async () => {
+test('Shows FACTS sync status (last updated time)', async () => {
 	const admin = await createAdminUser()
 	const employee = await createEmployee()
 

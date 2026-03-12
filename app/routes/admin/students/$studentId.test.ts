@@ -69,6 +69,8 @@ async function createStudent(data?: {
 }) {
 	const student = await prisma.student.create({
 		data: {
+			firstName: faker.person.firstName(),
+			lastName: faker.person.lastName(),
 			sisStudentId: faker.string.alphanumeric(10),
 			fullName: data?.fullName ?? faker.person.fullName(),
 			email: data?.email ?? faker.internet.email(),
@@ -416,7 +418,7 @@ test('Creates StudentID record if missing', async () => {
 	await prisma.user.delete({ where: { id: admin.id } })
 })
 
-test('Shows SIS sync status (last updated time)', async () => {
+test('Shows FACTS sync status (last updated time)', async () => {
 	const admin = await createAdminUser()
 	const student = await createStudent()
 

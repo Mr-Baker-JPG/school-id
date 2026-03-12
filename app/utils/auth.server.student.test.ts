@@ -35,14 +35,20 @@ beforeEach(async () => {
 async function createStudent(overrides: Partial<{
 	email: string
 	fullName: string
+	firstName: string
+	lastName: string
 	sisStudentId: string
 	status: string
 }> = {}) {
 	const email = overrides.email ?? `test-redirect-student-${faker.string.uuid()}@jpgacademy.org`
+	const firstName = overrides.firstName ?? faker.person.firstName()
+	const lastName = overrides.lastName ?? faker.person.lastName()
 	return prisma.student.create({
 		data: {
 			email,
-			fullName: overrides.fullName ?? faker.person.fullName(),
+			fullName: overrides.fullName ?? `${firstName} ${lastName}`,
+			firstName,
+			lastName,
 			sisStudentId: overrides.sisStudentId ?? faker.string.uuid(),
 			status: (overrides.status as 'active' | 'inactive') ?? 'active',
 		},
@@ -55,15 +61,21 @@ async function createStudent(overrides: Partial<{
 async function createEmployee(overrides: Partial<{
 	email: string
 	fullName: string
+	firstName: string
+	lastName: string
 	sisEmployeeId: string
 	jobTitle: string
 	status: string
 }> = {}) {
 	const email = overrides.email ?? `test-redirect-employee-${faker.string.uuid()}@jpgacademy.org`
+	const firstName = overrides.firstName ?? faker.person.firstName()
+	const lastName = overrides.lastName ?? faker.person.lastName()
 	return prisma.employee.create({
 		data: {
 			email,
-			fullName: overrides.fullName ?? faker.person.fullName(),
+			fullName: overrides.fullName ?? `${firstName} ${lastName}`,
+			firstName,
+			lastName,
 			sisEmployeeId: overrides.sisEmployeeId ?? faker.string.uuid(),
 			jobTitle: overrides.jobTitle ?? 'Teacher',
 			status: (overrides.status as 'active' | 'inactive') ?? 'active',
@@ -96,12 +108,12 @@ async function createUserWithRoles(
 // TESTS: getRedirectPathForUser
 // ============================================================================
 
-test('redirects admin users to /admin/employees', async () => {
+test('redirects admin users to /admin', async () => {
 	const email = `test-redirect-admin-${faker.string.uuid()}@jpgacademy.org`
 	const user = await createUserWithRoles(email, ['user', 'admin'])
 
 	const redirectPath = await getRedirectPathForUser(user.id)
-	expect(redirectPath).toBe('/admin/employees')
+	expect(redirectPath).toBe('/admin')
 })
 
 test('redirects employees to /employee/id', async () => {
@@ -129,7 +141,7 @@ test('prioritizes admin role over employee record', async () => {
 
 	// Admin role should take precedence
 	const redirectPath = await getRedirectPathForUser(user.id)
-	expect(redirectPath).toBe('/admin/employees')
+	expect(redirectPath).toBe('/admin')
 })
 
 test('prioritizes admin role over student record', async () => {
@@ -139,7 +151,7 @@ test('prioritizes admin role over student record', async () => {
 
 	// Admin role should take precedence
 	const redirectPath = await getRedirectPathForUser(user.id)
-	expect(redirectPath).toBe('/admin/employees')
+	expect(redirectPath).toBe('/admin')
 })
 
 test('prioritizes employee over student when both exist', async () => {

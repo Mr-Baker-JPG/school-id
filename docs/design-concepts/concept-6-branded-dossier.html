@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept 6 — The Branded Dossier (JPG Academy)</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* ---- JPG Brand Palette ---- */
+    --navy:        #1B2A4A;
+    --navy-deep:   #0F1A30;
+    --navy-light:  #2F3E63;
+    --gold:        #C9A24D;
+    --gold-light:  #DEC07A;
+    --gold-pale:   #F5EDDA;
+    --gold-bg:     #FBF7EE;
+    --maroon:      #8B1A2B;
+    --maroon-light:#A33A32;
+
+    /* ---- UI Tokens ---- */
+    --bg:          #F5F2EB;
+    --paper:       #FDFBF7;
+    --paper-warm:  #F8F4EC;
+    --ink:         var(--navy);
+    --ink-light:   var(--navy-light);
+    --muted:       #7D7668;
+    --border:      #DDD8CB;
+    --border-gold: rgba(201,162,77,0.35);
+    --success:     #2D6A4F;
+    --warning:     #B45309;
+    --shadow:      0 1px 3px rgba(27,42,74,0.06), 0 1px 2px rgba(27,42,74,0.04);
+    --shadow-lg:   0 8px 24px rgba(27,42,74,0.08), 0 2px 8px rgba(27,42,74,0.04);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'EB Garamond', Garamond, Georgia, serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.65;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* CONCEPT 6: "The Branded Dossier"
+     Dossier layout from Concept 1, recast in JPG Academy's visual identity.
+     Navy + Gold + Maroon palette. Cinzel for headings (Trajan substitute).
+     EB Garamond for body (matches ID cards). Crest watermark. Gold rules.
+     Feels like official school documentation — dignified, institutional. */
+
+  .shell {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* ---- BACK LINK ---- */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-decoration: none;
+    margin-bottom: 2rem;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--navy); }
+  .back-link svg { width: 14px; height: 14px; }
+
+  /* ---- SCHOOL MASTHEAD ---- */
+  .masthead {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding-bottom: 1rem;
+    margin-bottom: 1.75rem;
+    border-bottom: 2px solid var(--navy);
+    position: relative;
+  }
+  .masthead::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--gold);
+  }
+  .masthead-logo {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+  }
+  .masthead-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .masthead-text {
+    display: flex;
+    flex-direction: column;
+  }
+  .masthead-school {
+    font-family: 'TrajanPro', 'Cinzel', Georgia, 'Times New Roman', serif;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--navy);
+    line-height: 1.3;
+  }
+  .masthead-system {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  /* ---- NOTICE ---- */
+  .notice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    font-size: 0.82rem;
+    margin-bottom: 1.5rem;
+    border-left: 3px solid;
+    background: var(--paper);
+  }
+  .notice--success { border-color: var(--success); color: var(--success); }
+  .notice--warning { border-color: var(--warning); color: var(--warning); }
+  .notice--info { border-color: var(--gold); color: #8A6930; background: var(--gold-bg); }
+
+  /* ---- DOSSIER HEADER ---- */
+  .dossier-header {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 2rem;
+    align-items: start;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2.5rem;
+    position: relative;
+  }
+  /* Gold accent line under header */
+  .dossier-header::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 80px;
+    height: 2px;
+    background: var(--gold);
+  }
+
+  .photo-frame {
+    width: 160px;
+    height: 200px;
+    background: var(--paper-warm);
+    border: 2px solid var(--navy);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  /* Gold inner border */
+  .photo-frame::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px solid var(--border-gold);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .photo-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .photo-frame .no-photo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 0.35rem;
+    color: var(--muted);
+  }
+  .photo-frame .no-photo svg {
+    width: 40px;
+    height: 40px;
+    opacity: 0.3;
+  }
+  .photo-frame .no-photo span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .photo-actions {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    gap: 1px;
+    z-index: 2;
+  }
+  .photo-actions button {
+    flex: 1;
+    padding: 0.35rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border: none;
+    background: rgba(27,42,74,0.88);
+    color: var(--gold-light);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .photo-actions button:hover { background: var(--maroon); color: #fff; }
+
+  .header-info { padding-top: 0.15rem; }
+
+  .person-type-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--gold);
+    background: var(--navy);
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .person-name {
+    font-family: 'TrajanPro', 'Cinzel', Georgia, 'Times New Roman', serif;
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1.15;
+    margin-bottom: 0.3rem;
+    color: var(--navy);
+    letter-spacing: 0.01em;
+  }
+
+  .person-subtitle {
+    font-size: 1rem;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 1rem;
+  }
+
+  .stamp-row {
+    display: flex;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+  }
+
+  .stamp {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.6rem;
+    border: 2px solid;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 500;
+    transform: rotate(-1.5deg);
+  }
+  .stamp--active {
+    border-color: var(--success);
+    color: var(--success);
+  }
+  .stamp--inactive {
+    border-color: var(--muted);
+    color: var(--muted);
+  }
+  .stamp--expiring {
+    border-color: var(--warning);
+    color: var(--warning);
+  }
+  .stamp--school {
+    border-color: var(--navy);
+    color: var(--navy);
+    transform: rotate(0.5deg);
+  }
+
+  .header-actions {
+    margin-top: 1.25rem;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .btn:hover { border-color: var(--navy); background: #fff; }
+  .btn--primary {
+    background: var(--navy);
+    color: var(--gold-light);
+    border-color: var(--navy);
+  }
+  .btn--primary:hover { background: var(--navy-deep); }
+  .btn--gold {
+    background: var(--gold);
+    color: var(--navy-deep);
+    border-color: var(--gold);
+    font-weight: 600;
+  }
+  .btn--gold:hover { background: var(--gold-light); }
+
+  /* ---- SECTION ---- */
+  .section {
+    margin-bottom: 2.5rem;
+  }
+
+  .section-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--gold);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .section-title .num {
+    color: var(--navy);
+    font-weight: 500;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ---- DATA GRID ---- */
+  .data-grid {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 0;
+  }
+  .data-grid dt,
+  .data-grid dd {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+  }
+  .data-grid dt {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 400;
+    color: var(--muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+  }
+  .data-grid dd { color: var(--ink); }
+  .data-grid .mono {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+    color: var(--navy-light);
+  }
+
+  /* ---- TWO COLUMN ---- */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+  }
+
+  /* ---- CARD BOX (elevated paper) ---- */
+  .card-box {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 1.25rem 1.5rem;
+    position: relative;
+  }
+  /* Gold top accent */
+  .card-box--gold::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+  }
+
+  /* ---- EDIT NAME ---- */
+  .edit-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: end;
+  }
+  .edit-row .field { flex: 1; }
+  .edit-row label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .edit-row input {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border);
+    background: #fff;
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 0.95rem;
+    color: var(--ink);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .edit-row input:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(201,162,77,0.15);
+  }
+
+  .reset-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.65rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--maroon);
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    transition: color 0.2s;
+  }
+  .reset-link:hover { color: var(--maroon-light); text-decoration: underline; }
+
+  /* ---- GMAIL SIG ---- */
+  .sig-preview {
+    background: #fff;
+    border: 1px solid var(--border);
+    padding: 1rem 1.25rem;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: #444;
+  }
+  .sig-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  /* ---- CARD PREVIEW ---- */
+  .card-preview-wrap {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+
+  .card-mock {
+    width: 243px;
+    height: 153px;
+    margin: 0 auto 0.75rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .card-mock:hover {
+    transform: scale(1.03);
+    box-shadow: var(--shadow-lg);
+  }
+  .card-mock--front {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-deep) 100%);
+    color: rgba(201,162,77,0.4);
+    box-shadow: 0 4px 12px rgba(27,42,74,0.2);
+    border: 1px solid rgba(201,162,77,0.15);
+  }
+  .card-mock--front::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--maroon), var(--gold), var(--maroon));
+  }
+  .card-mock--front::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(135deg, transparent, rgba(201,162,77,0.04));
+  }
+  .card-mock--back {
+    background: linear-gradient(135deg, #FDFBF7, #F0EBE0);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .card-mock--back::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--maroon), var(--gold), var(--maroon));
+  }
+
+  .card-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* ---- WATERMARK CREST ---- */
+  .dossier-header {
+    position: relative;
+    overflow: hidden;
+  }
+  .watermark {
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 180px;
+    height: 180px;
+    opacity: 0.04;
+    pointer-events: none;
+  }
+  .watermark img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  /* ---- DIVIDER ---- */
+  .gold-rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 2.5rem 0;
+  }
+
+  /* ---- MOTTO ---- */
+  .motto {
+    text-align: center;
+    font-style: italic;
+    color: var(--muted);
+    font-size: 0.88rem;
+    letter-spacing: 0.02em;
+    padding: 1rem 0;
+  }
+
+  @media (max-width: 640px) {
+    .dossier-header { grid-template-columns: 1fr; }
+    .photo-frame { width: 120px; height: 150px; margin: 0 auto; }
+    .two-col { grid-template-columns: 1fr; }
+    .data-grid { grid-template-columns: 1fr; }
+    .data-grid dt { border-bottom: none; padding-bottom: 0.1rem; }
+    .data-grid dd { padding-top: 0; }
+    .header-info { text-align: center; }
+    .stamp-row { justify-content: center; }
+    .header-actions { justify-content: center; }
+    .person-type-label { margin-left: auto; margin-right: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <a href="#" class="back-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to Employees
+  </a>
+
+  <!-- MASTHEAD -->
+  <div class="masthead">
+    <div class="masthead-logo">
+      <img src="JPG-Crest.png" alt="JPG Academy Crest" />
+    </div>
+    <div class="masthead-text">
+      <span class="masthead-school">John Paul the Great Academy</span>
+      <span class="masthead-system">ID Management System</span>
+    </div>
+  </div>
+
+  <!-- NOTICE -->
+  <div class="notice notice--success">
+    ✓ Profile picture successfully fetched from FACTS and cached.
+  </div>
+
+  <!-- DOSSIER HEADER -->
+  <div class="dossier-header">
+    <!-- Watermark crest -->
+    <div class="watermark">
+      <img src="JPG-Crest.png" alt="" aria-hidden="true" />
+    </div>
+
+    <div class="photo-frame">
+      <div class="no-photo">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+        <span>No Photo</span>
+      </div>
+      <div class="photo-actions">
+        <button>Upload</button>
+        <button>Refresh FACTS</button>
+      </div>
+    </div>
+
+    <div class="header-info">
+      <span class="person-type-label">Employee · Faculty</span>
+      <h1 class="person-name">Sarah Mitchell</h1>
+      <div class="person-subtitle">Upper School Math Teacher · smitchell@jpgacademy.org</div>
+      <div class="stamp-row">
+        <span class="stamp stamp--active">✓ Active</span>
+        <span class="stamp stamp--school">Faculty</span>
+        <span class="stamp stamp--active">ID Valid</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn--gold">↓ Download ID Card</button>
+        <button class="btn">✎ Edit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERSONNEL RECORD -->
+  <div class="two-col">
+    <div class="section">
+      <div class="section-title"><span class="num">01</span> Personnel Record</div>
+      <dl class="data-grid">
+        <dt>Full Name</dt>
+        <dd>Sarah Mitchell</dd>
+        <dt>Job Title</dt>
+        <dd>Upper School Math Teacher</dd>
+        <dt>Email</dt>
+        <dd>smitchell@jpgacademy.org</dd>
+        <dt>SIS ID</dt>
+        <dd class="mono">EMP-00482</dd>
+        <dt>Status</dt>
+        <dd><span class="stamp stamp--active" style="transform:none;font-size:0.6rem;">Active</span></dd>
+      </dl>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span class="num">02</span> ID Card</div>
+      <dl class="data-grid">
+        <dt>Expiration</dt>
+        <dd class="mono">07/01/2026</dd>
+        <dt>Status</dt>
+        <dd><span class="stamp stamp--active" style="transform:none;font-size:0.6rem;">Valid</span></dd>
+        <dt>Last SIS Sync</dt>
+        <dd class="mono">03/12/2026, 8:14 AM</dd>
+        <dt>FACTS Photo</dt>
+        <dd class="mono" style="font-size:0.78rem;">Checked 03/10/2026</dd>
+      </dl>
+      <div style="margin-top:1rem;">
+        <button class="btn">✎ Update Expiration</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT NAME -->
+  <div class="section">
+    <div class="section-title"><span class="num">03</span> Edit Display Name</div>
+    <div class="card-box card-box--gold">
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.85rem;font-style:italic;">
+        Once edited, the name will be preserved during SIS syncs.
+      </p>
+      <div class="edit-row">
+        <div class="field">
+          <label for="fullName">Full Name</label>
+          <input type="text" id="fullName" value="Sarah Mitchell" />
+        </div>
+        <button class="btn btn--primary">Save Name</button>
+      </div>
+      <a href="#" class="reset-link">⟳ Allow Name Sync from SIS</a>
+    </div>
+  </div>
+
+  <!-- GMAIL SIGNATURE -->
+  <div class="section">
+    <div class="section-title"><span class="num">04</span> Gmail Signature</div>
+    <div class="sig-meta">Last fetched: 03/10/2026, 2:30 PM</div>
+    <div class="sig-preview">
+      <strong style="color:var(--navy);">Sarah Mitchell</strong><br>
+      Upper School Math Teacher<br>
+      John Paul the Great Academy<br>
+      <span style="color:var(--maroon);">smitchell@jpgacademy.org</span> · (337) 889-5345
+    </div>
+  </div>
+
+  <div class="gold-rule"></div>
+
+  <!-- ID CARD PREVIEW -->
+  <div class="section">
+    <div class="section-title"><span class="num">05</span> ID Card Preview</div>
+    <div class="two-col">
+      <div class="card-preview-wrap">
+        <div class="card-mock card-mock--front">Front of ID</div>
+        <div class="card-label">Front</div>
+      </div>
+      <div class="card-preview-wrap">
+        <div class="card-mock card-mock--back">Back of ID</div>
+        <div class="card-label">Back</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="motto">Ad Majorem Dei Gloriam</div>
+</div>
+
+</body>
+</html>

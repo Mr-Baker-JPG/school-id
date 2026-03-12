@@ -11,12 +11,12 @@ import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
-import { PageTitle } from '#app/ui/components/PageTitle.tsx'
-import { CardSection } from '#app/ui/components/CardSection.tsx'
-import { getEmployeePersonType } from '#app/utils/person-type.ts'
+import { DossierHeader } from '#app/ui/components/DossierHeader.tsx'
+import { SectionTitle } from '#app/ui/components/SectionTitle.tsx'
 import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
 import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
 import { IdPreviewCard } from '#app/ui/components/IdPreviewCard.tsx'
+import { getEmployeePersonType } from '#app/utils/person-type.ts'
 import { generateBarcodeDataURL } from '#app/utils/barcode.server.ts'
 import { getBrandingConfig } from '#app/utils/branding.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
@@ -99,7 +99,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 			DAYS_BEFORE_RECHECK * 24 * 60 * 60 * 1000
 
 	if (shouldFetchSignature) {
-		// Don't await - let it run in the background
 		gmailSignatureService
 			.fetchAndCacheSignature(employee.id, employee.email)
 			.catch((error) => {
@@ -110,13 +109,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 			})
 	}
 
-	// If no uploaded photo exists, try to fetch and cache from FACTS
-	// Note: This is done asynchronously to avoid blocking the loader response
-	// The photo will be available on the next page load if successfully cached
 	let photoUrl = employeeIdRecord?.photoUrl ?? null
 	if (!photoUrl && employee.sisEmployeeId) {
-		// Don't await - let it run in the background to avoid loader timeout
-		// The photo will be cached for the next page load
 		fetchAndCacheFactsProfilePicture(employee.id, employee.sisEmployeeId).catch(
 			(error) => {
 				console.warn(
@@ -129,8 +123,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
 	// Get branding config
 	const branding = getBrandingConfig()
-
-	// Get logo URL (if configured)
 	const logoUrl = branding.logoUrl || null
 
 	// Generate QR code for verification
@@ -181,7 +173,6 @@ export async function action({ request, params }: Route.ActionArgs) {
 	invariantResponse(employeeId, 'Employee ID is required', { status: 400 })
 
 	if (intent === 'recheck-facts-photo') {
-		// Fetch employee to get sisEmployeeId
 		const employee = await prisma.employee.findUnique({
 			where: { id: employeeId },
 			select: { sisEmployeeId: true, fullName: true },
@@ -190,11 +181,10 @@ export async function action({ request, params }: Route.ActionArgs) {
 		invariantResponse(employee, 'Employee not found', { status: 404 })
 
 		try {
-			// Force re-fetch from FACTS
 			const cachedPhotoUrl = await fetchAndCacheFactsProfilePicture(
 				employeeId,
 				employee.sisEmployeeId,
-				true, // force re-fetch
+				true,
 			)
 
 			if (cachedPhotoUrl) {
@@ -269,89 +259,89 @@ export default function AdminEmployeeDetailRoute({
 		expirationDate: new Date(employee.employeeId?.expirationDate ?? new Date()),
 	}
 
-	const downloadButton = (
-		<Button
-			type="button"
-			onClick={() => {
-				window.location.href = `/resources/admin/employee-pdf/${employee.id}`
-			}}
-		>
-			<Icon name="download">Download ID Card</Icon>
-		</Button>
-	)
-
 	return (
-		<div>
+		<div className="font-body">
 			{/* Back link — visible only on mobile where the list panel is hidden */}
-			<div className="mb-4 md:hidden">
+			<div className="mb-6 md:hidden">
 				<Link
 					to="/admin/employees"
-					className="text-muted-foreground hover:text-foreground flex items-center gap-2"
+					className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-[0.1em] text-muted-foreground transition-colors hover:text-foreground"
 				>
-					<Icon name="arrow-left">Back to Employees</Icon>
+					<Icon name="arrow-left" className="size-3.5" />
+					Back to Employees
 				</Link>
 			</div>
 
-			<PageTitle
-				title="Employee Details"
-				subtitle={employee.fullName}
-				rightSlot={downloadButton}
+			{/* ── DOSSIER HEADER ── */}
+			<DossierHeader
+				name={employee.fullName}
+				subtitle={`${employee.jobTitle} · ${employee.email}`}
+				typeLabel={`Employee · ${personType === 'FACULTY' ? 'Faculty' : 'Staff'}`}
+				photoUrl={displayPhotoUrl}
+				photoAlt={employee.fullName}
+				status={employee.status}
+				idValid={
+					employee.employeeId?.expirationDate
+						? new Date(employee.employeeId.expirationDate) > new Date()
+						: undefined
+				}
+				photoActions={
+					<>
+						<Button
+							asChild
+							size="sm"
+							className="flex-1 rounded-none bg-primary/90 font-mono text-[0.6rem] uppercase tracking-wide text-brand-gold hover:bg-brand-red"
+						>
+							<Link to={`/admin/employees/${employee.id}/photo`}>
+								{hasPhoto ? 'Change' : 'Upload'}
+							</Link>
+						</Button>
+						<Form method="post" className="flex flex-1">
+							<input type="hidden" name="intent" value="recheck-facts-photo" />
+							<StatusButton
+								type="submit"
+								size="sm"
+								status={isPending ? 'pending' : 'idle'}
+								disabled={isPending}
+								className="w-full rounded-none bg-primary/90 font-mono text-[0.6rem] uppercase tracking-wide text-brand-gold hover:bg-brand-red"
+							>
+								Refresh
+							</StatusButton>
+						</Form>
+					</>
+				}
+				actions={
+					<>
+						<Button
+							className="bg-brand-gold font-body text-sm font-semibold text-primary hover:bg-brand-gold/80"
+							onClick={() => {
+								window.location.href = `/resources/admin/employee-pdf/${employee.id}`
+							}}
+						>
+							<Icon name="download" className="size-4" />
+							Download ID Card
+						</Button>
+						<Button variant="outline" asChild className="font-body text-sm">
+							<Link to={`/admin/employees/${employee.id}/expiration`}>
+								<Icon name="pencil-1" className="size-4" />
+								Edit Expiration
+							</Link>
+						</Button>
+					</>
+				}
 			/>
 
-			<div className="mt-8 grid gap-6 md:grid-cols-2">
-				{/* Left Column: Photo */}
-				<CardSection title="Photo">
-					<div className="flex items-center gap-4">
-						{hasPhoto ? (
-							<Img
-								src={getEmployeePhotoSrc(photoUrl)}
-								alt={employee.fullName}
-								className="size-32 rounded-lg object-cover"
-								width={128}
-								height={128}
-							/>
-						) : (
-							<div className="bg-muted-foreground/20 flex size-32 items-center justify-center rounded-lg">
-								<Icon name="avatar" className="text-muted-foreground size-16" />
-							</div>
-						)}
-						<div className="flex flex-col gap-2">
-							<Button asChild variant="outline">
-								<Link to={`/admin/employees/${employee.id}/photo`}>
-									<Icon name="pencil-1">
-										{hasPhoto ? 'Change Photo' : 'Upload Photo'}
-									</Icon>
-								</Link>
-							</Button>
-							<Form method="post">
-								<input
-									type="hidden"
-									name="intent"
-									value="recheck-facts-photo"
-								/>
-								<StatusButton
-									type="submit"
-									variant="outline"
-									size="sm"
-									status={isPending ? 'pending' : 'idle'}
-									disabled={isPending}
-								>
-									<Icon name="update">Recheck</Icon>
-								</StatusButton>
-							</Form>
-						</div>
-					</div>
-				</CardSection>
-
-				{/* Right Column: Employee Info */}
-				<CardSection title="Employee Info">
+			{/* ── 01 PERSONNEL RECORD + 02 ID CARD ── */}
+			<div className="mt-10 grid gap-8 md:grid-cols-2">
+				<div>
+					<SectionTitle number="01">Personnel Record</SectionTitle>
 					<KeyValueList
 						items={[
 							{ key: 'Full Name', value: employee.fullName },
 							{ key: 'Job Title', value: employee.jobTitle },
 							{ key: 'Email', value: employee.email },
 							{
-								key: 'SIS Employee ID',
+								key: 'SIS ID',
 								value: employee.sisEmployeeId || 'N/A',
 								mono: true,
 							},
@@ -362,6 +352,7 @@ export default function AdminEmployeeDetailRoute({
 										variant={
 											employee.status === 'active' ? 'active' : 'inactive'
 										}
+										className="rotate-0"
 									>
 										{employee.status}
 									</StatusBadge>
@@ -369,134 +360,131 @@ export default function AdminEmployeeDetailRoute({
 							},
 						]}
 					/>
-				</CardSection>
-			</div>
+				</div>
 
-			<div className="mt-6 grid gap-6 md:grid-cols-2">
-				{/* ID Card Info */}
-				<CardSection title="ID Card Info">
+				<div>
+					<SectionTitle number="02">ID Card</SectionTitle>
 					<KeyValueList
 						items={[
+							{ key: 'Expiration', value: expirationDate, mono: true },
 							{
-								key: 'Expiration Date',
-								value: expirationDate,
-								mono: true,
+								key: 'Status',
+								value: (
+									<StatusBadge
+										variant={
+											employee.employeeId?.expirationDate &&
+											new Date(employee.employeeId.expirationDate) > new Date()
+												? 'valid'
+												: 'expired'
+										}
+										className="rotate-0"
+									>
+										{employee.employeeId?.expirationDate &&
+										new Date(employee.employeeId.expirationDate) > new Date()
+											? 'Valid'
+											: 'Expired'}
+									</StatusBadge>
+								),
 							},
+							{ key: 'Last SIS Sync', value: lastUpdated, mono: true },
 						]}
 					/>
-					<div className="mt-4">
-						<Button asChild variant="outline" size="sm">
-							<Link to={`/admin/employees/${employee.id}/expiration`}>
-								<Icon name="pencil-1">Update</Icon>
-							</Link>
-						</Button>
+				</div>
+			</div>
+
+			{/* ── 03 GMAIL SIGNATURE ── */}
+			<div className="mt-10">
+				<SectionTitle number="03">Gmail Signature</SectionTitle>
+				{employee.employeeId?.gmailSignature ? (
+					<div>
+						<p className="mb-2 font-mono text-[0.68rem] text-muted-foreground">
+							Last fetched:{' '}
+							{employee.employeeId.gmailSignatureFetchedAt
+								? new Date(
+										employee.employeeId.gmailSignatureFetchedAt,
+									).toLocaleString()
+								: 'Unknown'}
+						</p>
+						{/*
+							Security Note: Using dangerouslySetInnerHTML to render Gmail signature HTML.
+							This is safe because:
+							1. Content comes from Gmail API (trusted source)
+							2. Only admins can view this page
+							3. Content is fetched via service account (not user input)
+							4. Gmail sanitizes signatures on their end
+						*/}
+						<div
+							className="rounded border border-border bg-white p-4 font-body text-sm leading-relaxed text-gray-700"
+							dangerouslySetInnerHTML={{
+								__html: employee.employeeId.gmailSignature,
+							}}
+						/>
 					</div>
-				</CardSection>
-
-				{/* SIS Sync Status */}
-				<CardSection title="SIS Sync Status">
-					<KeyValueList
-						items={[
-							{
-								key: 'Last Updated from SIS',
-								value: lastUpdated,
-								mono: true,
-							},
-						]}
-					/>
-				</CardSection>
+				) : (
+					<div className="text-muted-foreground">
+						<p className="font-body italic">No Gmail signature found</p>
+						<p className="mt-1 font-body text-sm">
+							Signature will be fetched automatically when available
+						</p>
+					</div>
+				)}
 			</div>
 
-			{/* Gmail Signature Section */}
-			<div className="mt-6">
-				<CardSection title="Gmail Signature">
-					{employee.employeeId?.gmailSignature ? (
-						<div>
-							<div className="mb-2 text-sm text-muted-foreground">
-								Last updated:{' '}
-								{employee.employeeId.gmailSignatureFetchedAt
-									? new Date(
-											employee.employeeId.gmailSignatureFetchedAt,
-										).toLocaleString()
-									: 'Unknown'}
-							</div>
-							{/*
-								Security Note: Using dangerouslySetInnerHTML to render Gmail signature HTML.
-								This is safe because:
-								1. Content comes from Gmail API (trusted source)
-								2. Only admins can view this page
-								3. Content is fetched via service account (not user input)
-								4. Gmail sanitizes signatures on their end
-							*/}
-							<div
-								className="rounded-lg border bg-white p-4"
-								dangerouslySetInnerHTML={{
-									__html: employee.employeeId.gmailSignature,
-								}}
+			{/* ── GOLD RULE ── */}
+			<div className="my-10 h-px bg-gradient-to-r from-transparent via-brand-gold to-transparent" />
+
+			{/* ── 04 ID CARD PREVIEW ── */}
+			<SectionTitle number="04">ID Card Preview</SectionTitle>
+			<div className="grid gap-6 md:grid-cols-2">
+				<div className="border border-border bg-card p-5 shadow-sm">
+					<IdPreviewCard
+						title="Front of ID"
+						previewContent={
+							<IDCardFrontPreview
+								employee={employeeCardData}
+								photoUrl={displayPhotoUrl}
+								logoUrl={logoUrl}
+								branding={branding}
+								academicYear={academicYear}
+								barcodeDataURL={barcodeDataURL}
+							/>
+						}
+					>
+						<div className="flex justify-center">
+							<IDCardFrontPreview
+								employee={employeeCardData}
+								photoUrl={displayPhotoUrl}
+								logoUrl={logoUrl}
+								branding={branding}
+								academicYear={academicYear}
+								barcodeDataURL={barcodeDataURL}
 							/>
 						</div>
-					) : (
-						<div className="text-muted-foreground">
-							<p className="italic">No Gmail signature found</p>
-							<p className="mt-1 text-sm">
-								Signature will be fetched automatically when available
-							</p>
+					</IdPreviewCard>
+					<p className="mt-3 text-center font-mono text-[0.65rem] uppercase tracking-[0.08em] text-muted-foreground">
+						Front
+					</p>
+				</div>
+				<div className="border border-border bg-card p-5 shadow-sm">
+					<IdPreviewCard
+						title="Back of ID"
+						previewContent={
+							<IDCardBackPreview
+								qrCodeDataURL={qrCodeDataURL}
+								branding={branding}
+							/>
+						}
+					>
+						<div className="flex justify-center">
+							<IDCardBackPreview
+								qrCodeDataURL={qrCodeDataURL}
+								branding={branding}
+							/>
 						</div>
-					)}
-				</CardSection>
-			</div>
-
-			{/* ID Card Preview Section */}
-			<div className="mt-8">
-				<h2 className="mb-4 text-xl font-semibold">ID Card Preview</h2>
-				<div className="grid gap-6 md:grid-cols-2">
-					{/* Front of ID */}
-					<CardSection title="Front" className="border-muted/50 shadow-sm">
-						<IdPreviewCard
-							title="Front of ID"
-							previewContent={
-								<IDCardFrontPreview
-									employee={employeeCardData}
-									photoUrl={displayPhotoUrl}
-									logoUrl={logoUrl}
-									branding={branding}
-									academicYear={academicYear}
-									barcodeDataURL={barcodeDataURL}
-								/>
-							}
-						>
-							<div className="flex justify-center">
-								<IDCardFrontPreview
-									employee={employeeCardData}
-									photoUrl={displayPhotoUrl}
-									logoUrl={logoUrl}
-									branding={branding}
-									academicYear={academicYear}
-									barcodeDataURL={barcodeDataURL}
-								/>
-							</div>
-						</IdPreviewCard>
-					</CardSection>
-
-					{/* Back of ID */}
-					<CardSection title="Back" className="border-muted/50 shadow-sm">
-						<IdPreviewCard
-							title="Back of ID"
-							previewContent={
-								<IDCardBackPreview
-									qrCodeDataURL={qrCodeDataURL}
-									branding={branding}
-								/>
-							}
-						>
-							<div className="flex justify-center">
-								<IDCardBackPreview
-									qrCodeDataURL={qrCodeDataURL}
-									branding={branding}
-								/>
-							</div>
-						</IdPreviewCard>
-					</CardSection>
+					</IdPreviewCard>
+					<p className="mt-3 text-center font-mono text-[0.65rem] uppercase tracking-[0.08em] text-muted-foreground">
+						Back
+					</p>
 				</div>
 			</div>
 		</div>

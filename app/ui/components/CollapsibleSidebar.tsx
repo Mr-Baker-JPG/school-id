@@ -63,21 +63,25 @@ export function MobileSidebarTrigger({
 	return (
 		<Sheet>
 			<SheetTrigger asChild>
-				<Button variant="ghost" size="icon" className="md:hidden">
+				<Button
+					variant="ghost"
+					size="icon"
+					className="text-brand-gold/70 hover:bg-white/10 hover:text-brand-gold md:hidden"
+				>
 					<Icon name="menu" />
 					<span className="sr-only">{triggerLabel}</span>
 				</Button>
 			</SheetTrigger>
-			<SheetContent side="left" className="w-64">
+			<SheetContent side="left" className="w-64 bg-card">
 				<nav className="mt-8 flex flex-col gap-4">
 					{allGroups.map((group, groupIndex) => (
 						<div key={group.label || groupIndex}>
 							{group.label && (
-								<div className="text-muted-foreground mb-2 px-3 text-xs font-medium uppercase tracking-widest">
+								<div className="mb-2 px-3 font-mono text-[0.6rem] font-medium uppercase tracking-[0.12em] text-muted-foreground">
 									{group.label}
 								</div>
 							)}
-							<div className="flex flex-col gap-1">
+							<div className="flex flex-col gap-0.5">
 								{group.items.map((item) => {
 									const isActive =
 										location.pathname === item.to ||
@@ -89,14 +93,20 @@ export function MobileSidebarTrigger({
 											key={item.to}
 											to={item.to}
 											className={cn(
-												'text-body-sm flex items-center gap-3 rounded-md px-3 py-2 font-medium transition-colors',
+												'flex items-center gap-3 px-3 py-2 font-body text-sm font-medium transition-colors',
 												isActive
-													? 'bg-muted text-foreground'
+													? 'border-l-2 border-brand-gold bg-brand-navy/5 text-foreground'
 													: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
 											)}
 										>
 											{item.icon && (
-												<Icon name={item.icon} className="size-4" />
+												<Icon
+													name={item.icon}
+													className={cn(
+														'size-4',
+														isActive && 'text-brand-gold',
+													)}
+												/>
 											)}
 											{item.label}
 										</Link>
@@ -104,7 +114,7 @@ export function MobileSidebarTrigger({
 								})}
 							</div>
 							{groupIndex < allGroups.length - 1 && (
-								<div className="border-border my-2 border-t" />
+								<div className="mx-3 my-2 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 							)}
 						</div>
 					))}
@@ -115,8 +125,7 @@ export function MobileSidebarTrigger({
 }
 
 /**
- * Desktop collapsible sidebar — renders the aside with collapse/expand.
- * Hidden on mobile (md:flex). Place this in the body layout alongside <main>.
+ * Desktop collapsible sidebar — dossier-styled with warm cream tones.
  */
 export function CollapsibleSidebar({
 	items,
@@ -152,8 +161,6 @@ export function CollapsibleSidebar({
 
 	const NavLink = React.useCallback(
 		({ item }: { item: NavItem }) => {
-			// Exact match, or prefix match for non-root paths
-			// Special case: /admin should only match exactly (not /admin/employees)
 			const isActive =
 				location.pathname === item.to ||
 				(item.to !== '/' &&
@@ -164,12 +171,10 @@ export function CollapsibleSidebar({
 				<Link
 					to={item.to}
 					className={cn(
-						'relative flex items-center gap-3 rounded-md px-3 py-2 font-medium transition-colors',
+						'relative flex items-center gap-3 px-3 py-2 font-body text-sm font-medium transition-colors',
 						isActive
-							? 'bg-primary/10 text-foreground'
+							? 'border-l-2 border-brand-gold bg-brand-navy/5 text-foreground'
 							: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-						isActive &&
-							'before:bg-primary before:absolute before:left-0 before:top-1 before:bottom-1 before:w-[3px] before:rounded-full',
 					)}
 				>
 					{item.icon && (
@@ -177,16 +182,16 @@ export function CollapsibleSidebar({
 							name={item.icon}
 							className={cn(
 								'size-4 shrink-0',
-								isActive && 'text-primary',
+								isActive && 'text-brand-gold',
 							)}
 						/>
 					)}
 					<span
 						className={cn(
-							'text-body-sm whitespace-nowrap transition-[opacity,max-width] duration-200',
+							'whitespace-nowrap transition-[opacity,max-width] duration-200',
 							expanded
 								? 'max-w-48 opacity-100'
-								: 'max-w-0 opacity-0 overflow-hidden',
+								: 'max-w-0 overflow-hidden opacity-0',
 						)}
 					>
 						{item.label}
@@ -198,7 +203,7 @@ export function CollapsibleSidebar({
 				return (
 					<Tooltip delayDuration={100}>
 						<TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-						<TooltipContent side="right" className="text-xs">
+						<TooltipContent side="right" className="font-body text-xs">
 							{item.label}
 						</TooltipContent>
 					</Tooltip>
@@ -213,7 +218,7 @@ export function CollapsibleSidebar({
 	return (
 		<aside
 			className={cn(
-				'bg-muted/40 hidden shrink-0 border-r md:flex md:flex-col transition-[width] duration-200 ease-in-out',
+				'hidden shrink-0 border-r border-border bg-card transition-[width] duration-200 ease-in-out md:flex md:flex-col',
 				expanded ? EXPANDED_W : COLLAPSED_W,
 				className,
 			)}
@@ -227,10 +232,10 @@ export function CollapsibleSidebar({
 							{group.label && (
 								<div
 									className={cn(
-										'mb-2 px-3 text-xs font-semibold tracking-wider uppercase text-muted-foreground transition-opacity duration-200',
+										'mb-2 px-3 font-mono text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-opacity duration-200',
 										expanded
 											? 'opacity-100'
-											: 'opacity-0 h-0 mb-0 overflow-hidden',
+											: 'mb-0 h-0 overflow-hidden opacity-0',
 									)}
 								>
 									{group.label}
@@ -242,19 +247,19 @@ export function CollapsibleSidebar({
 								))}
 							</div>
 							{groupIndex < allGroups.length - 1 && (
-								<div className="border-border mx-2 my-2 border-t" />
+								<div className="mx-2 my-2 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 							)}
 						</div>
 					))}
 				</nav>
 
 				{/* Pin toggle */}
-				<div className="border-t p-2">
+				<div className="border-t border-border p-2">
 					<Tooltip delayDuration={100}>
 						<TooltipTrigger asChild>
 							<button
 								onClick={togglePin}
-								className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+								className="flex w-full items-center gap-3 px-3 py-2 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
 								aria-label={
 									pinned ? 'Unpin sidebar' : 'Pin sidebar'
 								}
@@ -265,10 +270,10 @@ export function CollapsibleSidebar({
 								/>
 								<span
 									className={cn(
-										'text-body-sm whitespace-nowrap transition-[opacity,max-width] duration-200',
+										'whitespace-nowrap font-body text-sm transition-[opacity,max-width] duration-200',
 										expanded
 											? 'max-w-48 opacity-100'
-											: 'max-w-0 opacity-0 overflow-hidden',
+											: 'max-w-0 overflow-hidden opacity-0',
 									)}
 								>
 									{pinned ? 'Unpin sidebar' : 'Pin sidebar'}
@@ -276,7 +281,7 @@ export function CollapsibleSidebar({
 							</button>
 						</TooltipTrigger>
 						{!expanded && (
-							<TooltipContent side="right" className="text-xs">
+							<TooltipContent side="right" className="font-body text-xs">
 								{pinned ? 'Unpin sidebar' : 'Pin sidebar'}
 							</TooltipContent>
 						)}

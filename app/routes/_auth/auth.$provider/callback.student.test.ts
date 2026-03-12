@@ -62,14 +62,20 @@ async function deleteGoogleUsers() {
 async function createStudent(overrides: Partial<{
 	email: string
 	fullName: string
+	firstName: string
+	lastName: string
 	sisStudentId: string
 	status: string
 }> = {}) {
 	const email = overrides.email ?? `test-student-${faker.string.uuid()}@jpgacademy.org`
+	const firstName = overrides.firstName ?? faker.person.firstName()
+	const lastName = overrides.lastName ?? faker.person.lastName()
 	return prisma.student.create({
 		data: {
 			email,
-			fullName: overrides.fullName ?? faker.person.fullName(),
+			fullName: overrides.fullName ?? `${firstName} ${lastName}`,
+			firstName,
+			lastName,
 			sisStudentId: overrides.sisStudentId ?? faker.string.uuid(),
 			status: (overrides.status as 'active' | 'inactive') ?? 'active',
 		},
@@ -273,6 +279,8 @@ test('students are distinguished from employees in the system', async () => {
 		data: {
 			email: 'test-employee-distinct@jpgacademy.org',
 			fullName: 'Test Employee',
+			firstName: 'Test',
+			lastName: 'Employee',
 			jobTitle: 'Teacher',
 			sisEmployeeId: faker.string.uuid(),
 			status: 'active',
@@ -451,5 +459,5 @@ test('admin student goes to admin dashboard, not student ID page', async () => {
 	const response = await loader({ request: request2, params: PARAMS, context: {} })
 
 	// Should redirect to admin dashboard
-	expect(response).toHaveRedirect('/admin/employees')
+	expect(response).toHaveRedirect('/admin')
 })

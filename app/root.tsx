@@ -53,6 +53,11 @@ export const links: Route.LinksFunction = () => {
 			crossOrigin: 'use-credentials',
 		} as const, // necessary to make typescript happy
 		{ rel: 'stylesheet', href: tailwindStyleSheetUrl },
+		// Brand body font: EB Garamond (display font TrajanPro loaded via @font-face)
+		{
+			rel: 'stylesheet',
+			href: 'https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap',
+		},
 	].filter(Boolean)
 }
 
@@ -82,6 +87,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 							id: true,
 							name: true,
 							username: true,
+							email: true,
 							image: { select: { objectKey: true } },
 							roles: {
 								select: {
@@ -97,6 +103,32 @@ export async function loader({ request }: Route.LoaderArgs) {
 				{ timings, type: 'find user', desc: 'find user in root' },
 			)
 		: null
+
+	// Determine person type for navigation
+	let personType: 'admin' | 'employee' | 'student' | null = null
+	if (user) {
+		const isAdmin = user.roles.some((role) => role.name === 'admin')
+		if (isAdmin) {
+			personType = 'admin'
+		} else {
+			const employee = await prisma.employee.findUnique({
+				where: { email: user.email },
+				select: { id: true },
+			})
+			if (employee) {
+				personType = 'employee'
+			} else {
+				const student = await prisma.student.findUnique({
+					where: { email: user.email },
+					select: { id: true },
+				})
+				if (student) {
+					personType = 'student'
+				}
+			}
+		}
+	}
+
 	if (userId && !user) {
 		console.info('something weird happened')
 		// something weird happened... The user is authenticated but we can't find
@@ -109,6 +141,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	return data(
 		{
 			user,
+			personType,
 			requestInfo: {
 				hints: getHints(request),
 				origin: getDomainUrl(request),
@@ -223,10 +256,6 @@ function App() {
 
 				<div className="flex flex-1 flex-col">
 					<Outlet />
-				</div>
-
-				<div className="container flex justify-center pb-5">
-					<Logo />
 				</div>
 			</div>
 			<EpicToaster closeButton position="top-center" theme={theme} />

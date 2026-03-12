@@ -170,15 +170,35 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
 
 		return (
 			<>
+				<style>
+					{`
+						@keyframes dialog-fade-in {
+							from { opacity: 0; }
+							to { opacity: 1; }
+						}
+						@keyframes dialog-scale-in {
+							from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+							to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+						}
+						.dialog-backdrop {
+							animation: dialog-fade-in 0.2s ease-out forwards;
+						}
+						.dialog-content {
+							animation: dialog-scale-in 0.2s ease-out forwards;
+						}
+					`}
+				</style>
+				{/* Backdrop with fade animation */}
 				<div
-					className="fixed inset-0 z-50 bg-black/80"
+					className="dialog-backdrop fixed inset-0 z-50 bg-black/80"
 					onClick={handleBackdropClick}
 					aria-hidden="true"
 				/>
+				{/* Dialog content with scale + fade animation */}
 				<div
 					ref={ref || contentRef}
 					className={cn(
-						'bg-background fixed top-1/2 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg border shadow-lg',
+						'dialog-content bg-background fixed top-1/2 left-1/2 z-50 w-full max-w-lg rounded-lg border shadow-lg',
 						className,
 					)}
 					role="dialog"
@@ -190,7 +210,7 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
 					<Button
 						variant="ghost"
 						size="icon"
-						className="absolute top-4 right-4"
+						className="absolute top-4 right-4 z-10 hover:bg-slate-100 dark:hover:bg-slate-800"
 						onClick={() => setOpen(false)}
 						aria-label="Close dialog"
 					>

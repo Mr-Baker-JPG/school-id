@@ -62,7 +62,7 @@ export function AdminShell({ children, headerActions }: AdminShellProps) {
 			/>
 			<div className="flex min-h-0 flex-1">
 				<CollapsibleSidebar groups={navGroups} />
-				<main className="min-h-0 flex-1">{children}</main>
+				<main className="min-h-0 min-w-0 flex-1 overflow-hidden">{children}</main>
 			</div>
 		</div>
 	)

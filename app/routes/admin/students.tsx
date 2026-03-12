@@ -152,8 +152,10 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 				)}
 			>
 				{/* Header */}
-				<div className="flex items-center justify-between border-b px-4 py-3">
-					<h1 className="text-sm font-bold">Students</h1>
+				<div className="flex items-center justify-between border-b border-border px-4 py-3">
+					<h1 className="font-display text-sm font-semibold tracking-wide text-primary">
+						Students
+					</h1>
 					<Form method="post">
 						<input type="hidden" name="intent" value="sync" />
 						<StatusButton
@@ -162,7 +164,7 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 							variant="outline"
 							status={syncPending ? 'pending' : 'idle'}
 							disabled={syncPending}
-							className="h-7 text-xs"
+							className="h-7 font-mono text-[0.6rem] uppercase tracking-wide"
 						>
 							<Icon name="cloud-sync" className="size-3.5" />
 							<span className="hidden sm:inline">Sync</span>
@@ -171,7 +173,7 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 				</div>
 
 				{/* Search + Filters */}
-				<div className="space-y-2.5 border-b px-3 py-3">
+				<div className="space-y-2.5 border-b border-border px-3 py-3">
 					<Form
 						method="get"
 						onChange={(e) => handleSearchChange(e.currentTarget)}
@@ -181,7 +183,7 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 							name="search"
 							defaultValue={search}
 							placeholder="Search students…"
-							className="border-input bg-background h-8 w-full rounded-md border px-3 text-sm"
+							className="h-8 w-full border border-input bg-background px-3 font-body text-sm transition-colors focus:border-brand-gold focus:outline-none focus:ring-2 focus:ring-brand-gold/15"
 						/>
 						<input type="hidden" name="status" value={status} />
 						<input type="hidden" name="photo" value={photo} />
@@ -224,8 +226,8 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 				<div className="flex-1 overflow-y-auto">
 					{students.length === 0 ? (
 						<div className="flex flex-col items-center justify-center p-8 text-center">
-							<Icon name="user" className="text-muted-foreground mb-2 size-8" />
-							<p className="text-muted-foreground text-sm">No students found</p>
+							<Icon name="user" className="mb-2 size-8 text-muted-foreground" />
+							<p className="font-body text-sm text-muted-foreground">No students found</p>
 						</div>
 					) : (
 						students.map((student) => (
@@ -233,17 +235,17 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 								key={student.id}
 								to={`/admin/students/${student.id}?${searchParams.toString()}`}
 								className={cn(
-									'flex items-center gap-3 border-b px-4 py-3 transition-colors',
+									'flex items-center gap-3 border-b border-border px-4 py-3 transition-colors',
 									selectedId === student.id
-										? 'bg-primary/5 border-l-2 border-l-primary'
+										? 'border-l-2 border-l-brand-gold bg-brand-navy/5'
 										: 'hover:bg-muted/50',
 								)}
 							>
 								<div
 									className={cn(
-										'flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
+										'flex size-8 shrink-0 items-center justify-center rounded-full font-display text-xs font-semibold',
 										student.hasPhoto
-											? 'bg-primary/10 text-primary'
+											? 'bg-brand-navy/10 text-brand-navy'
 											: 'bg-muted text-muted-foreground',
 									)}
 								>
@@ -254,10 +256,10 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 									)}
 								</div>
 								<div className="min-w-0 flex-1">
-									<div className="truncate text-sm font-medium">
+									<div className="truncate font-body text-sm font-medium">
 										{student.fullName}
 									</div>
-									<div className="text-muted-foreground truncate text-xs">
+									<div className="truncate font-body text-xs text-muted-foreground">
 										{student.grade ? `Grade ${student.grade}` : student.email}
 									</div>
 								</div>
@@ -292,7 +294,7 @@ export default function StudentsLayout({ loaderData }: Route.ComponentProps) {
 				</div>
 
 				{/* Footer */}
-				<div className="text-muted-foreground border-t px-4 py-2 text-xs">
+				<div className="border-t border-border px-4 py-2 font-mono text-[0.65rem] uppercase tracking-[0.08em] text-muted-foreground">
 					{students.length} student{students.length !== 1 ? 's' : ''}
 				</div>
 			</div>
@@ -325,7 +327,7 @@ function FilterRow({
 }) {
 	return (
 		<div className="flex items-center gap-2">
-			<span className="text-muted-foreground w-11 shrink-0 text-[10px] font-semibold uppercase tracking-wider">
+			<span className="w-11 shrink-0 font-mono text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
 				{label}
 			</span>
 			<div className="flex gap-1">{children}</div>
@@ -346,10 +348,10 @@ function FilterPill({
 		<Link
 			to={to}
 			className={cn(
-				'rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors',
+				'px-2 py-0.5 font-body text-[11px] font-medium transition-colors',
 				active
-					? 'bg-primary/10 text-primary'
-					: 'text-muted-foreground hover:bg-muted',
+					? 'border-b border-brand-gold text-foreground'
+					: 'text-muted-foreground hover:text-foreground',
 			)}
 		>
 			{children}
