@@ -1,7 +1,6 @@
 import { Img } from 'openimg/react'
 import * as React from 'react'
 import { Link, useFetcher } from 'react-router'
-import { Button } from '#app/components/ui/button.tsx'
 import {
 	Dialog,
 	DialogContent,
@@ -10,7 +9,13 @@ import {
 } from '#app/components/ui/dialog.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
-import { cn, getUserImgSrc, useDoubleCheck } from '#app/utils/misc.tsx'
+import {
+	cn,
+	getEmployeePhotoSrc,
+	getStudentPhotoSrc,
+	getUserImgSrc,
+	useDoubleCheck,
+} from '#app/utils/misc.tsx'
 
 // Define the settings data type inline
 interface SettingsUserData {
@@ -24,6 +29,8 @@ interface SettingsUserData {
 	}
 	hasPassword: boolean
 	isTwoFactorEnabled: boolean
+	photoUrl: string | null
+	personType: 'employee' | 'student' | null
 }
 
 interface UserSettingsModalProps {
@@ -43,8 +50,15 @@ export function UserSettingsModal({
 		onOpenChange(newOpen)
 	}
 
-	const { user, hasPassword, isTwoFactorEnabled } = settingsData
+	const { user, hasPassword, isTwoFactorEnabled, photoUrl, personType } = settingsData
 	const otherSessionsCount = user._count.sessions - 1
+
+	// Resolve the photo: prefer employee/student ID photo, fall back to user image
+	const resolvedPhotoSrc = photoUrl
+		? personType === 'student'
+			? getStudentPhotoSrc(photoUrl)
+			: getEmployeePhotoSrc(photoUrl)
+		: getUserImgSrc(user.image?.objectKey)
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
@@ -61,7 +75,7 @@ export function UserSettingsModal({
 					<div className="mx-auto mb-4 w-fit">
 						<div className="size-20 rounded-full border-2 border-brand-gold/30 shadow-md overflow-hidden bg-white dark:bg-slate-900">
 							<Img
-								src={getUserImgSrc(user.image?.objectKey)}
+								src={resolvedPhotoSrc}
 								alt={user.name ?? user.username}
 								className="h-full w-full object-cover object-top"
 								width={256}

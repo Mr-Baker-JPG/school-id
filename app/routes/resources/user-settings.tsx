@@ -38,9 +38,34 @@ export async function loader({ request }: Route.LoaderArgs) {
 		where: { userId },
 	})
 
+	// Look up employee or student photo by matching email
+	let photoUrl: string | null = null
+	let personType: 'employee' | 'student' | null = null
+
+	const employee = await prisma.employee.findUnique({
+		where: { email: user.email },
+		select: { employeeId: { select: { photoUrl: true } } },
+	})
+
+	if (employee?.employeeId?.photoUrl) {
+		photoUrl = employee.employeeId.photoUrl
+		personType = 'employee'
+	} else {
+		const student = await prisma.student.findUnique({
+			where: { email: user.email },
+			select: { studentId: { select: { photoUrl: true } } },
+		})
+		if (student?.studentId?.photoUrl) {
+			photoUrl = student.studentId.photoUrl
+			personType = 'student'
+		}
+	}
+
 	return data({
 		user,
 		hasPassword: Boolean(password),
 		isTwoFactorEnabled: Boolean(twoFactorVerification),
+		photoUrl,
+		personType,
 	})
 }
