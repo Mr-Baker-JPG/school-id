@@ -17,6 +17,7 @@ import { CardSection } from '#app/ui/components/CardSection.tsx'
 import { PageTitle } from '#app/ui/components/PageTitle.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { syncEmployeesFromFacts } from '#app/utils/employee-sync.server.ts'
+import { syncPhotosToGoogle } from '#app/utils/google-photo-sync.server.ts'
 import { syncStudentsFromFacts } from '#app/utils/student-sync.server.ts'
 import { useIsPending } from '#app/utils/misc.tsx'
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
@@ -190,6 +191,66 @@ export async function action({ request }: Route.ActionArgs) {
 		}
 	}
 
+	if (intent === 'sync-google-photos-staff') {
+		const result = await syncPhotosToGoogle({
+			employeesOnly: true,
+			studentsOnly: false,
+			dryRun: false,
+		})
+
+		if (result.success) {
+			const message =
+				result.updated > 0
+					? `Google photo sync completed: ${result.updated} updated, ${result.skipped} skipped (no photo)`
+					: 'Google photo sync completed: No photos to update'
+
+			return redirectWithToast('/admin/sync-status', {
+				type: 'success',
+				title: 'Staff Google Photo Sync Successful',
+				description: message,
+			})
+		} else {
+			return redirectWithToast('/admin/sync-status', {
+				type: 'error',
+				title: 'Staff Google Photo Sync Failed',
+				description:
+					result.errors.length > 0
+						? result.errors.slice(0, 3).join('; ')
+						: 'An error occurred during sync',
+			})
+		}
+	}
+
+	if (intent === 'sync-google-photos-students') {
+		const result = await syncPhotosToGoogle({
+			employeesOnly: false,
+			studentsOnly: true,
+			dryRun: false,
+		})
+
+		if (result.success) {
+			const message =
+				result.updated > 0
+					? `Google photo sync completed: ${result.updated} updated, ${result.skipped} skipped (no photo)`
+					: 'Google photo sync completed: No photos to update'
+
+			return redirectWithToast('/admin/sync-status', {
+				type: 'success',
+				title: 'Student Google Photo Sync Successful',
+				description: message,
+			})
+		} else {
+			return redirectWithToast('/admin/sync-status', {
+				type: 'error',
+				title: 'Student Google Photo Sync Failed',
+				description:
+					result.errors.length > 0
+						? result.errors.slice(0, 3).join('; ')
+						: 'An error occurred during sync',
+			})
+		}
+	}
+
 	return redirect('/admin/sync-status')
 }
 
@@ -201,12 +262,19 @@ function SyncStatusCard({
 	personsWithSyncIssues,
 	personType,
 	syncPending,
+	googleSyncPending,
 	onSyncClick,
+	onGoogleSyncClick,
 	confirmDialogOpen,
 	setConfirmDialogOpen,
 	confirmationChecked,
 	setConfirmationChecked,
 	formAction,
+	googleFormAction,
+	googleDialogOpen,
+	setGoogleDialogOpen,
+	googleConfirmationChecked,
+	setGoogleConfirmationChecked,
 }: {
 	title: string
 	lastSync: any
@@ -215,12 +283,19 @@ function SyncStatusCard({
 	personsWithSyncIssues: any[]
 	personType: 'staff' | 'students'
 	syncPending: boolean
+	googleSyncPending: boolean
 	onSyncClick: () => void
+	onGoogleSyncClick: () => void
 	confirmDialogOpen: boolean
 	setConfirmDialogOpen: (open: boolean) => void
 	confirmationChecked: boolean
 	setConfirmationChecked: (checked: boolean) => void
 	formAction: string
+	googleFormAction: string
+	googleDialogOpen: boolean
+	setGoogleDialogOpen: (open: boolean) => void
+	googleConfirmationChecked: boolean
+	setGoogleConfirmationChecked: (checked: boolean) => void
 }) {
 	const revalidator = useRevalidator()
 	const personLinkBase = personType === 'staff' ? '/admin/employees' : '/admin/students'
@@ -245,6 +320,16 @@ function SyncStatusCard({
 					onClick={onSyncClick}
 				>
 					Sync {title} Now
+				</StatusButton>
+				<StatusButton
+					type="button"
+					variant="secondary"
+					status={googleSyncPending ? 'pending' : 'idle'}
+					disabled={googleSyncPending}
+					onClick={onGoogleSyncClick}
+				>
+					<Icon name="update" className="mr-2" />
+					Sync to Google
 				</StatusButton>
 			</div>
 
@@ -492,6 +577,85 @@ function SyncStatusCard({
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			{/* Google Photo Sync Confirmation Dialog */}
+			<Dialog
+				open={googleDialogOpen}
+				onOpenChange={(open) => {
+					setGoogleDialogOpen(open)
+					if (!open) {
+						setGoogleConfirmationChecked(false)
+					}
+				}}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Sync {title} Photos to Google Workspace</DialogTitle>
+						<DialogDescription>
+							This will update profile photos in Google Workspace for all{' '}
+							{title.toLowerCase()} that have photos in the ID system.
+						</DialogDescription>
+					</DialogHeader>
+
+					<div className="bg-muted/50 border-border rounded-md border p-3 text-sm">
+						<p className="text-foreground font-medium">
+							<strong>What will happen:</strong>
+						</p>
+						<ul className="text-muted-foreground mt-2 list-disc space-y-1 pl-5">
+							<li>Photos from the ID system will be uploaded to Google</li>
+							<li>Users without photos will be skipped</li>
+							<li>Existing Google profile photos may be replaced</li>
+							<li>This may take a few minutes for large batches</li>
+						</ul>
+					</div>
+
+					{/* Confirmation Checkbox */}
+					<div className="flex items-start gap-2">
+						<input
+							type="checkbox"
+							id={`google-sync-confirmation-${personType}`}
+							checked={googleConfirmationChecked}
+							onChange={(e) => setGoogleConfirmationChecked(e.target.checked)}
+							className="mt-1 h-4 w-4 rounded border-gray-300"
+						/>
+						<label
+							htmlFor={`google-sync-confirmation-${personType}`}
+							className="text-foreground text-sm leading-relaxed"
+						>
+							I understand that Google Workspace profile photos will be updated.
+						</label>
+					</div>
+
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => {
+								setGoogleDialogOpen(false)
+								setGoogleConfirmationChecked(false)
+							}}
+							disabled={googleSyncPending}
+						>
+							Cancel
+						</Button>
+						<Form method="post" action="/admin/sync-status">
+							<input type="hidden" name="intent" value={googleFormAction} />
+							<Button
+								type="submit"
+								disabled={googleSyncPending || !googleConfirmationChecked}
+							>
+								{googleSyncPending ? (
+									<>
+										<Icon name="update" className="mr-2 animate-spin" />
+										Syncing...
+									</>
+								) : (
+									'Sync to Google'
+								)}
+							</Button>
+						</Form>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	)
 }
@@ -514,6 +678,15 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 
 	const [studentDialogOpen, setStudentDialogOpen] = useState(false)
 	const [studentConfirmationChecked, setStudentConfirmationChecked] =
+		useState(false)
+
+	// Google photo sync dialogs
+	const [staffGoogleDialogOpen, setStaffGoogleDialogOpen] = useState(false)
+	const [staffGoogleConfirmationChecked, setStaffGoogleConfirmationChecked] =
+		useState(false)
+
+	const [studentGoogleDialogOpen, setStudentGoogleDialogOpen] = useState(false)
+	const [studentGoogleConfirmationChecked, setStudentGoogleConfirmationChecked] =
 		useState(false)
 
 	return (
@@ -568,12 +741,19 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 					personsWithSyncIssues={staffWithSyncIssues}
 					personType="staff"
 					syncPending={staffSyncPending}
+					googleSyncPending={staffSyncPending}
 					onSyncClick={() => setStaffDialogOpen(true)}
+					onGoogleSyncClick={() => setStaffGoogleDialogOpen(true)}
 					confirmDialogOpen={staffDialogOpen}
 					setConfirmDialogOpen={setStaffDialogOpen}
 					confirmationChecked={staffConfirmationChecked}
 					setConfirmationChecked={setStaffConfirmationChecked}
 					formAction="sync-staff"
+					googleFormAction="sync-google-photos-staff"
+					googleDialogOpen={staffGoogleDialogOpen}
+					setGoogleDialogOpen={setStaffGoogleDialogOpen}
+					googleConfirmationChecked={staffGoogleConfirmationChecked}
+					setGoogleConfirmationChecked={setStaffGoogleConfirmationChecked}
 				/>
 			</div>
 
@@ -588,12 +768,19 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 					personsWithSyncIssues={studentsWithSyncIssues}
 					personType="students"
 					syncPending={staffSyncPending}
+					googleSyncPending={staffSyncPending}
 					onSyncClick={() => setStudentDialogOpen(true)}
+					onGoogleSyncClick={() => setStudentGoogleDialogOpen(true)}
 					confirmDialogOpen={studentDialogOpen}
 					setConfirmDialogOpen={setStudentDialogOpen}
 					confirmationChecked={studentConfirmationChecked}
 					setConfirmationChecked={setStudentConfirmationChecked}
 					formAction="sync-students"
+					googleFormAction="sync-google-photos-students"
+					googleDialogOpen={studentGoogleDialogOpen}
+					setGoogleDialogOpen={setStudentGoogleDialogOpen}
+					googleConfirmationChecked={studentGoogleConfirmationChecked}
+					setGoogleConfirmationChecked={setStudentGoogleConfirmationChecked}
 				/>
 			</div>
 		</div>
