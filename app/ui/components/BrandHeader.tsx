@@ -144,11 +144,11 @@ export function BrandHeader({
 				/>
 			) : settingsOpen ? (
 				<Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-					<DialogContent className="max-w-2xl overflow-visible p-0">
-						<div className="flex items-center justify-center py-24">
+					<DialogContent className="max-w-md overflow-visible p-0 gap-0 border-brand-gold/20 bg-[#FDFBF7] dark:bg-slate-950 rounded-xl">
+						<div className="flex items-center justify-center py-20">
 							<div className="flex flex-col items-center gap-3">
-								<div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-gold border-t-transparent" />
-								<p className="text-sm text-slate-500">Loading settings...</p>
+								<div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-gold/40 border-t-brand-gold" />
+								<p className="font-body text-sm text-slate-400">Loading…</p>
 							</div>
 						</div>
 					</DialogContent>
