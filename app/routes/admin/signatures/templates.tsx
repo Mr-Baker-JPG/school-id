@@ -13,6 +13,7 @@ import { PageTitle } from '#app/ui/components/PageTitle.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
+import { getSchoolSettingsForSignatures } from '#app/utils/system-settings.server.ts'
 import { type Route } from './+types/templates.ts'
 
 export const handle: SEOHandle = {
@@ -27,20 +28,31 @@ export const TEMPLATE_PLACEHOLDERS = [
 	{ key: '{{jobTitle}}', description: 'Job title (e.g. Teacher)' },
 	{ key: '{{department}}', description: 'Department (e.g. Mathematics)' },
 	{ key: '{{email}}', description: 'Email address' },
-	{ key: '{{phone}}', description: 'Phone number' },
+	{ key: '{{phone}}', description: 'School phone number' },
 	{ key: '{{schoolName}}', description: 'School name' },
+	{ key: '{{schoolAddress}}', description: 'School address' },
+	{ key: '{{schoolWebsite}}', description: 'School website URL' },
+	{ key: '{{schoolLogoUrl}}', description: 'School logo image URL' },
 ] as const
 
-// Sample data used for live preview
-export const SAMPLE_EMPLOYEE = {
+// Sample employee data (school settings come from loader)
+export const SAMPLE_EMPLOYEE_BASE = {
 	fullName: 'Jane A. Smith',
 	firstName: 'Jane',
 	lastName: 'Smith',
 	jobTitle: 'Mathematics Teacher',
 	department: 'Mathematics',
 	email: 'jane.smith@jpgacademy.org',
+}
+
+// Full sample with default school settings (for backward compatibility with tests)
+export const SAMPLE_EMPLOYEE = {
+	...SAMPLE_EMPLOYEE_BASE,
 	phone: '(555) 123-4567',
 	schoolName: 'JPG Academy',
+	schoolAddress: '123 Education Lane, City, ST 12345',
+	schoolWebsite: 'https://www.jpgacademy.org',
+	schoolLogoUrl: 'https://www.jpgacademy.org/logo.png',
 }
 
 /**
@@ -77,11 +89,14 @@ const DeleteSchema = z.object({
 export async function loader({ request }: Route.LoaderArgs) {
 	await requireUserWithRole(request, 'admin')
 
-	const templates = await prisma.signatureTemplate.findMany({
-		orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
-	})
+	const [templates, schoolSettings] = await Promise.all([
+		prisma.signatureTemplate.findMany({
+			orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
+		}),
+		getSchoolSettingsForSignatures(),
+	])
 
-	return { templates }
+	return { templates, schoolSettings }
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -209,7 +224,7 @@ export async function action({ request }: Route.ActionArgs) {
 export default function SignatureTemplatesPage({
 	loaderData,
 }: Route.ComponentProps) {
-	const { templates } = loaderData
+	const { templates, schoolSettings } = loaderData
 	const actionData = useActionData<typeof action>()
 	const navigation = useNavigation()
 	const isSubmitting = navigation.state !== 'idle'
@@ -218,6 +233,16 @@ export default function SignatureTemplatesPage({
 	const [showCreate, setShowCreate] = React.useState(false)
 	const [previewHtml, setPreviewHtml] = React.useState<string>('')
 	const [previewName, setPreviewName] = React.useState<string>('Preview')
+
+	// Build sample employee with school settings
+	const sampleEmployee = React.useMemo(() => ({
+		...SAMPLE_EMPLOYEE_BASE,
+		phone: schoolSettings.schoolPhone,
+		schoolName: schoolSettings.schoolName,
+		schoolAddress: schoolSettings.schoolAddress,
+		schoolWebsite: schoolSettings.schoolWebsite,
+		schoolLogoUrl: schoolSettings.schoolLogoUrl,
+	}), [schoolSettings])
 
 	// Reset form state after successful action
 	React.useEffect(() => {
@@ -228,7 +253,7 @@ export default function SignatureTemplatesPage({
 	}, [actionData])
 
 	function handlePreview(htmlContent: string, name: string) {
-		const rendered = renderTemplate(htmlContent, SAMPLE_EMPLOYEE)
+		const rendered = renderTemplate(htmlContent, sampleEmployee)
 		setPreviewHtml(rendered)
 		setPreviewName(name || 'Preview')
 	}
@@ -255,6 +280,12 @@ export default function SignatureTemplatesPage({
 						className="text-muted-foreground hover:text-foreground"
 					>
 						Push History
+					</a>
+					<a
+						href="/admin/signatures/settings"
+						className="text-muted-foreground hover:text-foreground"
+					>
+						Settings
 					</a>
 				</div>
 
@@ -455,7 +486,7 @@ export default function SignatureTemplatesPage({
 						</div>
 						<div className="bg-muted/30 border-t px-4 py-2">
 							<p className="text-muted-foreground text-xs">
-								Rendered with sample data: {SAMPLE_EMPLOYEE.fullName} ({SAMPLE_EMPLOYEE.email})
+								Rendered with sample data: {sampleEmployee.fullName} ({sampleEmployee.email})
 							</p>
 						</div>
 					</div>

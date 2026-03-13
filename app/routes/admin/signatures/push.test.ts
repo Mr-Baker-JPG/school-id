@@ -3,6 +3,7 @@ import { loader, action } from './push.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { gmailSignatureService } from '#app/utils/gmail-signature.server.ts'
+import { getSchoolSettingsForSignatures } from '#app/utils/system-settings.server.ts'
 
 // Mock dependencies
 vi.mock('#app/utils/db.server.ts', () => ({
@@ -33,6 +34,10 @@ vi.mock('#app/utils/gmail-signature.server.ts', () => ({
 	},
 }))
 
+vi.mock('#app/utils/system-settings.server.ts', () => ({
+	getSchoolSettingsForSignatures: vi.fn(),
+}))
+
 // Mock renderTemplate from templates.tsx
 vi.mock('./templates.tsx', () => ({
 	renderTemplate: vi.fn((html, data) => {
@@ -42,6 +47,14 @@ vi.mock('./templates.tsx', () => ({
 		}
 		return result
 	}),
+	SAMPLE_EMPLOYEE_BASE: {
+		fullName: 'Jane A. Smith',
+		firstName: 'Jane',
+		lastName: 'Smith',
+		jobTitle: 'Mathematics Teacher',
+		department: 'Mathematics',
+		email: 'jane.smith@jpgacademy.org',
+	},
 	SAMPLE_EMPLOYEE: {
 		fullName: 'Jane A. Smith',
 		firstName: 'Jane',
@@ -54,9 +67,19 @@ vi.mock('./templates.tsx', () => ({
 	},
 }))
 
+const defaultSchoolSettings = {
+	schoolName: 'JPG Academy',
+	schoolPhone: '(555) 123-4567',
+	schoolAddress: '123 Education Lane',
+	schoolWebsite: 'https://example.com',
+	schoolLogoUrl: 'https://example.com/logo.png',
+}
+
 describe('Signature Push Route', () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
+		// Set default mock for system settings
+		vi.mocked(getSchoolSettingsForSignatures).mockResolvedValue(defaultSchoolSettings)
 	})
 
 	describe('loader', () => {

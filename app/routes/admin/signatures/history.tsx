@@ -114,6 +114,12 @@ export default function SignaturePushHistoryPage({
 					>
 						Push History
 					</a>
+					<a
+						href="/admin/signatures/settings"
+						className="text-muted-foreground hover:text-foreground"
+					>
+						Settings
+					</a>
 				</div>
 
 				<PageTitle

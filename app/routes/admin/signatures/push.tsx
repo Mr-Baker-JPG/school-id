@@ -12,7 +12,8 @@ import { PageTitle } from '#app/ui/components/PageTitle.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { gmailSignatureService } from '#app/utils/gmail-signature.server.ts'
-import { renderTemplate, SAMPLE_EMPLOYEE } from './templates.tsx'
+import { getSchoolSettingsForSignatures } from '#app/utils/system-settings.server.ts'
+import { renderTemplate, SAMPLE_EMPLOYEE_BASE } from './templates.tsx'
 import { type Route } from './+types/push.ts'
 
 export const handle: SEOHandle = {
@@ -77,6 +78,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		employees,
 		departments: departments.map((d) => d.department).filter(Boolean) as string[],
 		searchParams,
+		schoolSettings: await getSchoolSettingsForSignatures(),
 	}
 }
 
@@ -120,6 +122,9 @@ export async function action({ request }: Route.ActionArgs) {
 			include: { employeeId: true },
 		})
 
+		// Fetch school settings for template rendering
+		const schoolSettings = await getSchoolSettingsForSignatures()
+
 		// Push signatures
 		const results: {
 			employeeId: string
@@ -130,7 +135,7 @@ export async function action({ request }: Route.ActionArgs) {
 		}[] = []
 
 		for (const employee of employees) {
-			// Render template with employee data
+			// Render template with employee data and school settings
 			const renderedSignature = renderTemplate(template.htmlContent, {
 				fullName: employee.fullName,
 				firstName: employee.firstName,
@@ -138,8 +143,11 @@ export async function action({ request }: Route.ActionArgs) {
 				jobTitle: employee.jobTitle,
 				department: employee.department ?? '',
 				email: employee.email,
-				phone: '', // Phone not in employee model
-				schoolName: 'JPG Academy',
+				phone: schoolSettings.schoolPhone,
+				schoolName: schoolSettings.schoolName,
+				schoolAddress: schoolSettings.schoolAddress,
+				schoolWebsite: schoolSettings.schoolWebsite,
+				schoolLogoUrl: schoolSettings.schoolLogoUrl,
 			})
 
 			// Push to Gmail
@@ -200,7 +208,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function SignaturePushPage({ loaderData }: Route.ComponentProps) {
-	const { templates, employees, departments, searchParams } = loaderData
+	const { templates, employees, departments, searchParams, schoolSettings } = loaderData
 	const actionData = useActionData<typeof action>()
 	const navigation = useNavigation()
 	const isSubmitting = navigation.state !== 'idle'
@@ -214,6 +222,16 @@ export default function SignaturePushPage({ loaderData }: Route.ComponentProps) 
 	)
 	const [searchQuery, setSearchQuery] = React.useState(searchParams.search)
 	const [showPreview, setShowPreview] = React.useState<string | null>(null)
+
+	// Build sample employee with school settings for preview
+	const sampleEmployee = React.useMemo(() => ({
+		...SAMPLE_EMPLOYEE_BASE,
+		phone: schoolSettings.schoolPhone,
+		schoolName: schoolSettings.schoolName,
+		schoolAddress: schoolSettings.schoolAddress,
+		schoolWebsite: schoolSettings.schoolWebsite,
+		schoolLogoUrl: schoolSettings.schoolLogoUrl,
+	}), [schoolSettings])
 
 	// Update URL params when filters change
 	function updateFilter(key: string, value: string) {
@@ -259,8 +277,11 @@ export default function SignaturePushPage({ loaderData }: Route.ComponentProps) 
 			jobTitle: employee.jobTitle,
 			department: employee.department ?? '',
 			email: employee.email,
-			phone: '',
-			schoolName: 'JPG Academy',
+			phone: schoolSettings.schoolPhone,
+			schoolName: schoolSettings.schoolName,
+			schoolAddress: schoolSettings.schoolAddress,
+			schoolWebsite: schoolSettings.schoolWebsite,
+			schoolLogoUrl: schoolSettings.schoolLogoUrl,
 		})
 	}
 
@@ -286,6 +307,12 @@ export default function SignaturePushPage({ loaderData }: Route.ComponentProps) 
 						className="text-muted-foreground hover:text-foreground"
 					>
 						Push History
+					</a>
+					<a
+						href="/admin/signatures/settings"
+						className="text-muted-foreground hover:text-foreground"
+					>
+						Settings
 					</a>
 				</div>
 
@@ -373,7 +400,7 @@ export default function SignaturePushPage({ loaderData }: Route.ComponentProps) 
 							<div
 								className="prose prose-sm max-w-none"
 								dangerouslySetInnerHTML={{
-									__html: renderTemplate(template.htmlContent, SAMPLE_EMPLOYEE),
+									__html: renderTemplate(template.htmlContent, sampleEmployee),
 								}}
 							/>
 						</div>
