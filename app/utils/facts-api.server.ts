@@ -289,7 +289,8 @@ function parseNameParts(nameStr: string): { firstName: string; lastName: string 
  * Derive department classification from FACTS API data.
  *
  * The raw FACTS `department` string determines the role category:
- * - Contains "administrator" (case-insensitive) → "Administrator"
+ * - Contains "administrator" (case-insensitive) → "Administration"
+ * - Contains "administration" (case-insensitive) → "Administration"
  * - Contains "faculty" (case-insensitive) → Faculty; then use boolean flags
  *   to determine sub-type (Upper School / Lower School / Preschool)
  *   with priority: Upper School > Lower School > Preschool.
@@ -301,7 +302,7 @@ export function deriveDepartment(staff: Pick<FactsStaffVmOutV1_1, 'department' |
 
 	// Administrator is determined by the department string
 	if (dept.includes('administrator') || dept.includes('administration')) {
-		return 'Administrator'
+		return 'Administration'
 	}
 
 	// Faculty — check school-level boolean flags for sub-type
@@ -371,7 +372,9 @@ function transformStaffToEmployee(
 	if (!lastName) lastName = 'Unknown'
 
 	// Get job title from FACTS department field (this is the raw FACTS value)
-	const jobTitle = staff.department || 'Staff'
+	// Normalize admin-type values to "Administrator" (the title, not the department)
+	const rawDept = (staff.department || 'Staff').trim()
+	const jobTitle = rawDept.toLowerCase().includes('administrat') ? 'Administrator' : rawDept
 
 	// Derive department from FACTS department string + boolean flags
 	// Department string determines role (Administrator/Faculty/Staff),
@@ -386,7 +389,7 @@ function transformStaffToEmployee(
 		firstName,
 		lastName,
 		fullName,
-		jobTitle: jobTitle.trim(),
+		jobTitle,
 		department,
 		email: email.trim(),
 		status,

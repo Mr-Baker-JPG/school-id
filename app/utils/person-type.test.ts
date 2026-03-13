@@ -14,8 +14,8 @@ describe('getEmployeePersonType', () => {
 		expect(getEmployeePersonType('Preschool')).toBe('FACULTY')
 	})
 
-	it('returns ADMINISTRATION for Administrator department', () => {
-		expect(getEmployeePersonType('Administrator')).toBe('ADMINISTRATION')
+	it('returns ADMINISTRATION for Administration department', () => {
+		expect(getEmployeePersonType('Administration')).toBe('ADMINISTRATION')
 	})
 
 	it('returns STAFF for Staff department', () => {
@@ -34,7 +34,6 @@ describe('getEmployeePersonType', () => {
 	})
 
 	it('returns STAFF for unknown department values', () => {
-		expect(getEmployeePersonType('Administration')).toBe('STAFF')
 		expect(getEmployeePersonType('Maintenance')).toBe('STAFF')
 	})
 })

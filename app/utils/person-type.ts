@@ -31,7 +31,7 @@ export function getEmployeePersonType(department: string | undefined | null): 'F
 	}
 
 	// Administrator → ADMINISTRATION
-	if (dept === 'Administrator') {
+	if (dept === 'Administration') {
 		return 'ADMINISTRATION'
 	}
 
