@@ -176,30 +176,49 @@ export default function CardDesignsPage({ loaderData }: Route.ComponentProps) {
 									{/* Card with flip */}
 									<div className="relative flex justify-center">
 										<div
-											className="cursor-pointer transition-transform duration-500"
+											className="cursor-pointer"
 											style={{
 												perspective: '1000px',
-												transformStyle: 'preserve-3d',
 											}}
 											onClick={() => toggleFace(d.id)}
 											title="Click to flip"
 										>
+											{/* Flip container */}
 											<div
-												className="relative transition-opacity duration-300"
-												style={{ opacity: isBack ? 0 : 1, pointerEvents: isBack ? 'none' : 'auto' }}
+												className="relative transition-transform duration-500 ease-in-out"
+												style={{
+													transformStyle: 'preserve-3d',
+													transform: isBack ? 'rotateY(180deg)' : 'rotateY(0deg)',
+												}}
 											>
-												<d.Front {...sampleProps} />
-											</div>
-											{isBack && (
-												<div className="transition-opacity duration-300">
+												{/* Front face */}
+												<div
+													style={{
+														backfaceVisibility: 'hidden',
+														transform: 'rotateY(0deg)',
+													}}
+												>
+													<d.Front {...sampleProps} />
+												</div>
+												{/* Back face - absolutely positioned on top */}
+												<div
+													className="absolute left-0 top-0"
+													style={{
+														backfaceVisibility: 'hidden',
+														transform: 'rotateY(180deg)',
+													}}
+												>
 													<d.Back {...sampleProps} />
 												</div>
-											)}
+											</div>
 										</div>
 
 										{/* Flip hint */}
 										<button
-											onClick={() => toggleFace(d.id)}
+											onClick={(e) => {
+												e.stopPropagation()
+												toggleFace(d.id)
+											}}
 											className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-medium text-slate-400 shadow-sm backdrop-blur transition-all hover:bg-white hover:text-slate-600 hover:shadow dark:bg-slate-800/90 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-300"
 										>
 											{isBack ? '← Front' : 'Back →'}

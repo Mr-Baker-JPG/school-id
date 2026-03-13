@@ -4,14 +4,18 @@ import { generateEmployeeIDPDF } from '#app/utils/pdf-id.server.tsx'
 import { getDefaultExpirationDate } from '#app/utils/employee.server.ts'
 
 /**
- * Resource route: generates a sample PDF for the active card design.
+ * Resource route: generates a sample PDF for a specific card design.
  * Uses sample employee data to show how the card looks printed.
+ * 
+ * Query params:
+ * - design: Design ID (1-5). Defaults to 3 (Light Executive).
  */
 export async function loader({ request }: Route.LoaderArgs) {
 	await requireUserWithRole(request, 'admin')
 
 	const url = new URL(request.url)
-	const designId = url.searchParams.get('design') || '3'
+	const designParam = url.searchParams.get('design')
+	const designId = designParam ? parseInt(designParam, 10) : 3
 
 	const sampleEmployee = {
 		id: 'sample-id',
@@ -26,7 +30,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		expirationDate: getDefaultExpirationDate(),
 	}
 
-	const pdfBuffer = await generateEmployeeIDPDF(sampleEmployee, request)
+	const pdfBuffer = await generateEmployeeIDPDF(sampleEmployee, request, designId)
 	const buffer = Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from(pdfBuffer as any)
 
 	return new Response(buffer, {

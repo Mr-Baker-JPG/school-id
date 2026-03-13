@@ -6,6 +6,8 @@ import { generateBarcodeDataURL } from './barcode.server.ts'
 import { getCurrentAcademicYear } from './employee.server.ts'
 import { getDomainUrl } from './misc.tsx'
 import { registerFonts } from './fonts.server.ts'
+import { getPDFDesign, PDF_CARD_WIDTH, PDF_CARD_HEIGHT } from './pdf-card-designs.tsx'
+import type { PDFCardFrontProps, PDFCardBackProps } from './pdf-card-designs.tsx'
 import {
 	IDCardFrontContentView,
 	IDCardBackContentView,
@@ -218,12 +220,14 @@ async function getSchoolLogoDataURL(
  *
  * @param employee - Employee data for the ID card
  * @param request - Request object to determine base URL for QR code
+ * @param designId - Optional design ID (1-5). Defaults to active design or 3.
  * @returns Promise resolving to PDF buffer
  * @throws Error if PDF generation fails
  */
 export async function generateEmployeeIDPDF(
 	employee: EmployeePDFData,
 	request: Request,
+	designId?: number,
 ): Promise<Buffer> {
 	try {
 		// Validate required fields
@@ -263,38 +267,51 @@ export async function generateEmployeeIDPDF(
 		// Get current academic year
 		const academicYear = getCurrentAcademicYear()
 
+		// Get the design (default to Design 3 if not specified)
+		const design = getPDFDesign(designId ?? 3)
+		const cardWidth = PDF_CARD_WIDTH
+		const cardHeight = PDF_CARD_HEIGHT
+
 		// Single-card page size: card + space for crop marks on all sides
 		const singleCardMargin = CROP_MARK_OFFSET + CROP_MARK_LENGTH + 18 // marks + extra padding
-		const singlePageWidth = ID_WIDTH + 2 * singleCardMargin
-		const singlePageHeight = ID_HEIGHT + 2 * singleCardMargin
+		const singlePageWidth = cardWidth + 2 * singleCardMargin
+		const singlePageHeight = cardHeight + 2 * singleCardMargin
 		const cardLeft = singleCardMargin
 		const cardTop = singleCardMargin
+
+		// Prepare props for the PDF design components
+		const frontProps: PDFCardFrontProps = {
+			fullName: employee.fullName,
+			personType: employee.personType,
+			sisId: employee.sisEmployeeId,
+			academicYear,
+			photoDataURL,
+			logoDataURL,
+			schoolName: branding.schoolName,
+			branding,
+		}
+
+		const backProps: PDFCardBackProps = {
+			qrCodeDataURL,
+			logoDataURL,
+			schoolName: branding.schoolName,
+			branding,
+		}
 
 		// Create PDF document with crop marks around each card
 		const doc = (
 			<Document>
 				<Page size={[singlePageWidth, singlePageHeight]} style={{ padding: 0, fontFamily: 'Times-Roman' }}>
-					<View style={{ position: 'absolute', left: cardLeft, top: cardTop, width: ID_WIDTH, height: ID_HEIGHT }}>
-						<IDCardFrontContentView
-							employee={employee}
-							photoDataURL={photoDataURL}
-							logoDataURL={logoDataURL}
-							branding={branding}
-							academicYear={academicYear}
-							barcodeDataURL={barcodeDataURL}
-						/>
+					<View style={{ position: 'absolute', left: cardLeft, top: cardTop, width: cardWidth, height: cardHeight }}>
+						<design.Front {...frontProps} />
 					</View>
-					<CropMarks left={cardLeft} top={cardTop} cardWidth={ID_WIDTH} cardHeight={ID_HEIGHT} />
+					<CropMarks left={cardLeft} top={cardTop} cardWidth={cardWidth} cardHeight={cardHeight} />
 				</Page>
 				<Page size={[singlePageWidth, singlePageHeight]} style={{ padding: 0, fontFamily: 'Times-Roman' }}>
-					<View style={{ position: 'absolute', left: cardLeft, top: cardTop, width: ID_WIDTH, height: ID_HEIGHT }}>
-						<IDCardBackContentView
-							qrCodeDataURL={qrCodeDataURL}
-							branding={branding}
-							logoDataURL={logoDataURL}
-						/>
+					<View style={{ position: 'absolute', left: cardLeft, top: cardTop, width: cardWidth, height: cardHeight }}>
+						<design.Back {...backProps} />
 					</View>
-					<CropMarks left={cardLeft} top={cardTop} cardWidth={ID_WIDTH} cardHeight={ID_HEIGHT} />
+					<CropMarks left={cardLeft} top={cardTop} cardWidth={cardWidth} cardHeight={cardHeight} />
 				</Page>
 			</Document>
 		)
