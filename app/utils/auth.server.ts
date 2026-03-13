@@ -124,7 +124,7 @@ export async function requireAnonymous(request: Request) {
 
 /**
  * Determines the appropriate redirect path for a user after authentication.
- * Admin users go to /admin/employees, employees go to /employee/id, students go to /student/id.
+ * Admin users go to /admin, employees go to /employee/id, students go to /student/id.
  */
 export async function getRedirectPathForUser(userId: string): Promise<string> {
 	// Check if user is admin
@@ -145,7 +145,7 @@ export async function getRedirectPathForUser(userId: string): Promise<string> {
 	// Check if user has admin role
 	const isAdmin = user.roles.some((role) => role.name === 'admin')
 	if (isAdmin) {
-		return '/admin/employees'
+		return '/admin'
 	}
 
 	// Check if user has an employee record

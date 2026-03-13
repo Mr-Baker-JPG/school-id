@@ -35,6 +35,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 			sisEmployeeId: true,
 			fullName: true,
 			jobTitle: true,
+			department: true,
 			email: true,
 			status: true,
 			employeeId: {
@@ -82,7 +83,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		lastName: employee.lastName,
 		fullName: employee.fullName,
 		jobTitle: employee.jobTitle,
-		personType: getEmployeePersonType(employee.jobTitle),
+		personType: getEmployeePersonType(employee.department),
 		email: employee.email,
 		status: employee.status,
 		sisEmployeeId: employee.sisEmployeeId,

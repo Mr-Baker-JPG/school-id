@@ -76,9 +76,10 @@ export default async function handleRequest(...args: DocRequestArgs) {
 										process.env.SENTRY_DSN ? '*.sentry.io' : undefined,
 										"'self'",
 									],
-									'font-src': ["'self'"],
+									'font-src': ["'self'", 'https://fonts.gstatic.com'],
 									'frame-src': ["'self'"],
 									'img-src': ["'self'", 'data:'],
+									'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
 									'script-src': [
 										"'strict-dynamic'",
 										"'self'",

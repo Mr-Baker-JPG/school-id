@@ -10,8 +10,8 @@ import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
-import { PageTitle } from '#app/ui/components/PageTitle.tsx'
-import { CardSection } from '#app/ui/components/CardSection.tsx'
+import { DossierHeader } from '#app/ui/components/DossierHeader.tsx'
+import { SectionTitle } from '#app/ui/components/SectionTitle.tsx'
 import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
 import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
 import { IdPreviewCard } from '#app/ui/components/IdPreviewCard.tsx'
@@ -92,8 +92,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	}
 
 	// Fetch FACTS profile picture
-	// - If forcePhotoCheck=true, bypass rate limiting and always fetch
-	// - If no uploaded photo exists, try to fetch (respects 7-day rate limit)
 	let photoCheckAttempted = false
 	let photoCheckResult: { success: boolean; message: string } | null = null
 
@@ -103,10 +101,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 			const photoUrl = await fetchAndCacheFactsProfilePicture(
 				student.id,
 				student.sisStudentId,
-				forcePhotoCheck, // Force bypass rate limiting if requested
+				forcePhotoCheck,
 			)
-			
-			// Re-fetch to get the updated photoUrl
+
 			const updatedStudentId = await prisma.studentID.findUnique({
 				where: { studentId: student.id },
 				select: {
@@ -121,11 +118,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 				studentIdRecord = updatedStudentId
 			}
 
-			// Set result message
 			if (photoUrl) {
 				photoCheckResult = {
 					success: true,
-					message: 'Profile picture successfully fetched from FACTS and cached.',
+					message:
+						'Profile picture successfully fetched from FACTS and cached.',
 				}
 			} else {
 				photoCheckResult = {
@@ -136,7 +133,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 				}
 			}
 		} catch (error) {
-			// Log error but continue without photo
 			console.error('Failed to fetch FACTS profile picture:', error)
 			photoCheckResult = {
 				success: false,
@@ -145,22 +141,15 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		}
 	}
 
-	// Get branding config
 	const branding = getBrandingConfig()
-
-	// Get photo URL (objectKey from database)
 	const photoUrl: string | null = studentIdRecord?.photoUrl ?? null
-
-	// Get logo URL (if configured)
 	const logoUrl = branding.logoUrl || null
 
-	// Generate QR code for verification (using SIS ID)
 	const qrCodeDataURL = await generateStudentQRCodeDataURL(
 		student.sisStudentId,
 		request,
 	)
 
-	// Generate barcode for ID card
 	const barcodeDataURL = await generateBarcodeDataURL(student.sisStudentId, {
 		width: 2,
 		height: 40,
@@ -168,16 +157,13 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		displayValue: false,
 	})
 
-	// Get current academic year
 	const academicYear = getCurrentAcademicYear()
 
-	// Calculate expiration status
 	let expirationStatus = null
 	if (studentIdRecord.expirationDate) {
 		expirationStatus = getExpirationStatus(studentIdRecord.expirationDate)
 	}
 
-	// Ensure we always have an expiration date for the component
 	const defaultExpirationDate = getNextJuly1ExpirationDate()
 
 	return {
@@ -214,19 +200,34 @@ export async function action({ request, params }: Route.ActionArgs) {
 			{ status: 400 },
 		)
 
-		// Update student name and mark as edited
 		await prisma.student.update({
 			where: { id: studentId },
 			data: {
 				fullName: fullName.trim(),
-				isNameEdited: true, // Mark as edited to preserve during SIS sync
+				isNameEdited: true,
 			},
 		})
 
 		return redirectWithToast(`/admin/students/${studentId}`, {
 			type: 'success',
 			title: 'Name Updated',
-			description: 'Student name has been updated and will be preserved during SIS syncs.',
+			description:
+				'Student name has been updated and will be preserved during SIS syncs.',
+		})
+	}
+
+	if (intent === 'reset-name-sync') {
+		await prisma.student.update({
+			where: { id: studentId },
+			data: {
+				isNameEdited: false,
+			},
+		})
+
+		return redirectWithToast(`/admin/students/${studentId}`, {
+			type: 'success',
+			title: 'Name Sync Reset',
+			description: 'Name will be updated from FACTS SIS on the next sync.',
 		})
 	}
 
@@ -277,13 +278,11 @@ export default function AdminStudentDetailRoute({
 	const lastUpdated = new Date(student.updatedAt).toLocaleString()
 	const isNameUpdatePending = useIsPending({
 		formAction: `/admin/students/${student.id}`,
-		intent: 'update-name',
 	})
 	const isPhotoCheckPending = useIsPending({
 		formAction: `/admin/students/${student.id}`,
 	})
 
-	// Prepare student data for ID card component
 	const studentCardData = {
 		id: student.id,
 		firstName: student.firstName,
@@ -292,119 +291,110 @@ export default function AdminStudentDetailRoute({
 		personType: 'STUDENT' as const,
 		email: student.email,
 		status: student.status,
-		sisEmployeeId: student.sisStudentId, // Using sisEmployeeId field name for component compatibility
+		sisEmployeeId: student.sisStudentId,
 		photoUrl: student.studentId?.photoUrl || null,
 		expirationDate: student.studentId?.expirationDate
 			? new Date(student.studentId.expirationDate)
 			: new Date(defaultExpirationDate),
 	}
 
-	const downloadButton = (
-		<Button
-			type="button"
-			onClick={() => {
-				window.location.href = `/resources/admin/student-pdf/${student.id}`
-			}}
-		>
-			<Icon name="download">Download ID Card</Icon>
-		</Button>
-	)
-
 	return (
-		<div>
-			<div className="mb-4">
+		<div className="font-body">
+			{/* Back link — visible only on mobile where the list panel is hidden */}
+			<div className="mb-6 md:hidden">
 				<Link
 					to="/admin/students"
-					className="text-muted-foreground hover:text-foreground flex items-center gap-2"
+					className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 font-mono text-xs tracking-[0.1em] uppercase transition-colors"
 				>
-					<Icon name="arrow-left">Back to Students</Icon>
+					<Icon name="arrow-left" className="size-3.5" />
+					Back to Students
 				</Link>
 			</div>
 
-			<PageTitle
-				title="Student Details"
-				subtitle={student.fullName}
-				rightSlot={downloadButton}
+			{/* ── PHOTO CHECK NOTICE ── */}
+			{photoCheckResult && (
+				<div
+					className={`font-body mb-5 flex items-center gap-2 border-l-[3px] px-4 py-2.5 text-sm ${
+						photoCheckResult.success
+							? 'border-emerald-700 bg-emerald-50 text-emerald-800 dark:border-emerald-500 dark:bg-emerald-950/30 dark:text-emerald-400'
+							: 'border-amber-600 bg-amber-50 text-amber-800 dark:border-amber-400 dark:bg-amber-950/30 dark:text-amber-400'
+					}`}
+				>
+					<Icon
+						name={photoCheckResult.success ? 'check' : 'question-mark-circled'}
+						className="mt-0.5 size-4 flex-shrink-0"
+					/>
+					{photoCheckResult.message}
+				</div>
+			)}
+
+			{/* ── DOSSIER HEADER ── */}
+			<DossierHeader
+				name={student.fullName}
+				subtitle={`${student.grade ? `Grade ${student.grade}` : 'Student'} · ${student.email}`}
+				typeLabel="Student"
+				photoUrl={displayPhotoUrl}
+				photoAlt={student.fullName}
+				status={student.status}
+				idValid={
+					student.studentId?.expirationDate
+						? new Date(student.studentId.expirationDate) > new Date()
+						: undefined
+				}
+				extraStamps={
+					student.isNameEdited
+						? [{ label: 'Name Edited', variant: 'expiring' as const }]
+						: undefined
+				}
+				photoActions={
+					<>
+						<Button
+							asChild
+							size="sm"
+							className="bg-primary/90 text-brand-gold hover:bg-brand-red flex-1 rounded-none font-mono text-[0.6rem] tracking-wide uppercase"
+						>
+							<Link to={`/admin/students/${student.id}/photo`}>
+								{hasPhoto ? 'Change' : 'Upload'}
+							</Link>
+						</Button>
+						<Button
+							asChild
+							size="sm"
+							className={`bg-primary/90 text-brand-gold hover:bg-brand-red flex-1 rounded-none font-mono text-[0.6rem] tracking-wide uppercase ${
+								forcePhotoCheck ? 'bg-brand-red' : ''
+							}`}
+						>
+							<Link to={`/admin/students/${student.id}?forcePhotoCheck=true`}>
+								{isPhotoCheckPending ? 'Checking…' : 'Refresh'}
+							</Link>
+						</Button>
+					</>
+				}
+				actions={
+					<>
+						<Button
+							className="bg-brand-gold font-body text-primary hover:bg-brand-gold/80 text-sm font-semibold"
+							onClick={() => {
+								window.location.href = `/resources/admin/student-pdf/${student.id}`
+							}}
+						>
+							<Icon name="download" className="size-4" />
+							Download ID Card
+						</Button>
+						<Button variant="outline" asChild className="font-body text-sm">
+							<Link to={`/admin/students/${student.id}/expiration`}>
+								<Icon name="pencil-1" className="size-4" />
+								Edit Expiration
+							</Link>
+						</Button>
+					</>
+				}
 			/>
 
-			<div className="mt-8 grid gap-6 md:grid-cols-2">
-				{/* Left Column: Photo */}
-				<CardSection title="Photo">
-					<div className="flex flex-col gap-4">
-						{/* Photo display */}
-						<div className="flex items-center gap-4">
-							{hasPhoto ? (
-								<Img
-									src={getStudentPhotoSrc(student.studentId?.photoUrl)}
-									alt={student.fullName}
-									className="size-32 rounded-lg object-cover"
-									width={128}
-									height={128}
-								/>
-							) : (
-								<div className="bg-muted-foreground/20 flex size-32 items-center justify-center rounded-lg">
-									<Icon name="avatar" className="text-muted-foreground size-16" />
-								</div>
-							)}
-							<div className="flex flex-col gap-2">
-								<Button asChild variant="outline">
-									<Link to={`/admin/students/${student.id}/photo`}>
-										<Icon name="pencil-1">
-											{hasPhoto ? 'Change Photo' : 'Upload Photo'}
-										</Icon>
-									</Link>
-								</Button>
-								<Button
-									asChild
-									variant="outline"
-									className={
-										forcePhotoCheck ? 'border-primary bg-primary/10' : ''
-									}
-								>
-									<Link to={`/admin/students/${student.id}?forcePhotoCheck=true`}>
-										<Icon name="refresh">
-											{isPhotoCheckPending
-												? 'Checking FACTS...'
-												: 'Refresh from FACTS'}
-										</Icon>
-									</Link>
-								</Button>
-							</div>
-						</div>
-
-						{/* Photo check result message */}
-						{photoCheckResult && (
-							<div
-								className={`rounded-lg border p-3 ${
-									photoCheckResult.success
-										? 'border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400'
-										: 'border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400'
-								}`}
-							>
-								<div className="flex items-start gap-2">
-									<Icon
-										name={photoCheckResult.success ? 'check' : 'info'}
-										className="mt-0.5 size-4 flex-shrink-0"
-									/>
-									<div className="text-sm">{photoCheckResult.message}</div>
-								</div>
-							</div>
-						)}
-
-						{/* Last checked info */}
-						{student.studentId?.factsPhotoCheckedAt && !forcePhotoCheck && (
-							<div className="text-muted-foreground text-xs">
-								Last checked FACTS:{' '}
-								{new Date(
-									student.studentId.factsPhotoCheckedAt,
-								).toLocaleString()}
-							</div>
-						)}
-					</div>
-				</CardSection>
-
-				{/* Right Column: Student Info */}
-				<CardSection title="Student Info">
+			{/* ── 01 STUDENT RECORD + 02 ID CARD ── */}
+			<div className="mt-10 grid gap-8 md:grid-cols-2">
+				<div>
+					<SectionTitle number="01">Student Record</SectionTitle>
 					<KeyValueList
 						items={[
 							{ key: 'Full Name', value: student.fullName },
@@ -422,6 +412,7 @@ export default function AdminStudentDetailRoute({
 										variant={
 											student.status === 'active' ? 'active' : 'inactive'
 										}
+										className="rotate-0"
 									>
 										{student.status}
 									</StatusBadge>
@@ -429,24 +420,67 @@ export default function AdminStudentDetailRoute({
 							},
 							{
 								key: 'Name Edited',
-								value: student.isNameEdited ? 'Yes (preserved during sync)' : 'No',
+								value: student.isNameEdited
+									? 'Yes (preserved during sync)'
+									: 'No',
 							},
 						]}
 					/>
-				</CardSection>
+				</div>
+
+				<div>
+					<SectionTitle number="02">ID Card</SectionTitle>
+					<KeyValueList
+						items={[
+							{ key: 'Expiration', value: expirationDate, mono: true },
+							{
+								key: 'Status',
+								value: (
+									<StatusBadge
+										variant={
+											student.studentId?.expirationDate &&
+											new Date(student.studentId.expirationDate) > new Date()
+												? 'valid'
+												: 'expired'
+										}
+										className="rotate-0"
+									>
+										{student.studentId?.expirationDate &&
+										new Date(student.studentId.expirationDate) > new Date()
+											? 'Valid'
+											: 'Expired'}
+									</StatusBadge>
+								),
+							},
+							{ key: 'Last SIS Sync', value: lastUpdated, mono: true },
+							{
+								key: 'FACTS Photo',
+								value: student.studentId?.factsPhotoCheckedAt
+									? `Checked ${new Date(student.studentId.factsPhotoCheckedAt).toLocaleString()}`
+									: 'Not checked',
+								mono: true,
+							},
+						]}
+					/>
+				</div>
 			</div>
 
-			<div className="mt-6 grid gap-6 md:grid-cols-2">
-				{/* Edit Name Section */}
-				<CardSection title="Edit Name">
-					<p className="text-muted-foreground mb-4 text-sm">
-						Edit the student's name. Once edited, the name will be preserved
-						during SIS syncs.
+			{/* ── 03 EDIT DISPLAY NAME ── */}
+			<div className="mt-10">
+				<SectionTitle number="03">Edit Display Name</SectionTitle>
+				<div className="border-border bg-card relative overflow-hidden border p-5 shadow-sm">
+					{/* Gold top accent */}
+					<div className="from-brand-gold via-brand-gold/70 to-brand-gold absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r" />
+					<p className="font-body text-muted-foreground mb-3 text-sm italic">
+						Once edited, the name will be preserved during SIS syncs.
 					</p>
-					<Form method="post" className="flex flex-col gap-4">
+					<Form method="post" className="flex gap-3">
 						<input type="hidden" name="intent" value="update-name" />
-						<div className="flex flex-col gap-1">
-							<label htmlFor="fullName" className="text-body-xs">
+						<div className="flex-1">
+							<label
+								htmlFor="fullName"
+								className="text-muted-foreground mb-1 block font-mono text-[0.65rem] tracking-[0.08em] uppercase"
+							>
 								Full Name
 							</label>
 							<input
@@ -454,125 +488,107 @@ export default function AdminStudentDetailRoute({
 								id="fullName"
 								name="fullName"
 								defaultValue={student.fullName}
-								className="border-input bg-background h-10 rounded-md border px-3 py-2"
+								className="border-input bg-background font-body text-foreground focus:border-brand-gold focus:ring-brand-gold/15 h-10 w-full border px-3 text-[0.95rem] transition-colors focus:ring-2 focus:outline-none"
 								required
 							/>
 						</div>
-						<StatusButton
-							type="submit"
-							status={isNameUpdatePending ? 'pending' : 'idle'}
-							disabled={isNameUpdatePending}
-						>
-							<Icon name="pencil-1">Save Name</Icon>
-						</StatusButton>
-					</Form>
-				</CardSection>
-
-				{/* ID Card Info */}
-				<CardSection title="ID Card Info">
-					<KeyValueList
-						items={[
-							{
-								key: 'Expiration Date',
-								value: expirationDate,
-								mono: true,
-							},
-						]}
-					/>
-					<div className="mt-4">
-						<Button asChild variant="outline" size="sm">
-							<Link to={`/admin/students/${student.id}/expiration`}>
-								<Icon name="pencil-1">Update</Icon>
-							</Link>
-						</Button>
-					</div>
-				</CardSection>
-			</div>
-
-			<div className="mt-6">
-				{/* SIS Sync Status */}
-				<CardSection title="SIS Sync Status">
-					<KeyValueList
-						items={[
-							{
-								key: 'Last Updated from SIS',
-								value: lastUpdated,
-								mono: true,
-							},
-							{
-								key: 'Name Protected',
-								value: student.isNameEdited
-									? 'Yes - name edits will be preserved during sync'
-									: 'No - name will be updated from SIS during sync',
-							},
-						]}
-					/>
-					{student.isNameEdited && (
-						<div className="mt-4">
-							<Form method="post">
-								<input type="hidden" name="intent" value="reset-name-sync" />
-								<StatusButton
-									type="submit"
-									variant="outline"
-									size="sm"
-									status={useIsPending({ intent: 'reset-name-sync' }) ? 'pending' : 'idle'}
-								>
-									<Icon name="refresh">Allow Name Sync from SIS</Icon>
-								</StatusButton>
-							</Form>
+						<div className="self-end">
+							<StatusButton
+								type="submit"
+								status={isNameUpdatePending ? 'pending' : 'idle'}
+								disabled={isNameUpdatePending}
+								className="bg-primary font-body text-primary-foreground hover:bg-primary/90 text-sm"
+							>
+								Save Name
+							</StatusButton>
 						</div>
+					</Form>
+					{student.isNameEdited && (
+						<Form method="post" className="mt-3">
+							<input type="hidden" name="intent" value="reset-name-sync" />
+							<button
+								type="submit"
+								className="text-brand-red hover:text-brand-red/80 inline-flex items-center gap-1 font-mono text-[0.68rem] tracking-[0.04em] uppercase transition-colors hover:underline"
+							>
+								<Icon name="update" className="size-3" />
+								Allow Name Sync from SIS
+							</button>
+						</Form>
 					)}
-				</CardSection>
+				</div>
 			</div>
 
-			{/* ID Card Preview Section */}
-			<div className="mt-6">
-				<h2 className="mb-4 text-xl font-semibold">ID Card Preview</h2>
-				<div className="grid gap-6 md:grid-cols-2">
-					<CardSection title="Front" className="border-muted/50 shadow-sm">
-						<IdPreviewCard
-							title="Front of ID"
-							previewContent={
-								<IDCardFrontPreview
-									employee={studentCardData}
-									photoUrl={displayPhotoUrl}
-									logoUrl={logoUrl}
-									branding={branding}
-									academicYear={academicYear}
-									barcodeDataURL={barcodeDataURL}
-								/>
-							}
-						>
-							<div className="flex justify-center">
-								<IDCardFrontPreview
-									employee={studentCardData}
-									photoUrl={displayPhotoUrl}
-									logoUrl={logoUrl}
-									branding={branding}
-									academicYear={academicYear}
-									barcodeDataURL={barcodeDataURL}
-								/>
-							</div>
-						</IdPreviewCard>
-					</CardSection>
-					<CardSection title="Back" className="border-muted/50 shadow-sm">
-						<IdPreviewCard
-							title="Back of ID"
-							previewContent={
-								<IDCardBackPreview
-									qrCodeDataURL={qrCodeDataURL}
-									branding={branding}
-								/>
-							}
-						>
-							<div className="flex justify-center">
-								<IDCardBackPreview
-									qrCodeDataURL={qrCodeDataURL}
-									branding={branding}
-								/>
-							</div>
-						</IdPreviewCard>
-					</CardSection>
+			{/* ── 04 FACTS SYNC STATUS ── */}
+			<div className="mt-10">
+				<SectionTitle number="04">FACTS Sync Status</SectionTitle>
+				<KeyValueList
+					items={[
+						{ key: 'Last Updated', value: lastUpdated, mono: true },
+						{
+							key: 'Name Protected',
+							value: student.isNameEdited
+								? 'Yes — edits preserved during sync'
+								: 'No — updated from FACTS during sync',
+						},
+					]}
+				/>
+			</div>
+
+			{/* ── GOLD RULE ── */}
+			<div className="via-brand-gold my-10 h-px bg-gradient-to-r from-transparent to-transparent" />
+
+			{/* ── 05 ID CARD PREVIEW ── */}
+			<SectionTitle number="05">ID Card Preview</SectionTitle>
+			<div className="grid gap-6 md:grid-cols-2">
+				<div className="border-border bg-card border p-5 shadow-sm">
+					<IdPreviewCard
+						title="Front of ID"
+						previewContent={
+							<IDCardFrontPreview
+								employee={studentCardData}
+								photoUrl={displayPhotoUrl}
+								logoUrl={logoUrl}
+								branding={branding}
+								academicYear={academicYear}
+								barcodeDataURL={barcodeDataURL}
+							/>
+						}
+					>
+						<div className="flex justify-center">
+							<IDCardFrontPreview
+								employee={studentCardData}
+								photoUrl={displayPhotoUrl}
+								logoUrl={logoUrl}
+								branding={branding}
+								academicYear={academicYear}
+								barcodeDataURL={barcodeDataURL}
+							/>
+						</div>
+					</IdPreviewCard>
+					<p className="text-muted-foreground mt-3 text-center font-mono text-[0.65rem] tracking-[0.08em] uppercase">
+						Front
+					</p>
+				</div>
+				<div className="border-border bg-card border p-5 shadow-sm">
+					<IdPreviewCard
+						title="Back of ID"
+						previewContent={
+							<IDCardBackPreview
+								qrCodeDataURL={qrCodeDataURL}
+								branding={branding}
+							/>
+						}
+					>
+						<div className="flex justify-center">
+							<IDCardBackPreview
+								qrCodeDataURL={qrCodeDataURL}
+								branding={branding}
+							/>
+						</div>
+					</IdPreviewCard>
+					<p className="text-muted-foreground mt-3 text-center font-mono text-[0.65rem] tracking-[0.08em] uppercase">
+						Back
+					</p>
 				</div>
 			</div>
 		</div>

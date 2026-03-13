@@ -349,7 +349,7 @@
 	{
 		"id": "F025",
 		"title": "Integration Tests for Full ID Workflow",
-		"description": "Create end-to-end integration tests covering complete ID workflow: SIS sync → employee login → view ID → admin uploads photo → generate PDF → verify via QR code.",
+		"description": "Create end-to-end integration tests covering complete ID workflow: SIS sync \u2192 employee login \u2192 view ID \u2192 admin uploads photo \u2192 generate PDF \u2192 verify via QR code.",
 		"tests": [
 			"E2E test: Employee can complete full ID workflow",
 			"E2E test: Admin can manage employee ID end-to-end",
@@ -604,8 +604,8 @@
 			"Already expired student IDs are identified separately",
 			"Notifications work for both employees and students"
 		],
-		"implemented": false,
-		"tests_passed": false
+		"implemented": true,
+		"tests_passed": true
 	},
 	{
 		"id": "F042",
@@ -634,6 +634,84 @@
 			"Background refresh triggers when signature is missing",
 			"Graceful handling when service account not configured",
 			"Graceful handling when API call fails"
+		],
+		"implemented": true,
+		"tests_passed": true
+	},
+	{
+		"id": "F044",
+		"title": "Store & Display Department from FACTS SIS",
+		"description": "Add a separate department field to the Employee model, pulled from FACTS SIS. Display department on admin employee list (filterable), admin employee detail page, and employee own page. Department is stored separately from jobTitle (which currently uses the department field).",
+		"tests": [
+			"Department field pulled from FACTS and stored in Employee model",
+			"Department displayed on admin employee detail page in Personnel Record section",
+			"Department displayed as filterable column/filter on admin employee list",
+			"Department visible on employee own ID page info section",
+			"Sync preserves department across updates",
+			"Null/empty department handled gracefully with fallback"
+		],
+		"implemented": true,
+		"tests_passed": true
+	},
+	{
+		"id": "F045",
+		"title": "Unified Bulk ID Card Print with Criteria Selection",
+		"description": "Create a unified admin route at /admin/print for bulk ID card printing. Supports both employees and students. Admin can filter by people type (employees/students/both), grade level (students), faculty/staff classification (employees), department, and active/inactive status. Supports select-all or individual cherry-picking. Generates multi-card-per-page PDF with front/back.",
+		"tests": [
+			"Admin can access /admin/print route",
+			"Admin can filter employees by department and faculty/staff type",
+			"Admin can filter students by grade level",
+			"Admin can select mixed employees and students",
+			"Generated PDF contains correct cards for all selected people",
+			"Front/back pages render correctly for mixed employee and student cards",
+			"Non-admin users cannot access print route"
+		],
+		"implemented": true,
+		"tests_passed": true
+	},
+	{
+		"id": "F046",
+		"title": "Gmail Signature Template CRUD",
+		"description": "Create SignatureTemplate Prisma model (name, htmlContent, isDefault, createdAt, updatedAt). Build admin UI at /admin/signatures/templates for creating, editing, and deleting HTML signature templates. Templates support placeholders: {{fullName}}, {{firstName}}, {{lastName}}, {{jobTitle}}, {{department}}, {{email}}, {{phone}}, {{schoolName}}. Includes live preview with sample data.",
+		"tests": [
+			"SignatureTemplate model created with correct fields and constraints",
+			"Admin can create a new signature template",
+			"Admin can edit an existing signature template",
+			"Admin can delete a signature template",
+			"Template placeholders are listed and documented in the UI",
+			"Live preview renders template with sample employee data",
+			"Non-admin users cannot access template management"
+		],
+		"implemented": true,
+		"tests_passed": true
+	},
+	{
+		"id": "F047",
+		"title": "Gmail Signature Preview & Push",
+		"description": "Admin UI at /admin/signatures/push to select a template, select recipients (all employees, or filter by department/status/individual), preview rendered signatures per person, and push to Gmail. Uses Google Workspace domain-wide delegation with gmail.settings.sharing scope to SET signatures via PUT /users/{email}/settings/sendAs/{email}.",
+		"tests": [
+			"Admin can select a template and see recipient list",
+			"Admin can filter recipients by department, status, or individual selection",
+			"Preview shows correctly rendered signature for each selected employee",
+			"Push action updates Gmail signature for selected employees",
+			"Gmail API called with correct scope (gmail.settings.sharing) and PUT method",
+			"Partial failures handled gracefully (some succeed, some fail)",
+			"Non-admin users cannot access signature push"
+		],
+		"implemented": true,
+		"tests_passed": true
+	},
+	{
+		"id": "F048",
+		"title": "Signature Push History & Status Tracking",
+		"description": "Track signature push history: which employees had signatures pushed, when, which template was used, and success/failure status. Display push status on admin employee detail page. Show bulk push results summary after each push operation. New SignaturePushLog model.",
+		"tests": [
+			"SignaturePushLog model created with correct fields",
+			"Push operations create log entries for each employee",
+			"Admin employee detail page shows last signature push status",
+			"Bulk push results summary displayed after push operation",
+			"Push history is queryable by employee, template, or date",
+			"Failed pushes are logged with error details"
 		],
 		"implemented": true,
 		"tests_passed": true

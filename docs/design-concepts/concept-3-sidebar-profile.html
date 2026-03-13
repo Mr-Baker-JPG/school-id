@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept 3 — The Sidebar Profile</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&opsz=9..144&family=Work+Sans:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8f7f4;
+    --sidebar-bg: #1b2838;
+    --sidebar-text: #c8cdd5;
+    --surface: #ffffff;
+    --border: #e5e2db;
+    --text: #2c2c2c;
+    --text-muted: #8c8880;
+    --navy: #1b2838;
+    --gold: #c9944a;
+    --gold-light: rgba(201,148,74,0.1);
+    --green: #3d8b5e;
+    --green-light: rgba(61,139,94,0.08);
+    --red: #c0392b;
+    --radius: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Work Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* CONCEPT: "The Sidebar Profile" — Split layout.
+     Left: a dark vertical panel with photo, name, status, and quick actions.
+     Right: scrollable content area with tabbed sections.
+     Feels like a CRM or HR tool profile page. */
+
+  .layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ---- LEFT PANEL ---- */
+  .sidebar {
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .sidebar-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.4);
+    text-decoration: none;
+    margin-bottom: 2rem;
+    transition: color 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .sidebar-back:hover { color: rgba(255,255,255,0.7); }
+
+  .sidebar-photo {
+    width: 180px;
+    height: 220px;
+    margin: 0 auto 1.5rem;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+  .sidebar-photo .ph-icon {
+    width: 48px;
+    height: 48px;
+    opacity: 0.2;
+    fill: currentColor;
+  }
+
+  .sidebar-name {
+    font-family: 'Fraunces', serif;
+    font-size: 1.6rem;
+    color: #fff;
+    text-align: center;
+    line-height: 1.25;
+    margin-bottom: 0.25rem;
+  }
+
+  .sidebar-role {
+    text-align: center;
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 1.25rem;
+  }
+
+  .sidebar-status {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .s-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .s-pill--green { background: rgba(61,139,94,0.2); color: #6fcf97; }
+  .s-pill--gold { background: rgba(201,148,74,0.2); color: var(--gold); }
+
+  .sidebar-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.08);
+    margin: 0.5rem 0 1.25rem;
+  }
+
+  .sidebar-meta {
+    list-style: none;
+    margin-bottom: 1.5rem;
+  }
+  .sidebar-meta li {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.45rem 0;
+    font-size: 0.78rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .sidebar-meta .lbl { color: rgba(255,255,255,0.4); }
+  .sidebar-meta .val {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.74rem;
+    color: rgba(255,255,255,0.8);
+  }
+
+  .sidebar-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: auto;
+  }
+
+  .s-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.6rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    text-decoration: none;
+    border: none;
+  }
+  .s-btn--gold {
+    background: var(--gold);
+    color: var(--navy);
+  }
+  .s-btn--gold:hover { background: #d4a35a; }
+  .s-btn--ghost {
+    background: rgba(255,255,255,0.06);
+    color: var(--sidebar-text);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .s-btn--ghost:hover { background: rgba(255,255,255,0.1); }
+
+  /* ---- MAIN CONTENT ---- */
+  .main {
+    padding: 2rem 2.5rem 4rem;
+    overflow-y: auto;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 2rem;
+  }
+  .tab {
+    padding: 0.6rem 1.25rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    font-family: inherit;
+  }
+  .tab:hover { color: var(--text); }
+  .tab--active {
+    color: var(--navy);
+    border-bottom-color: var(--gold);
+  }
+
+  /* Section */
+  .content-section {
+    margin-bottom: 2.5rem;
+  }
+
+  .section-heading {
+    font-family: 'Fraunces', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--navy);
+  }
+
+  /* Info Card */
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+
+  .info-item {}
+  .info-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+  }
+  .info-value {
+    font-size: 0.92rem;
+    font-weight: 500;
+  }
+  .info-value.mono {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.85rem;
+  }
+
+  /* Edit Form */
+  .edit-form {
+    display: flex;
+    gap: 0.75rem;
+    align-items: end;
+  }
+  .form-group { flex: 1; }
+  .form-group label {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+  }
+  .form-group input {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.88rem;
+    color: var(--text);
+    background: var(--surface);
+  }
+  .form-group input:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px var(--gold-light);
+  }
+  .form-btn {
+    padding: 0.55rem 1.25rem;
+    border-radius: 6px;
+    border: none;
+    background: var(--navy);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: background 0.2s;
+  }
+  .form-btn:hover { background: #253a4f; }
+
+  /* Signature */
+  .sig-preview {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    font-size: 0.85rem;
+    color: #444;
+    line-height: 1.6;
+  }
+  .sig-time {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+
+  /* ID Previews */
+  .id-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+  .id-frame {
+    text-align: center;
+  }
+  .id-mock {
+    aspect-ratio: 3.375 / 2.125;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-bottom: 0.5rem;
+  }
+  .id-mock:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+  .id-mock--front {
+    background: linear-gradient(145deg, var(--navy), #0d1a28);
+    color: rgba(255,255,255,0.4);
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .id-mock--back {
+    background: linear-gradient(145deg, #f5f3ee, #e6e2d8);
+    color: rgba(0,0,0,0.25);
+    border: 1px solid var(--border);
+  }
+  .id-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* Notice */
+  .notice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    border-radius: var(--radius);
+    font-size: 0.8rem;
+    margin-bottom: 1.5rem;
+  }
+  .notice--info {
+    background: var(--gold-light);
+    color: #8a6930;
+    border: 1px solid rgba(201,148,74,0.2);
+  }
+
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar {
+      position: relative;
+      height: auto;
+      padding: 1.5rem;
+    }
+    .sidebar-photo { width: 120px; height: 150px; }
+    .main { padding: 1.5rem; }
+    .info-grid { grid-template-columns: 1fr; }
+    .id-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <a href="#" class="sidebar-back">← Back to Students</a>
+
+    <div class="sidebar-photo">
+      <svg class="ph-icon" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+    </div>
+
+    <h1 class="sidebar-name">Marcus Rivera</h1>
+    <p class="sidebar-role">Student · Grade 10</p>
+
+    <div class="sidebar-status">
+      <span class="s-pill s-pill--green">● Active</span>
+      <span class="s-pill s-pill--gold">⎘ Name Edited</span>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <ul class="sidebar-meta">
+      <li><span class="lbl">Email</span><span class="val">mrivera@jpg.org</span></li>
+      <li><span class="lbl">SIS ID</span><span class="val">STU-10234</span></li>
+      <li><span class="lbl">Expires</span><span class="val">07/01/2026</span></li>
+      <li><span class="lbl">Last Sync</span><span class="val">03/12/2026</span></li>
+    </ul>
+
+    <div class="sidebar-actions">
+      <button class="s-btn s-btn--gold">↓ Download ID Card</button>
+      <button class="s-btn s-btn--ghost">📷 Upload Photo</button>
+      <button class="s-btn s-btn--ghost">⟳ Refresh from FACTS</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="tabs">
+      <button class="tab tab--active">Overview</button>
+      <button class="tab">ID Card</button>
+      <button class="tab">SIS Sync</button>
+      <button class="tab">Gmail</button>
+    </div>
+
+    <div class="notice notice--info">
+      ℹ Name has been manually edited and will be preserved during SIS syncs.
+    </div>
+
+    <!-- OVERVIEW TAB -->
+    <div class="content-section">
+      <h2 class="section-heading">Student Information</h2>
+      <div class="info-card">
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Full Name</div>
+            <div class="info-value">Marcus Rivera</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Grade</div>
+            <div class="info-value">10</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Email</div>
+            <div class="info-value">mrivera@jpgacademy.org</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">SIS Student ID</div>
+            <div class="info-value mono">STU-10234</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Status</div>
+            <div class="info-value"><span class="s-pill s-pill--green" style="color:#3d8b5e;background:var(--green-light);">● Active</span></div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Name Edited</div>
+            <div class="info-value">Yes — preserved during sync</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-section">
+      <h2 class="section-heading">Edit Display Name</h2>
+      <div class="info-card">
+        <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1rem;">Once edited, the name is locked from SIS overwrite. Reset below to re-enable sync.</p>
+        <div class="edit-form">
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" value="Marcus Rivera" />
+          </div>
+          <button class="form-btn">Save Name</button>
+        </div>
+        <div style="margin-top:0.75rem;">
+          <button class="s-btn s-btn--ghost" style="color:var(--text-muted);background:transparent;border:1px solid var(--border);font-size:0.75rem;padding:0.4rem 0.75rem;">⟳ Allow Name Sync from SIS</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-section">
+      <h2 class="section-heading">ID Card Info</h2>
+      <div class="info-card">
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Expiration Date</div>
+            <div class="info-value mono">07/01/2026</div>
+          </div>
+          <div class="info-item" style="display:flex;align-items:end;">
+            <button class="form-btn" style="background:transparent;color:var(--navy);border:1px solid var(--border);">✎ Update Expiration</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-section">
+      <h2 class="section-heading">ID Card Preview</h2>
+      <div class="id-row">
+        <div class="id-frame">
+          <div class="id-mock id-mock--front">Front of ID</div>
+          <span class="id-label">Front</span>
+        </div>
+        <div class="id-frame">
+          <div class="id-mock id-mock--back">Back of ID</div>
+          <span class="id-label">Back</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

@@ -1,16 +1,15 @@
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
-import { captureException } from '@sentry/react-router'
 import { Img } from 'openimg/react'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
-import { Card } from '#app/components/ui/card.tsx'
-import { SCHOOL_NAME, HEADER_LOGO_SRC } from '#app/ui/brand.ts'
+import { Icon } from '#app/components/ui/icon.tsx'
+import { SCHOOL_NAME, LOGO_SRC } from '#app/ui/brand.ts'
 import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
 import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
 import { getBrandingConfig } from '#app/utils/branding.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { fetchAndCacheFactsProfilePicture as fetchEmployeeProfilePicture } from '#app/utils/employee.server.ts'
+import { getEmployeePhotoSrc, getStudentPhotoSrc } from '#app/utils/misc.tsx'
 import { fetchAndCacheFactsProfilePicture as fetchStudentProfilePicture } from '#app/utils/student.server.ts'
-import { getDomainUrl, getEmployeePhotoSrc, getStudentPhotoSrc } from '#app/utils/misc.tsx'
 import { getVerificationStatus } from '#app/utils/verification.server.ts'
 import { type Route } from './+types/$id.ts'
 
@@ -18,7 +17,7 @@ export const handle: SEOHandle = {
 	getSitemapEntries: () => null,
 }
 
-export async function loader({ params, request }: Route.LoaderArgs) {
+export async function loader({ params }: Route.LoaderArgs) {
 	const { id } = params
 
 	if (!id) {
@@ -51,7 +50,6 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 		if (!employee.employeeId?.photoUrl) {
 			try {
 				await fetchEmployeeProfilePicture(employee.id, employee.sisEmployeeId)
-				// Re-fetch to get the updated photoUrl
 				const updatedEmployee = await prisma.employee.findUnique({
 					where: { id },
 					select: {
@@ -67,7 +65,6 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 					employee.employeeId = updatedEmployee.employeeId
 				}
 			} catch (error) {
-				// Log error but continue without photo
 				console.error('Failed to fetch FACTS profile picture:', error)
 			}
 		}
@@ -98,7 +95,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 		}
 	}
 
-	// Try to find student by SIS ID first, then by database ID (for backward compatibility)
+	// Try to find student by SIS ID first, then by database ID
 	const student = await prisma.student.findFirst({
 		where: {
 			OR: [{ sisStudentId: id }, { id }],
@@ -119,11 +116,9 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 	})
 
 	if (student) {
-		// Fetch FACTS profile picture if no uploaded photo
 		if (!student.studentId?.photoUrl) {
 			try {
 				await fetchStudentProfilePicture(student.id, student.sisStudentId)
-				// Re-fetch to get the updated photoUrl
 				const updatedStudent = await prisma.student.findUnique({
 					where: { id },
 					select: {
@@ -139,8 +134,10 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 					student.studentId = updatedStudent.studentId
 				}
 			} catch (error) {
-				// Log error but continue without photo
-				console.error('Failed to fetch FACTS profile picture for student:', error)
+				console.error(
+					'Failed to fetch FACTS profile picture for student:',
+					error,
+				)
 			}
 		}
 
@@ -213,94 +210,163 @@ export default function VerifyId({ loaderData }: Route.ComponentProps) {
 		: 'Not set'
 
 	return (
-		<div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-			<div className="mx-auto max-w-3xl">
-				{/* Header with logo */}
-				<div className="mb-8 text-center">
-					<img
-						src={HEADER_LOGO_SRC}
-						alt={`${branding.schoolName} logo`}
-						className="mx-auto h-20 w-auto"
-					/>
-					<h1 className="mt-4 text-3xl font-bold text-gray-900">
+		<div className="bg-background font-body min-h-screen px-4 py-12 sm:px-6 lg:px-8">
+			<div className="mx-auto max-w-2xl">
+				{/* ── HEADER ── */}
+				<div className="mb-10 text-center">
+					<div className="bg-card mx-auto mb-4 flex size-20 items-center justify-center rounded-full shadow-sm">
+						<Img
+							src={LOGO_SRC}
+							alt={`${branding.schoolName} logo`}
+							className="h-16 w-auto object-contain object-top"
+							width={128}
+							height={128}
+						/>
+					</div>
+					<h1 className="font-display text-primary text-2xl font-semibold tracking-wide sm:text-3xl">
 						ID Verification
 					</h1>
+					<p className="text-muted-foreground mt-1 font-mono text-[0.65rem] tracking-[0.12em] uppercase">
+						{SCHOOL_NAME}
+					</p>
 				</div>
 
-				{/* Main Card */}
-				<Card className="overflow-hidden">
-					<div className="px-6 py-8 sm:px-8">
-						{/* Status Banner */}
-						<div className="mb-6 flex justify-center">
-							<StatusBadge
-								isValid={verificationStatus.isValid}
-								reason={verificationStatus.reason}
-							/>
-						</div>
+				{/* ── VERIFICATION STATUS STAMP ── */}
+				<div className="mb-8 flex justify-center">
+					<div
+						className={`flex items-center gap-2.5 border-2 px-5 py-2.5 ${
+							verificationStatus.isValid
+								? 'border-emerald-700 text-emerald-700'
+								: 'border-destructive text-destructive'
+						}`}
+					>
+						<Icon
+							name={verificationStatus.isValid ? 'check' : 'cross-1'}
+							className="size-5"
+						/>
+						<span className="font-mono text-sm font-medium tracking-[0.1em] uppercase">
+							{verificationStatus.isValid ? 'Verified — Valid ID' : 'Invalid'}
+						</span>
+					</div>
+				</div>
 
-						{/* Person Info Grid */}
-						<div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+				{/* ── DOSSIER CARD ── */}
+				<div className="border-border bg-card relative border shadow-sm">
+					{/* Gold accent line */}
+					<div className="from-brand-gold via-brand-gold/70 to-brand-gold absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r" />
+
+					<div className="px-6 py-8 sm:px-8">
+						{/* Photo + Name header */}
+						<div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
 							{/* Photo */}
-							<div className="flex justify-center sm:justify-start">
-								{person.photoUrl ? (
-									<img
-										src={photoSrc}
-										alt={`${person.fullName}'s photo`}
-										className="h-48 w-48 rounded-lg object-cover shadow-md"
-									/>
-								) : (
-									<div className="flex h-48 w-48 items-center justify-center rounded-lg bg-gray-200 shadow-md">
-										<span className="text-4xl font-semibold text-gray-400">
-											{person.fullName.charAt(0)}
-										</span>
+							<div className="relative shrink-0">
+								<div className="border-brand-navy/20 border-2 p-0.5">
+									<div className="border-brand-gold/30 border">
+										{person.photoUrl ? (
+											<img
+												src={photoSrc}
+												alt={`${person.fullName}'s photo`}
+												className="size-36 object-cover object-top"
+											/>
+										) : (
+											<div className="bg-muted flex size-36 items-center justify-center">
+												<span className="font-display text-muted-foreground text-3xl font-semibold">
+													{person.fullName.charAt(0)}
+												</span>
+											</div>
+										)}
 									</div>
-								)}
+								</div>
+								{/* Type badge */}
+								<div className="bg-brand-navy text-brand-gold absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-0.5 font-mono text-[0.55rem] tracking-[0.14em] whitespace-nowrap uppercase">
+									{personTypeLabel}
+								</div>
 							</div>
 
-							{/* Details */}
-							<KeyValueList
-								items={[
-									{ label: 'Name', value: person.fullName },
-									{ label: 'Type', value: personTypeLabel },
-									...(personType === 'employee' && 'jobTitle' in person
-										? [{ label: 'Title' as const, value: person.jobTitle }]
-										: []),
-									{ label: 'Status', value: person.status },
-									{
-										label: 'Expiration Date',
-										value: expirationDisplay,
-									},
-								]}
-							/>
+							{/* Name + stamps */}
+							<div className="flex-1 text-center sm:text-left">
+								<h2 className="font-display text-primary text-xl font-semibold tracking-wide sm:text-2xl">
+									{person.fullName}
+								</h2>
+								{personType === 'employee' && 'jobTitle' in person && (
+									<p className="font-body text-muted-foreground mt-1 text-base italic">
+										{person.jobTitle}
+									</p>
+								)}
+								<div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
+									<StatusBadge
+										variant={person.status === 'active' ? 'active' : 'inactive'}
+									>
+										{person.status}
+									</StatusBadge>
+									<StatusBadge
+										variant={verificationStatus.isValid ? 'valid' : 'expired'}
+									>
+										{verificationStatus.isValid ? 'ID Valid' : 'ID Invalid'}
+									</StatusBadge>
+								</div>
+							</div>
 						</div>
+
+						{/* Gold rule */}
+						<div className="via-brand-gold my-6 h-px bg-gradient-to-r from-transparent to-transparent" />
+
+						{/* Details */}
+						<KeyValueList
+							items={[
+								{ key: 'Full Name', value: person.fullName },
+								{ key: 'Type', value: personTypeLabel },
+								...(personType === 'employee' && 'jobTitle' in person
+									? [{ key: 'Title', value: person.jobTitle }]
+									: []),
+								{
+									key: 'Account Status',
+									value: (
+										<StatusBadge
+											variant={
+												person.status === 'active' ? 'active' : 'inactive'
+											}
+											className="rotate-0"
+										>
+											{person.status}
+										</StatusBadge>
+									),
+								},
+								{
+									key: 'Expiration',
+									value: expirationDisplay,
+									mono: true,
+								},
+							]}
+						/>
 					</div>
 
-					{/* Footer with verification reason */}
+					{/* Footer — verification reason */}
 					<div
-						className={`px-6 py-4 sm:px-8 ${
+						className={`border-t px-6 py-4 sm:px-8 ${
 							verificationStatus.isValid
-								? 'bg-green-50'
-								: 'bg-red-50'
+								? 'border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20'
+								: 'border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-950/20'
 						}`}
 					>
 						<p
-							className={`text-center text-sm font-medium ${
+							className={`font-body text-center text-sm font-medium ${
 								verificationStatus.isValid
-									? 'text-green-800'
-									: 'text-red-800'
+									? 'text-emerald-800 dark:text-emerald-400'
+									: 'text-red-800 dark:text-red-400'
 							}`}
 						>
 							{verificationStatus.reason}
 						</p>
 					</div>
-				</Card>
+				</div>
 
-				{/* Footer */}
-				<div className="mt-8 text-center text-sm text-gray-500">
-					<p>
-						This verification page is provided by {branding.schoolName}.
+				{/* Footer text */}
+				<div className="mt-8 text-center">
+					<p className="text-muted-foreground font-mono text-[0.6rem] tracking-[0.1em] uppercase">
+						This verification page is provided by {branding.schoolName}
 					</p>
-					<p className="mt-2">
+					<p className="font-body text-muted-foreground mt-1 text-xs italic">
 						For questions or concerns, please contact your administrator.
 					</p>
 				</div>
@@ -314,21 +380,40 @@ export function ErrorBoundary() {
 		<GeneralErrorBoundary
 			statusHandlers={{
 				404: ({ params }) => (
-					<div className="flex flex-col items-center justify-center py-20">
-						<h1 className="text-4xl font-bold text-gray-900">
+					<div className="bg-background font-body flex min-h-screen flex-col items-center justify-center px-4 py-20">
+						<div className="bg-card mx-auto mb-6 flex size-16 items-center justify-center rounded-full shadow-sm">
+							<Img
+								src={LOGO_SRC}
+								alt={SCHOOL_NAME}
+								className="h-12 w-auto object-contain object-top"
+								width={96}
+								height={96}
+							/>
+						</div>
+						<h1 className="font-display text-primary text-2xl font-semibold">
 							Person Not Found
 						</h1>
-						<p className="mt-4 text-lg text-gray-600">
-							No person found with ID: {params.id}
+						<p className="font-body text-muted-foreground mt-3 text-base">
+							No person found with ID:{' '}
+							<span className="font-mono text-sm">{params.id}</span>
 						</p>
 					</div>
 				),
 				400: () => (
-					<div className="flex flex-col items-center justify-center py-20">
-						<h1 className="text-4xl font-bold text-gray-900">
+					<div className="bg-background font-body flex min-h-screen flex-col items-center justify-center px-4 py-20">
+						<div className="bg-card mx-auto mb-6 flex size-16 items-center justify-center rounded-full shadow-sm">
+							<Img
+								src={LOGO_SRC}
+								alt={SCHOOL_NAME}
+								className="h-12 w-auto object-contain object-top"
+								width={96}
+								height={96}
+							/>
+						</div>
+						<h1 className="font-display text-primary text-2xl font-semibold">
 							Invalid Request
 						</h1>
-						<p className="mt-4 text-lg text-gray-600">
+						<p className="font-body text-muted-foreground mt-3 text-base">
 							An ID is required for verification.
 						</p>
 					</div>

@@ -8,6 +8,10 @@ interface PageTitleProps {
 	className?: string
 }
 
+/**
+ * Page-level title.
+ * Uses Cinzel display font for the brand dossier aesthetic.
+ */
 export function PageTitle({
 	title,
 	subtitle,
@@ -23,9 +27,13 @@ export function PageTitle({
 			)}
 		>
 			<div className="flex-1">
-				<h1 className="md:text-h1 text-base font-semibold">{title}</h1>
+				<h1 className="font-display text-base font-semibold text-primary md:text-2xl">
+					{title}
+				</h1>
 				{subtitle && (
-					<p className="text-body-md text-muted-foreground mt-2">{subtitle}</p>
+					<p className="mt-1 font-body text-base italic text-muted-foreground">
+						{subtitle}
+					</p>
 				)}
 			</div>
 			{rightSlot && <div className="flex-shrink-0">{rightSlot}</div>}

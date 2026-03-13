@@ -158,13 +158,14 @@ export function ExpirationNotificationEmail({
  */
 export async function sendExpirationNotifications(
 	warningDays: number = 30,
+	currentDate: Date = new Date(),
 ): Promise<{ success: boolean; error?: string }> {
 	try {
 		// Get expiring and expired employees
-		const employees = await getExpiringEmployees(warningDays)
+		const employees = await getExpiringEmployees(warningDays, currentDate)
 
 		// Get expiring and expired students
-		const students = await getExpiringStudents(warningDays)
+		const students = await getExpiringStudents(warningDays, currentDate)
 
 		if (employees.length === 0 && students.length === 0) {
 			// No expiring or expired IDs, no need to send notifications

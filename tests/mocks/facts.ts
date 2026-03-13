@@ -11,6 +11,12 @@ function createMockStaff(overrides?: {
 	email?: string
 	active?: boolean
 	department?: string
+	administrator?: boolean
+	faculty?: boolean
+	highSchool?: boolean
+	middleSchool?: boolean
+	elementary?: boolean
+	preschool?: boolean
 }) {
 	const staffId = overrides?.staffId ?? faker.number.int({ min: 1, max: 10000 })
 	const firstName = overrides?.firstName ?? faker.person.firstName()
@@ -25,17 +31,17 @@ function createMockStaff(overrides?: {
 		middleName: faker.person.middleName(),
 		active: overrides?.active ?? true,
 		department: overrides?.department ?? faker.person.jobTitle(),
-		administrator: false,
+		administrator: overrides?.administrator ?? false,
 		blockSurvey: false,
 		districtUser: false,
 		districtWideUser: false,
 		dualEnrolledUser: false,
-		elementary: false,
-		faculty: true,
+		elementary: overrides?.elementary ?? false,
+		faculty: overrides?.faculty ?? true,
 		fullTime: true,
-		highSchool: false,
-		middleSchool: false,
-		preschool: false,
+		highSchool: overrides?.highSchool ?? false,
+		middleSchool: overrides?.middleSchool ?? false,
+		preschool: overrides?.preschool ?? false,
 		staffDirectoryBlock: false,
 		substitute: false,
 		unsubscribeRenWebEmail: false,

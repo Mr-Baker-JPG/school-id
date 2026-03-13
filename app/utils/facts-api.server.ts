@@ -30,6 +30,12 @@ export interface FactsStaffVmOutV1_1 {
 	lastName?: string
 	middleName?: string
 	active: boolean
+	administrator?: boolean
+	faculty?: boolean
+	highSchool?: boolean
+	middleSchool?: boolean
+	elementary?: boolean
+	preschool?: boolean
 	department?: string
 	demographics?: FactsDemographicsModel
 }
@@ -83,6 +89,7 @@ export interface FactsEmployeeData {
 	lastName: string
 	fullName: string
 	jobTitle: string
+	department: string | null
 	email: string
 	status: 'active' | 'inactive'
 }
@@ -279,6 +286,38 @@ function parseNameParts(nameStr: string): { firstName: string; lastName: string 
 }
 
 /**
+ * Derive department classification from FACTS API data.
+ *
+ * The raw FACTS `department` string determines the role category:
+ * - Contains "administrator" (case-insensitive) → "Administration"
+ * - Contains "administration" (case-insensitive) → "Administration"
+ * - Contains "faculty" (case-insensitive) → Faculty; then use boolean flags
+ *   to determine sub-type (Upper School / Lower School / Preschool)
+ *   with priority: Upper School > Lower School > Preschool.
+ *   Falls back to "Staff" if no school flags are set.
+ * - Everything else → "Staff"
+ */
+export function deriveDepartment(staff: Pick<FactsStaffVmOutV1_1, 'department' | 'highSchool' | 'middleSchool' | 'elementary' | 'preschool'>): string {
+	const dept = (staff.department || '').toLowerCase()
+
+	// Administrator is determined by the department string
+	if (dept.includes('administrator') || dept.includes('administration')) {
+		return 'Administration'
+	}
+
+	// Faculty — check school-level boolean flags for sub-type
+	if (dept.includes('faculty')) {
+		if (staff.highSchool || staff.middleSchool) return 'Upper School'
+		if (staff.elementary) return 'Lower School'
+		if (staff.preschool) return 'Preschool'
+		// Faculty but no school flags set
+		return 'Staff'
+	}
+
+	return 'Staff'
+}
+
+/**
  * Transform FACTS API staff data to Employee schema format
  */
 function transformStaffToEmployee(
@@ -332,8 +371,15 @@ function transformStaffToEmployee(
 	if (!firstName) firstName = 'Unknown'
 	if (!lastName) lastName = 'Unknown'
 
-	// Get job title from department
-	const jobTitle = staff.department || 'Staff'
+	// Get job title from FACTS department field (this is the raw FACTS value)
+	// Normalize admin-type values to "Administrator" (the title, not the department)
+	const rawDept = (staff.department || 'Staff').trim()
+	const jobTitle = rawDept.toLowerCase().includes('administrat') ? 'Administrator' : rawDept
+
+	// Derive department from FACTS department string + boolean flags
+	// Department string determines role (Administrator/Faculty/Staff),
+	// boolean flags determine faculty sub-type (Upper/Lower/Preschool)
+	const department = deriveDepartment(staff)
 
 	// Determine status from active flag
 	const status: 'active' | 'inactive' = staff.active ? 'active' : 'inactive'
@@ -343,7 +389,8 @@ function transformStaffToEmployee(
 		firstName,
 		lastName,
 		fullName,
-		jobTitle: jobTitle.trim(),
+		jobTitle,
+		department,
 		email: email.trim(),
 		status,
 	}

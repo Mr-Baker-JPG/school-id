@@ -61,7 +61,7 @@ export const StatusButton = ({
 
 	return (
 		<Button className={cn('flex justify-center gap-4', className)} {...props}>
-			<div>{children}</div>
+			<div className="flex items-center gap-1.5">{children}</div>
 			{message ? (
 				<TooltipProvider>
 					<Tooltip>

@@ -170,15 +170,40 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
 
 		return (
 			<>
+				<style>
+					{`
+						@keyframes dialog-fade-in {
+							from { opacity: 0; }
+							to { opacity: 1; }
+						}
+						@keyframes dialog-scale-in {
+							from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+							to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+						}
+						.dialog-backdrop {
+							animation: dialog-fade-in 0.2s ease-out forwards;
+						}
+						.dialog-content {
+							animation: dialog-scale-in 0.2s ease-out forwards;
+						}
+					`}
+				</style>
+				{/* Backdrop with fade animation */}
 				<div
-					className="fixed inset-0 z-50 bg-black/80"
+					className="dialog-backdrop fixed inset-0 z-50 bg-black/80"
 					onClick={handleBackdropClick}
 					aria-hidden="true"
 				/>
+				{/* Dialog content with scale + fade animation */}
 				<div
-					ref={ref || contentRef}
+					ref={(node) => {
+						// Handle both refs
+						if (typeof ref === 'function') ref(node)
+						else if (ref) ref.current = node
+						;(contentRef as React.MutableRefObject<HTMLDivElement | null>).current = node
+					}}
 					className={cn(
-						'bg-background fixed top-1/2 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg border shadow-lg',
+						'dialog-content bg-background fixed top-1/2 left-1/2 z-50 w-full max-w-lg overflow-hidden border border-border shadow-lg',
 						className,
 					)}
 					role="dialog"
@@ -186,11 +211,13 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
 					onClick={handleContentClick}
 					{...props}
 				>
+					{/* Gold accent bar */}
+					<div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-brand-gold via-brand-gold/70 to-brand-gold" />
 					{children}
 					<Button
 						variant="ghost"
 						size="icon"
-						className="absolute top-4 right-4"
+						className="absolute top-4 right-4 z-10 hover:bg-slate-100 dark:hover:bg-slate-800"
 						onClick={() => setOpen(false)}
 						aria-label="Close dialog"
 					>
@@ -222,7 +249,7 @@ const DialogTitle = React.forwardRef<
 	<h2
 		ref={ref}
 		className={cn(
-			'text-lg leading-none font-semibold tracking-tight',
+			'font-display text-lg leading-none font-semibold tracking-tight text-primary',
 			className,
 		)}
 		{...props}
@@ -236,7 +263,7 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
 	<p
 		ref={ref}
-		className={cn('text-muted-foreground text-sm', className)}
+		className={cn('font-body text-muted-foreground text-sm', className)}
 		{...props}
 	/>
 ))
@@ -248,7 +275,7 @@ const DialogFooter = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
 	<div
 		className={cn(
-			'flex flex-col-reverse p-6 pt-4 sm:flex-row sm:justify-end sm:space-x-2',
+			'flex flex-col-reverse border-t border-border bg-muted/30 p-6 pt-4 sm:flex-row sm:justify-end sm:space-x-2',
 			className,
 		)}
 		{...props}

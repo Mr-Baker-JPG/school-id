@@ -1,5 +1,4 @@
 import * as React from 'react'
-import { Badge } from '#app/components/ui/badge.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { cn } from '#app/utils/misc.tsx'
 
@@ -19,12 +18,18 @@ interface StatusBadgeProps {
 }
 
 const variantStyles: Record<StatusBadgeVariant, string> = {
-	active: 'bg-emerald-600 text-white hover:bg-emerald-600 border-emerald-600',
-	inactive: 'bg-slate-500 text-white hover:bg-slate-500 border-slate-500',
-	valid: 'bg-emerald-600 text-white hover:bg-emerald-600 border-emerald-600',
-	invalid: 'bg-red-600 text-white hover:bg-red-600 border-red-600',
-	expiring: 'bg-amber-500 text-white hover:bg-amber-500 border-amber-500',
-	expired: 'bg-red-600 text-white hover:bg-red-600 border-red-600',
+	active:
+		'border-emerald-700 text-emerald-700 dark:border-emerald-500 dark:text-emerald-400',
+	inactive:
+		'border-muted-foreground text-muted-foreground',
+	valid:
+		'border-emerald-700 text-emerald-700 dark:border-emerald-500 dark:text-emerald-400',
+	invalid:
+		'border-destructive text-destructive',
+	expiring:
+		'border-amber-600 text-amber-600 dark:border-amber-400 dark:text-amber-400',
+	expired:
+		'border-destructive text-destructive',
 }
 
 const variantIcons: Record<StatusBadgeVariant, string> = {
@@ -45,11 +50,19 @@ export function StatusBadge({
 	const iconName = variantIcons[variant]
 
 	return (
-		<Badge variant="outline" className={cn(variantStyles[variant], className)}>
+		<span
+			className={cn(
+				// Dossier "stamp" style: outlined, uppercase, mono, slight rotate
+				'inline-flex items-center gap-1 border-2 px-2 py-0.5 font-mono text-[0.62rem] font-medium uppercase tracking-[0.1em]',
+				'-rotate-[1.5deg]',
+				variantStyles[variant],
+				className,
+			)}
+		>
 			{showIcon && iconName && (
-				<Icon name={iconName as any} className="mr-1 size-3" />
+				<Icon name={iconName as any} className="size-2.5" />
 			)}
 			{children}
-		</Badge>
+		</span>
 	)
 }

@@ -186,23 +186,26 @@ model Passkey {
 }
 
 model Employee {
-  id            String @id @default(cuid())
-  sisEmployeeId String @unique
+  id            String  @id @default(cuid())
+  sisEmployeeId String  @unique
   firstName     String
   lastName      String
-  fullName      String // Kept for backward compatibility
+  fullName      String  // Kept for backward compatibility
   jobTitle      String
-  email         String @unique
-  status        String // 'active' or 'inactive'
+  department    String? // Department from FACTS SIS (stored separately from jobTitle)
+  email         String  @unique
+  status        String  // 'active' or 'inactive'
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  employeeId EmployeeID?
+  employeeId        EmployeeID?
+  signaturePushLogs SignaturePushLog[]
 
   @@index([email])
   @@index([status])
   @@index([sisEmployeeId])
+  @@index([department])
 }
 
 model EmployeeID {
@@ -277,4 +280,42 @@ model StudentID {
   @@index([studentId])
   @@index([expirationDate])
   @@index([factsPhotoCheckedAt])
+}
+
+model SignatureTemplate {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  htmlContent String
+  isDefault   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pushLogs SignaturePushLog[]
+
+  @@index([isDefault])
+}
+
+model SignaturePushLog {
+  id         String  @id @default(cuid())
+  employeeId String
+  templateId String
+  success    Boolean
+  error      String?
+
+  pushedAt DateTime @default(now())
+
+  employee   Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  template   SignatureTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@index([templateId])
+  @@index([pushedAt])
+  @@index([success])
+}
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }

@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept 2 — The Dashboard Card</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181a24;
+    --surface-2: #1e2030;
+    --surface-3: #252839;
+    --border: #2a2d3e;
+    --text: #e4e6f0;
+    --text-muted: #6b7194;
+    --accent: #6366f1;
+    --accent-glow: rgba(99,102,241,0.15);
+    --green: #22c55e;
+    --green-dim: rgba(34,197,94,0.12);
+    --amber: #f59e0b;
+    --amber-dim: rgba(245,158,11,0.12);
+    --red: #ef4444;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* CONCEPT: "The Dashboard Card" — Dark, glassmorphic, data-dense.
+     A large hero card at top with photo + key info + actions,
+     then a bento grid of info blocks below. Feels like a monitoring dashboard. */
+
+  .shell {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1.5rem 1.5rem 4rem;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+  }
+  .breadcrumb a {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .breadcrumb a:hover { color: var(--text); }
+  .breadcrumb .sep { opacity: 0.3; }
+
+  /* ---- HERO CARD ---- */
+  .hero-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.75rem;
+    display: grid;
+    grid-template-columns: 140px 1fr auto;
+    gap: 1.75rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), #a78bfa, var(--accent));
+  }
+
+  .hero-photo {
+    width: 140px;
+    height: 170px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    position: relative;
+  }
+  .hero-photo .placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 0.5rem;
+    color: var(--text-muted);
+  }
+  .hero-photo .placeholder svg { width: 40px; height: 40px; opacity: 0.4; }
+  .hero-photo .placeholder span { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .hero-info { display: flex; flex-direction: column; justify-content: space-between; }
+
+  .hero-top { }
+  .person-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(99,102,241,0.2);
+    margin-bottom: 0.75rem;
+  }
+
+  .person-name {
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 0.3rem;
+    letter-spacing: -0.01em;
+  }
+
+  .person-subtitle {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 300;
+  }
+
+  .hero-meta {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 1rem;
+  }
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .meta-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+  .meta-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--text);
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-self: start;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.55rem 1rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--surface-3); border-color: #3a3e55; }
+  .btn--accent {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .btn--accent:hover { background: #5558e6; }
+  .btn--sm { padding: 0.4rem 0.75rem; font-size: 0.72rem; }
+
+  /* ---- STATUS PILLS ---- */
+  .status-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 500;
+  }
+  .pill--green { background: var(--green-dim); color: var(--green); }
+  .pill--amber { background: var(--amber-dim); color: var(--amber); }
+  .pill .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* ---- BENTO GRID ---- */
+  .bento {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+  .bento-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    transition: border-color 0.2s;
+  }
+  .bento-card:hover { border-color: #3a3e55; }
+  .bento-card--span2 { grid-column: span 2; }
+  .bento-card--span3 { grid-column: span 3; }
+
+  .bento-title {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .bento-title .icon { opacity: 0.5; font-size: 0.9rem; }
+
+  .kv-list { list-style: none; }
+  .kv-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.82rem;
+  }
+  .kv-list li:last-child { border-bottom: none; }
+  .kv-list .label { color: var(--text-muted); }
+  .kv-list .value { font-weight: 500; }
+  .kv-list .mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+  }
+
+  /* ---- ID PREVIEW ---- */
+  .id-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+
+  .id-preview {
+    aspect-ratio: 3.375 / 2.125;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .id-preview:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .id-preview--front {
+    background: linear-gradient(135deg, #1a3a5c 0%, #0a1929 100%);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .id-preview--back {
+    background: linear-gradient(135deg, #f7f5f0 0%, #e8e4dc 100%);
+    color: #999;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+  .id-preview .hover-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .id-preview:hover .hover-label { opacity: 1; }
+
+  /* ---- EDIT INLINE ---- */
+  .inline-edit {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-top: 0.75rem;
+  }
+  .inline-edit input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.85rem;
+  }
+  .inline-edit input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+
+  /* ---- SIGNATURE ---- */
+  .sig-box {
+    background: #fff;
+    border-radius: var(--radius-sm);
+    padding: 1rem;
+    color: #333;
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 768px) {
+    .hero-card { grid-template-columns: 1fr; }
+    .hero-photo { width: 100%; height: 200px; }
+    .hero-actions { flex-direction: row; flex-wrap: wrap; }
+    .bento { grid-template-columns: 1fr; }
+    .bento-card--span2, .bento-card--span3 { grid-column: span 1; }
+    .id-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <div class="breadcrumb">
+    <a href="#">Admin</a>
+    <span class="sep">/</span>
+    <a href="#">Employees</a>
+    <span class="sep">/</span>
+    <span>Sarah Mitchell</span>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero-card">
+    <div class="hero-photo">
+      <div class="placeholder">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+        <span>No photo</span>
+      </div>
+    </div>
+
+    <div class="hero-info">
+      <div class="hero-top">
+        <span class="person-badge">⬟ Employee · Faculty</span>
+        <h1 class="person-name">Sarah Mitchell</h1>
+        <div class="person-subtitle">Upper School Math Teacher</div>
+        <div class="status-row">
+          <span class="pill pill--green"><span class="dot"></span> Active</span>
+          <span class="pill pill--green"><span class="dot"></span> ID Valid</span>
+        </div>
+      </div>
+
+      <div class="hero-meta">
+        <div class="meta-item">
+          <span class="meta-label">SIS ID</span>
+          <span class="meta-value">EMP-00482</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Expires</span>
+          <span class="meta-value">07/01/2026</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Last Sync</span>
+          <span class="meta-value">03/12/26</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-actions">
+      <button class="btn btn--accent">↓ Download ID</button>
+      <button class="btn">📷 Upload Photo</button>
+      <button class="btn">⟳ Refresh FACTS</button>
+    </div>
+  </div>
+
+  <!-- BENTO -->
+  <div class="bento">
+    <!-- Employee Info -->
+    <div class="bento-card">
+      <div class="bento-title"><span class="icon">👤</span> Personal Info</div>
+      <ul class="kv-list">
+        <li><span class="label">Name</span><span class="value">Sarah Mitchell</span></li>
+        <li><span class="label">Title</span><span class="value">Math Teacher</span></li>
+        <li><span class="label">Email</span><span class="value" style="font-size:0.78rem;">smitchell@jpg.org</span></li>
+      </ul>
+    </div>
+
+    <!-- ID Card Status -->
+    <div class="bento-card">
+      <div class="bento-title"><span class="icon">🪪</span> ID Card</div>
+      <ul class="kv-list">
+        <li><span class="label">Expiration</span><span class="value mono">07/01/2026</span></li>
+        <li><span class="label">Status</span><span class="pill pill--green" style="margin:0;"><span class="dot"></span> Valid</span></li>
+      </ul>
+      <div style="margin-top:0.75rem;">
+        <button class="btn btn--sm">✎ Update Expiration</button>
+      </div>
+    </div>
+
+    <!-- Sync -->
+    <div class="bento-card">
+      <div class="bento-title"><span class="icon">🔄</span> SIS Sync</div>
+      <ul class="kv-list">
+        <li><span class="label">Last Sync</span><span class="value mono">03/12/2026</span></li>
+        <li><span class="label">Name Lock</span><span class="value">No</span></li>
+      </ul>
+    </div>
+
+    <!-- Edit Name -->
+    <div class="bento-card bento-card--span2">
+      <div class="bento-title"><span class="icon">✏️</span> Edit Display Name</div>
+      <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.5rem;">Edited names are preserved during SIS syncs.</p>
+      <div class="inline-edit">
+        <input type="text" value="Sarah Mitchell" />
+        <button class="btn btn--accent btn--sm">Save</button>
+      </div>
+    </div>
+
+    <!-- Gmail Sig -->
+    <div class="bento-card">
+      <div class="bento-title"><span class="icon">✉️</span> Gmail Signature</div>
+      <div class="sig-box">
+        <strong>Sarah Mitchell</strong><br>
+        Math Teacher<br>
+        <span style="color:#6366f1;">smitchell@jpg.org</span>
+      </div>
+    </div>
+
+    <!-- ID Previews -->
+    <div class="bento-card bento-card--span3">
+      <div class="bento-title"><span class="icon">🪪</span> ID Card Preview</div>
+      <div class="id-grid">
+        <div class="id-preview id-preview--front">
+          Front of ID
+          <div class="hover-label">Click to enlarge</div>
+        </div>
+        <div class="id-preview id-preview--back">
+          Back of ID
+          <div class="hover-label">Click to enlarge</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

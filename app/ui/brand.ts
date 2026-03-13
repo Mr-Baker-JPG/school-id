@@ -6,6 +6,7 @@ export const APP_NAME = 'JPG ID System'
 export const SCHOOL_NAME = 'John Paul the Great Academy'
 export const LOGO_SRC = '/img/jpg-logo.png'
 export const HEADER_LOGO_SRC = '/img/jpg-logo.svg'
+export const CREST_SRC = '/img/JPG-Crest.png'
 
 export const brand = {
 	appName: APP_NAME,
@@ -17,6 +18,6 @@ export const brand = {
 /**
  * Helper classnames for brand styling
  */
-export const headerAccent = 'border-b-4 border-primary'
+export const headerAccent = 'border-b-2 border-brand-gold/60'
 export const pageBg = 'bg-background'
 export const subtleBand = 'bg-muted/40'

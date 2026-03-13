@@ -39,7 +39,7 @@
 	{
 		"label": "1.1.0",
 		"name": "Student Support",
-		"status": "active",
+		"status": "implemented",
 		"notes": "Add student ID support with separate admin interface, editable names, and student authentication. Students use same email domain (@jpgacademy.org) and July 1 expiration as employees.",
 		"features": [
 			"F029",
@@ -55,6 +55,20 @@
 			"F039",
 			"F040",
 			"F041"
+		],
+		"deferred_features": []
+	},
+	{
+		"label": "1.2.0",
+		"name": "Department Data, Bulk Print & Signature Management",
+		"status": "active",
+		"notes": "Three capabilities: (1) Pull and display department field from FACTS SIS separately from job title, (2) Unified bulk ID card printing with criteria-based selection for both employees and students, (3) Gmail signature template system with preview and push via domain-wide delegation.",
+		"features": [
+			"F044",
+			"F045",
+			"F046",
+			"F047",
+			"F048"
 		],
 		"deferred_features": []
 	}

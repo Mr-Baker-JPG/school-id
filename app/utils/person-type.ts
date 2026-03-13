@@ -5,43 +5,47 @@
 import type { PersonType } from '#app/components/employee-id-card.tsx'
 
 /**
- * Determines if an employee should be classified as FACULTY or STAFF
- * based on their job title.
+ * Determines if an employee should be classified as FACULTY, STAFF, or ADMINISTRATION
+ * based on their department.
  *
  * Business rules:
- * - Job title contains "Faculty" → FACULTY
- * - Job title contains "Staff" but not "Faculty" → STAFF
+ * - Department is "Upper School", "Lower School", or "Preschool" → FACULTY
+ * - Department is "Administrator" → ADMINISTRATION
+ * - Department is "Staff" or anything else → STAFF
  * - Everything else → STAFF (default)
- * - If both "Faculty" and "Staff" appear → FACULTY (faculty takes precedence)
  *
- * @param jobTitle - The employee's job title (from FACTS department field)
- * @returns 'FACULTY' or 'STAFF'
+ * @param department - The employee's department (derived from FACTS department string + boolean flags)
+ * @returns 'FACULTY', 'STAFF', or 'ADMINISTRATION'
  */
-export function getEmployeePersonType(jobTitle: string | undefined | null): 'FACULTY' | 'STAFF' {
+export function getEmployeePersonType(department: string | undefined | null): 'FACULTY' | 'STAFF' | 'ADMINISTRATION' {
 	// Handle null/undefined/empty
-	if (!jobTitle) {
+	if (!department) {
 		return 'STAFF'
 	}
 
-	const title = jobTitle.toLowerCase()
+	const dept = department.trim()
 
-	// Check for faculty first (takes precedence)
-	if (title.includes('faculty')) {
+	// Teaching departments → FACULTY
+	if (dept === 'Upper School' || dept === 'Lower School' || dept === 'Preschool') {
 		return 'FACULTY'
 	}
 
-	// Check for staff
-	if (title.includes('staff')) {
-		return 'STAFF'
+	// Administrator → ADMINISTRATION
+	if (dept === 'Administration') {
+		return 'ADMINISTRATION'
 	}
 
-	// Default to staff for all other job titles
+	// Also handle legacy values that contain "faculty"
+	if (dept.toLowerCase().includes('faculty')) {
+		return 'FACULTY'
+	}
+
 	return 'STAFF'
 }
 
 /**
  * Type guard to check if a PersonType is valid for an employee
  */
-export function isEmployeePersonType(type: PersonType): type is 'FACULTY' | 'STAFF' {
-	return type === 'FACULTY' || type === 'STAFF'
+export function isEmployeePersonType(type: PersonType): type is 'FACULTY' | 'STAFF' | 'ADMINISTRATION' {
+	return type === 'FACULTY' || type === 'STAFF' || type === 'ADMINISTRATION'
 }

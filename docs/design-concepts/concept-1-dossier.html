@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept 1 — The Dossier</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --paper: #f6f3ee;
+    --paper-warm: #ece7de;
+    --accent: #8b2500;
+    --accent-light: #c4451a;
+    --muted: #8a8478;
+    --border: #d4cfc5;
+    --success: #2d6a4f;
+    --warning: #b45309;
+    --card-bg: #fffdf8;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.06), 0 4px 10px rgba(0,0,0,0.04);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* CONCEPT: "The Dossier" — Editorial, file-folder aesthetic.
+     The page feels like opening a personnel file.
+     Vertical flow, strong typographic hierarchy, stamp-like badges. */
+
+  .shell {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-decoration: none;
+    margin-bottom: 2rem;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--ink); }
+  .back-link svg { width: 14px; height: 14px; }
+
+  /* ---- HEADER / HERO ---- */
+  .dossier-header {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 2rem;
+    align-items: start;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 2.5rem;
+  }
+
+  .photo-frame {
+    width: 160px;
+    height: 200px;
+    background: var(--paper-warm);
+    border: 2px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .photo-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .photo-frame .no-photo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .photo-actions {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    gap: 1px;
+  }
+  .photo-actions button {
+    flex: 1;
+    padding: 0.35rem;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border: none;
+    background: rgba(26,26,26,0.85);
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: inherit;
+  }
+  .photo-actions button:hover { background: var(--accent); }
+
+  .header-info { padding-top: 0.25rem; }
+
+  .person-type-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .person-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.2rem;
+    line-height: 1.15;
+    margin-bottom: 0.25rem;
+    color: var(--ink);
+  }
+
+  .person-subtitle {
+    font-size: 0.95rem;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .stamp-row {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .stamp {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.7rem;
+    border: 2px solid;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    transform: rotate(-1deg);
+  }
+  .stamp--active {
+    border-color: var(--success);
+    color: var(--success);
+  }
+  .stamp--inactive {
+    border-color: var(--muted);
+    color: var(--muted);
+  }
+  .stamp--expiring {
+    border-color: var(--warning);
+    color: var(--warning);
+  }
+
+  .header-actions {
+    margin-top: 1.25rem;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--ink);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .btn:hover { border-color: var(--ink); background: #fff; }
+  .btn--primary {
+    background: var(--ink);
+    color: #fff;
+    border-color: var(--ink);
+  }
+  .btn--primary:hover { background: #333; }
+
+  /* ---- SECTIONS ---- */
+  .section {
+    margin-bottom: 2.5rem;
+  }
+
+  .section-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  /* ---- DATA TABLE ---- */
+  .data-grid {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 0;
+  }
+  .data-grid dt,
+  .data-grid dd {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+  }
+  .data-grid dt {
+    font-weight: 500;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+  .data-grid dd {
+    color: var(--ink);
+  }
+  .data-grid .mono {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+  }
+
+  /* ---- TWO COLUMN ---- */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  /* ---- CARD PREVIEW ---- */
+  .card-preview-wrap {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  .card-mock {
+    width: 243px;
+    height: 153px;
+    margin: 0 auto 0.75rem;
+    background: linear-gradient(135deg, #1a3a5c, #0d2240);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.5);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .card-mock::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.03));
+  }
+  .card-mock--back {
+    background: linear-gradient(135deg, #f5f2ed, #e8e3da);
+    color: rgba(0,0,0,0.3);
+  }
+
+  .card-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* ---- EDIT NAME ---- */
+  .edit-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: end;
+  }
+  .edit-row .field { flex: 1; }
+  .edit-row label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .edit-row input {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border);
+    background: #fff;
+    font-size: 0.88rem;
+    font-family: inherit;
+    color: var(--ink);
+  }
+  .edit-row input:focus {
+    outline: none;
+    border-color: var(--ink);
+  }
+
+  /* ---- GMAIL SIG ---- */
+  .sig-preview {
+    background: #fff;
+    border: 1px solid var(--border);
+    padding: 1rem 1.25rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: #444;
+  }
+  .sig-meta {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  /* ---- NOTICE BAR ---- */
+  .notice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    border-left: 3px solid;
+    font-size: 0.82rem;
+    margin-bottom: 1.5rem;
+  }
+  .notice--success { border-color: var(--success); background: #f0faf4; color: var(--success); }
+  .notice--warning { border-color: var(--warning); background: #fefce8; color: var(--warning); }
+
+  @media (max-width: 640px) {
+    .dossier-header { grid-template-columns: 1fr; }
+    .photo-frame { width: 120px; height: 150px; }
+    .two-col { grid-template-columns: 1fr; }
+    .data-grid { grid-template-columns: 1fr; }
+    .data-grid dt { border-bottom: none; padding-bottom: 0.1rem; }
+    .data-grid dd { padding-top: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <a href="#" class="back-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to Employees
+  </a>
+
+  <!-- NOTICE -->
+  <div class="notice notice--success">
+    ✓ Profile picture successfully fetched from FACTS and cached.
+  </div>
+
+  <!-- HEADER -->
+  <div class="dossier-header">
+    <div class="photo-frame">
+      <div class="no-photo">No Photo</div>
+      <div class="photo-actions">
+        <button>Upload</button>
+        <button>Refresh</button>
+      </div>
+    </div>
+    <div class="header-info">
+      <div class="person-type-label">Employee — Faculty</div>
+      <h1 class="person-name">Sarah Mitchell</h1>
+      <div class="person-subtitle">Upper School Math Teacher · smitchell@jpgacademy.org</div>
+      <div class="stamp-row">
+        <span class="stamp stamp--active">✓ Active</span>
+        <span class="stamp stamp--active">ID Valid</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn--primary">↓ Download ID Card</button>
+        <button class="btn">✎ Edit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERSON INFO -->
+  <div class="two-col">
+    <div class="section">
+      <h2 class="section-title">01 — Personnel Record</h2>
+      <dl class="data-grid">
+        <dt>Full Name</dt>
+        <dd>Sarah Mitchell</dd>
+        <dt>Job Title</dt>
+        <dd>Upper School Math Teacher</dd>
+        <dt>Email</dt>
+        <dd>smitchell@jpgacademy.org</dd>
+        <dt>SIS ID</dt>
+        <dd class="mono">EMP-00482</dd>
+        <dt>Status</dt>
+        <dd><span class="stamp stamp--active" style="transform:none;font-size:0.65rem;">Active</span></dd>
+      </dl>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">02 — ID Card</h2>
+      <dl class="data-grid">
+        <dt>Expiration</dt>
+        <dd class="mono">07/01/2026</dd>
+        <dt>Last SIS Sync</dt>
+        <dd class="mono">03/12/2026, 8:14 AM</dd>
+      </dl>
+      <div style="margin-top:1rem;">
+        <button class="btn">✎ Update Expiration</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT NAME (Student-specific, shown for both) -->
+  <div class="section">
+    <h2 class="section-title">03 — Edit Display Name</h2>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Once edited, the name will be preserved during SIS syncs.</p>
+    <div class="edit-row">
+      <div class="field">
+        <label for="fullName">Full Name</label>
+        <input type="text" id="fullName" value="Sarah Mitchell" />
+      </div>
+      <button class="btn btn--primary">Save Name</button>
+    </div>
+  </div>
+
+  <!-- GMAIL SIGNATURE (Employee only) -->
+  <div class="section">
+    <h2 class="section-title">04 — Gmail Signature</h2>
+    <div class="sig-meta">Last fetched: 03/10/2026, 2:30 PM</div>
+    <div class="sig-preview">
+      <strong>Sarah Mitchell</strong><br>
+      Upper School Math Teacher<br>
+      John Paul the Great Academy<br>
+      <span style="color:#8b2500;">smitchell@jpgacademy.org</span> · (555) 123-4567
+    </div>
+  </div>
+
+  <!-- ID CARD PREVIEWS -->
+  <div class="section">
+    <h2 class="section-title">05 — ID Card Preview</h2>
+    <div class="two-col">
+      <div class="card-preview-wrap">
+        <div class="card-mock">Front of ID</div>
+        <div class="card-label">Front</div>
+      </div>
+      <div class="card-preview-wrap">
+        <div class="card-mock card-mock--back">Back of ID</div>
+        <div class="card-label">Back</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

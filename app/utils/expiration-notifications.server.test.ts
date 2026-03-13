@@ -60,6 +60,8 @@ describe('sendExpirationNotifications', () => {
 			data: {
 				sisEmployeeId: 'EMP001',
 				fullName: 'Test Employee',
+				firstName: 'Test',
+				lastName: 'Employee',
 				jobTitle: 'Teacher',
 				email: 'employee@example.com',
 				status: 'active',
@@ -76,6 +78,8 @@ describe('sendExpirationNotifications', () => {
 			data: {
 				sisStudentId: 'STU001',
 				fullName: 'Test Student',
+				firstName: 'Test',
+				lastName: 'Student',
 				email: 'student@example.com',
 				status: 'active',
 				studentId: {
@@ -124,6 +128,8 @@ describe('sendExpirationNotifications', () => {
 			data: {
 				sisEmployeeId: 'EMP002',
 				fullName: 'Expired Employee',
+				firstName: 'Expired',
+				lastName: 'Employee',
 				jobTitle: 'Teacher',
 				email: 'expired-emp@example.com',
 				status: 'active',
@@ -140,6 +146,8 @@ describe('sendExpirationNotifications', () => {
 			data: {
 				sisStudentId: 'STU002',
 				fullName: 'Expired Student',
+				firstName: 'Expired',
+				lastName: 'Student',
 				email: 'expired-stu@example.com',
 				status: 'active',
 				studentId: {
@@ -187,6 +195,8 @@ describe('sendExpirationNotifications', () => {
 			data: {
 				sisEmployeeId: 'EMP003',
 				fullName: 'Expiring Employee',
+				firstName: 'Expiring',
+				lastName: 'Employee',
 				jobTitle: 'Teacher',
 				email: 'expiring-emp@example.com',
 				status: 'active',
@@ -203,6 +213,8 @@ describe('sendExpirationNotifications', () => {
 			data: {
 				sisStudentId: 'STU003',
 				fullName: 'Expired Student',
+				firstName: 'Expired',
+				lastName: 'Student',
 				email: 'expired-stu@example.com',
 				status: 'active',
 				studentId: {
@@ -249,6 +261,8 @@ describe('sendExpirationNotifications', () => {
 			data: {
 				sisEmployeeId: 'EMP004',
 				fullName: 'Valid Employee',
+				firstName: 'Valid',
+				lastName: 'Employee',
 				jobTitle: 'Teacher',
 				email: 'valid-emp@example.com',
 				status: 'active',
@@ -265,6 +279,8 @@ describe('sendExpirationNotifications', () => {
 			data: {
 				sisStudentId: 'STU004',
 				fullName: 'Valid Student',
+				firstName: 'Valid',
+				lastName: 'Student',
 				email: 'valid-stu@example.com',
 				status: 'active',
 				studentId: {
@@ -282,6 +298,8 @@ describe('sendExpirationNotifications', () => {
 	})
 
 	it('returns error when no admin users found', async () => {
+		// Suppress expected console.warn
+		vi.spyOn(console, 'warn').mockImplementation(() => {})
 		const now = new Date()
 		const expiringDate = new Date(now)
 		expiringDate.setDate(expiringDate.getDate() + 15)
@@ -291,6 +309,8 @@ describe('sendExpirationNotifications', () => {
 			data: {
 				sisEmployeeId: 'EMP005',
 				fullName: 'Test Employee',
+				firstName: 'Test',
+				lastName: 'Employee',
 				jobTitle: 'Teacher',
 				email: 'employee5@example.com',
 				status: 'active',
@@ -333,6 +353,8 @@ describe('sendExpirationNotifications', () => {
 			data: {
 				sisEmployeeId: 'EMP006',
 				fullName: 'Inactive Employee',
+				firstName: 'Inactive',
+				lastName: 'Employee',
 				jobTitle: 'Teacher',
 				email: 'inactive-emp@example.com',
 				status: 'inactive',
@@ -349,6 +371,8 @@ describe('sendExpirationNotifications', () => {
 			data: {
 				sisStudentId: 'STU006',
 				fullName: 'Inactive Student',
+				firstName: 'Inactive',
+				lastName: 'Student',
 				email: 'inactive-stu@example.com',
 				status: 'inactive',
 				studentId: {
@@ -403,6 +427,8 @@ describe('sendExpirationNotifications', () => {
 			data: {
 				sisEmployeeId: 'EMP007',
 				fullName: 'Test Employee',
+				firstName: 'Test',
+				lastName: 'Employee',
 				jobTitle: 'Teacher',
 				email: 'employee7@example.com',
 				status: 'active',
@@ -429,6 +455,8 @@ describe('sendExpirationNotifications', () => {
 	})
 
 	it('handles email sending failures gracefully', async () => {
+		// Suppress expected console.error
+		vi.spyOn(console, 'error').mockImplementation(() => {})
 		const now = new Date()
 		const expiringDate = new Date(now)
 		expiringDate.setDate(expiringDate.getDate() + 15)
@@ -452,6 +480,8 @@ describe('sendExpirationNotifications', () => {
 			data: {
 				sisEmployeeId: 'EMP008',
 				fullName: 'Test Employee',
+				firstName: 'Test',
+				lastName: 'Employee',
 				jobTitle: 'Teacher',
 				email: 'employee8@example.com',
 				status: 'active',
