@@ -247,25 +247,25 @@ async function seed() {
 
 	console.timeEnd(`🐨 Created admin user "kody"`)
 
-	console.time(`👤 Created admin user "Craig Baker"`)
+	console.time(`👤 Created admin user "admin"`)
 
 	const googleUser = await insertGoogleUser(
-		'MOCK_CODE_GOOGLE_CRAIG',
-		'cbaker@jpgacademy.org',
+		'MOCK_CODE_GOOGLE_ADMIN',
+		'admin@example.org',
 	)
 
-	const craig = await prisma.user.upsert({
+	const admin = await prisma.user.upsert({
 		select: { id: true },
-		where: { email: 'cbaker@jpgacademy.org' },
+		where: { email: 'admin@example.org' },
 		update: {
-			username: 'cbaker',
-			name: 'Craig Baker',
+			username: 'admin',
+			name: 'Admin User',
 			roles: { connect: [{ name: 'admin' }, { name: 'user' }] },
 		},
 		create: {
-			email: 'cbaker@jpgacademy.org',
-			username: 'cbaker',
-			name: 'Craig Baker',
+			email: 'admin@example.org',
+			username: 'admin',
+			name: 'Admin User',
 			// connections: {
 			// 	create: {
 			// 		providerName: 'google',
@@ -276,7 +276,7 @@ async function seed() {
 		},
 	})
 
-	console.timeEnd(`👤 Created admin user "Craig Baker"`)
+	console.timeEnd(`👤 Created admin user "admin"`)
 
 	console.timeEnd(`🌱 Database has been seeded`)
 }
