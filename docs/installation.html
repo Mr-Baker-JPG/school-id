@@ -116,7 +116,7 @@
                         </svg>
                         <div>
                             <strong class="text-gray-900">FACTS SIS API Credentials</strong>
-                            <p class="text-gray-600">Subscription key + API key from your FACTS account</p>
+                            <p class="text-gray-600">Subscription key + API key from your FACTS account (entered during setup)</p>
                         </div>
                     </li>
                     <li class="flex items-start">
@@ -147,7 +147,7 @@
                         Clone & Install
                     </h3>
                     <pre class="text-gray-300"><code>git clone https://github.com/Mr-Baker-JPG/school-id.git
-ncd school-id
+cd school-id
 npm install</code></pre>
                 </div>
 
@@ -170,10 +170,7 @@ npm install</code></pre>
                     <pre class="text-gray-300"><code>fly secrets set \
   SESSION_SECRET="$(openssl rand -hex 32)" \
   HONEYPOT_SECRET="$(openssl rand -hex 32)" \
-  INTERNAL_COMMAND_TOKEN="$(openssl rand -hex 32)" \
-  FACTS_SUBSCRIPTION_KEY="your-subscription-key" \
-  FACTS_API_KEY="your-api-key" \
-  FACTS_BASE_URL="https://api.factsmgt.com"</code></pre>
+  INTERNAL_COMMAND_TOKEN="$(openssl rand -hex 32)"</code></pre>
                 </div>
 
                 <!-- Step 4 -->
@@ -274,18 +271,6 @@ npx prisma db seed</code></pre>
                                 <td class="py-2">Random string for internal API calls</td>
                             </tr>
                             <tr class="border-b">
-                                <td class="py-2 pr-4"><code class="code-light">FACTS_SUBSCRIPTION_KEY</code></td>
-                                <td class="py-2">Your FACTS SIS subscription key</td>
-                            </tr>
-                            <tr class="border-b">
-                                <td class="py-2 pr-4"><code class="code-light">FACTS_API_KEY</code></td>
-                                <td class="py-2">Your FACTS SIS API key</td>
-                            </tr>
-                            <tr class="border-b">
-                                <td class="py-2 pr-4"><code class="code-light">FACTS_BASE_URL</code></td>
-                                <td class="py-2">FACTS API URL (usually <code class="code-light">https://api.factsmgt.com</code>)</td>
-                            </tr>
-                            <tr class="border-b">
                                 <td class="py-2 pr-4"><code class="code-light">AWS_ACCESS_KEY_ID</code></td>
                                 <td class="py-2">S3 storage access key</td>
                             </tr>
@@ -308,7 +293,7 @@ npx prisma db seed</code></pre>
 
             <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
                 <p class="text-blue-800 text-sm">
-                    <strong>Note:</strong> School-specific settings (name, colors, branding) are configured through the setup wizard or admin dashboard, not environment variables.
+                    <strong>Note:</strong> School-specific settings (name, colors, branding) and FACTS SIS credentials are configured through the setup wizard or admin dashboard, not environment variables.
                 </p>
             </div>
         </section>
