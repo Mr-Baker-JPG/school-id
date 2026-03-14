@@ -43,7 +43,7 @@ describe('GmailSignatureService', () => {
 	describe('getSignature', () => {
 		test('fetches signature via service account impersonation', async () => {
 			// This is our tracer bullet - proves the path works end-to-end
-			const email = 'teacher@jpgacademy.org'
+			const email = 'teacher@school.org'
 			const expectedSignature = '<div>Best regards,<br>John Doe</div>'
 
 			// Mock successful Gmail API response
@@ -102,7 +102,7 @@ describe('GmailSignatureService', () => {
 
 	describe('fetchAndCacheSignature', () => {
 		test('does not update database if signature fetch fails', async () => {
-			const email = 'teacher@jpgacademy.org'
+			const email = 'teacher@school.org'
 
 			// Create employee in database
 			const employee = await prisma.employee.create({

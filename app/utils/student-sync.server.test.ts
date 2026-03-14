@@ -32,7 +32,7 @@ describe('Student Sync Background Job', () => {
 				studentId: 1,
 				firstName: 'John',
 				lastName: 'Doe',
-				email: 'john.doe@jpgacademy.org',
+				email: 'john.doe@school.org',
 				active: true,
 			})
 
@@ -51,7 +51,7 @@ describe('Student Sync Background Job', () => {
 				studentId: 123,
 				firstName: 'Jane',
 				lastName: 'Smith',
-				email: 'jane.smith@jpgacademy.org',
+				email: 'jane.smith@school.org',
 				active: true,
 			})
 
@@ -67,7 +67,7 @@ describe('Student Sync Background Job', () => {
 
 			expect(student).not.toBeNull()
 			expect(student?.fullName).toBe('Jane Smith')
-			expect(student?.email).toBe('jane.smith@jpgacademy.org')
+			expect(student?.email).toBe('jane.smith@school.org')
 			expect(student?.status).toBe('active')
 			expect(student?.isNameEdited).toBe(false)
 		})
@@ -77,14 +77,14 @@ describe('Student Sync Background Job', () => {
 				studentId: 1,
 				firstName: 'Alice',
 				lastName: 'Johnson',
-				email: 'alice.johnson@jpgacademy.org',
+				email: 'alice.johnson@school.org',
 				active: true,
 			})
 			insertMockStudent({
 				studentId: 2,
 				firstName: 'Bob',
 				lastName: 'Williams',
-				email: 'bob.williams@jpgacademy.org',
+				email: 'bob.williams@school.org',
 				active: true,
 			})
 
@@ -106,7 +106,7 @@ describe('Student Sync Background Job', () => {
 				data: {
 					sisStudentId: '456',
 					fullName: 'Old Name',
-					email: 'old.email@jpgacademy.org',
+					email: 'old.email@school.org',
 					status: 'active',
 					isNameEdited: false,
 				},
@@ -117,7 +117,7 @@ describe('Student Sync Background Job', () => {
 				studentId: 456,
 				firstName: 'New',
 				lastName: 'Name',
-				email: 'new.email@jpgacademy.org',
+				email: 'new.email@school.org',
 				active: true,
 			})
 
@@ -132,7 +132,7 @@ describe('Student Sync Background Job', () => {
 			})
 
 			expect(student?.fullName).toBe('New Name')
-			expect(student?.email).toBe('new.email@jpgacademy.org')
+			expect(student?.email).toBe('new.email@school.org')
 		})
 
 		test('Updates multiple existing students', async () => {
@@ -141,7 +141,7 @@ describe('Student Sync Background Job', () => {
 				data: {
 					sisStudentId: '1',
 					fullName: 'Student One',
-					email: 'student1@jpgacademy.org',
+					email: 'student1@school.org',
 					status: 'active',
 					isNameEdited: false,
 				},
@@ -150,7 +150,7 @@ describe('Student Sync Background Job', () => {
 				data: {
 					sisStudentId: '2',
 					fullName: 'Student Two',
-					email: 'student2@jpgacademy.org',
+					email: 'student2@school.org',
 					status: 'active',
 					isNameEdited: false,
 				},
@@ -161,14 +161,14 @@ describe('Student Sync Background Job', () => {
 				studentId: 1,
 				firstName: 'Updated',
 				lastName: 'One',
-				email: 'updated1@jpgacademy.org',
+				email: 'updated1@school.org',
 				active: true,
 			})
 			insertMockStudent({
 				studentId: 2,
 				firstName: 'Updated',
 				lastName: 'Two',
-				email: 'updated2@jpgacademy.org',
+				email: 'updated2@school.org',
 				active: true,
 			})
 
@@ -193,7 +193,7 @@ describe('Student Sync Background Job', () => {
 				data: {
 					sisStudentId: '789',
 					fullName: 'Admin Edited Name',
-					email: 'old.email@jpgacademy.org',
+					email: 'old.email@school.org',
 					status: 'active',
 					isNameEdited: true,
 				},
@@ -204,7 +204,7 @@ describe('Student Sync Background Job', () => {
 				studentId: 789,
 				firstName: 'SIS',
 				lastName: 'Name',
-				email: 'new.email@jpgacademy.org',
+				email: 'new.email@school.org',
 				active: true,
 			})
 
@@ -220,7 +220,7 @@ describe('Student Sync Background Job', () => {
 			// Name should remain the admin-edited name, not the SIS name
 			expect(student?.fullName).toBe('Admin Edited Name')
 			// But email should still be updated
-			expect(student?.email).toBe('new.email@jpgacademy.org')
+			expect(student?.email).toBe('new.email@school.org')
 			// isNameEdited flag should remain true
 			expect(student?.isNameEdited).toBe(true)
 		})
@@ -231,7 +231,7 @@ describe('Student Sync Background Job', () => {
 				data: {
 					sisStudentId: '101',
 					fullName: 'Old SIS Name',
-					email: 'old.email@jpgacademy.org',
+					email: 'old.email@school.org',
 					status: 'active',
 					isNameEdited: false,
 				},
@@ -242,7 +242,7 @@ describe('Student Sync Background Job', () => {
 				studentId: 101,
 				firstName: 'New',
 				lastName: 'SIS Name',
-				email: 'new.email@jpgacademy.org',
+				email: 'new.email@school.org',
 				active: true,
 			})
 
@@ -257,7 +257,7 @@ describe('Student Sync Background Job', () => {
 
 			// Name should be updated from SIS
 			expect(student?.fullName).toBe('New SIS Name')
-			expect(student?.email).toBe('new.email@jpgacademy.org')
+			expect(student?.email).toBe('new.email@school.org')
 			expect(student?.isNameEdited).toBe(false)
 		})
 	})
@@ -269,7 +269,7 @@ describe('Student Sync Background Job', () => {
 				data: {
 					sisStudentId: '202',
 					fullName: 'Becoming Inactive',
-					email: 'inactive@jpgacademy.org',
+					email: 'inactive@school.org',
 					status: 'active',
 					isNameEdited: false,
 				},
@@ -280,7 +280,7 @@ describe('Student Sync Background Job', () => {
 				studentId: 202,
 				firstName: 'Becoming',
 				lastName: 'Inactive',
-				email: 'inactive@jpgacademy.org',
+				email: 'inactive@school.org',
 				active: false,
 			})
 
@@ -302,7 +302,7 @@ describe('Student Sync Background Job', () => {
 				data: {
 					sisStudentId: '303',
 					fullName: 'Becoming Active',
-					email: 'active@jpgacademy.org',
+					email: 'active@school.org',
 					status: 'inactive',
 					isNameEdited: false,
 				},
@@ -313,7 +313,7 @@ describe('Student Sync Background Job', () => {
 				studentId: 303,
 				firstName: 'Becoming',
 				lastName: 'Active',
-				email: 'active@jpgacademy.org',
+				email: 'active@school.org',
 				active: true,
 			})
 
@@ -380,7 +380,7 @@ describe('Student Sync Background Job', () => {
 				studentId: 1,
 				firstName: 'Valid',
 				lastName: 'Student',
-				email: 'valid@jpgacademy.org',
+				email: 'valid@school.org',
 				active: true,
 			})
 
@@ -397,7 +397,7 @@ describe('Student Sync Background Job', () => {
 				studentId: 3,
 				firstName: 'Another',
 				lastName: 'Valid',
-				email: 'another.valid@jpgacademy.org',
+				email: 'another.valid@school.org',
 				active: true,
 			})
 
@@ -415,7 +415,7 @@ describe('Student Sync Background Job', () => {
 				data: {
 					sisStudentId: '1',
 					fullName: 'Existing Student',
-					email: 'duplicate@jpgacademy.org',
+					email: 'duplicate@school.org',
 					status: 'active',
 					isNameEdited: false,
 				},
@@ -426,7 +426,7 @@ describe('Student Sync Background Job', () => {
 				studentId: 2,
 				firstName: 'New',
 				lastName: 'Student',
-				email: 'duplicate@jpgacademy.org',
+				email: 'duplicate@school.org',
 				active: true,
 			})
 

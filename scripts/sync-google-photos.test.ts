@@ -53,7 +53,7 @@ describe('syncPhotosToGoogle', () => {
 
 			const mockEmployee = {
 				id: 'emp123',
-				email: 'teacher@jpgacademy.org',
+				email: 'teacher@school.org',
 				fullName: 'Test Teacher',
 				jobTitle: 'Teacher',
 				status: 'active',
@@ -121,7 +121,7 @@ describe('syncPhotosToGoogle', () => {
 
 			const mockEmployee = {
 				id: 'emp123',
-				email: 'teacher@jpgacademy.org',
+				email: 'teacher@school.org',
 				fullName: 'Test Teacher',
 				jobTitle: 'Teacher',
 				status: 'active',
@@ -176,7 +176,7 @@ describe('syncPhotosToGoogle', () => {
 
 			const mockStudent = {
 				id: 'stu123',
-				email: 'student@jpgacademy.org',
+				email: 'student@school.org',
 				fullName: 'Test Student',
 				status: 'active',
 				sisStudentId: 'SIS456',
@@ -249,7 +249,7 @@ describe('syncPhotosToGoogle', () => {
 
 			const mockEmployee = {
 				id: 'emp123',
-				email: 'nonexistent@jpgacademy.org',
+				email: 'nonexistent@school.org',
 				fullName: 'Nonexistent User',
 				jobTitle: 'Teacher',
 				status: 'active',
@@ -322,7 +322,7 @@ describe('syncPhotosToGoogle', () => {
 
 			const mockEmployee = {
 				id: 'emp123',
-				email: 'teacher@jpgacademy.org',
+				email: 'teacher@school.org',
 				fullName: 'Test Teacher',
 				jobTitle: 'Teacher',
 				status: 'active',
@@ -390,7 +390,7 @@ describe('syncPhotosToGoogle', () => {
 
 			const mockEmployee = {
 				id: 'emp123',
-				email: 'teacher@jpgacademy.org',
+				email: 'teacher@school.org',
 				fullName: 'Test Teacher',
 				jobTitle: 'Teacher',
 				status: 'active',
@@ -458,7 +458,7 @@ describe('syncPhotosToGoogle', () => {
 
 			const mockEmployee = {
 				id: 'emp1',
-				email: 'teacher1@jpgacademy.org',
+				email: 'teacher1@school.org',
 				fullName: 'Teacher One',
 				jobTitle: 'Teacher',
 				status: 'active',
@@ -502,16 +502,16 @@ describe('syncPhotosToGoogle', () => {
 				employeesOnly: true,
 				studentsOnly: false,
 				dryRun: false,
-				email: 'teacher1@jpgacademy.org', // Filter by email
+				email: 'teacher1@school.org', // Filter by email
 			})
 
 			// Verify behavior: only filtered user was processed
 			expect(result).toHaveLength(1)
-			expect(result[0].email).toBe('teacher1@jpgacademy.org')
+			expect(result[0].email).toBe('teacher1@school.org')
 
 			// Verify database query was filtered
 			expect(prisma.employee.findMany).toHaveBeenCalledWith({
-				where: { email: 'teacher1@jpgacademy.org' },
+				where: { email: 'teacher1@school.org' },
 				include: { employeeId: true },
 			})
 		})

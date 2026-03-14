@@ -108,7 +108,7 @@ describe('renderTemplate', () => {
 		expect(result).toContain('Jane A. Smith')
 		expect(result).toContain('Mathematics Teacher')
 		expect(result).toContain('Mathematics')
-		expect(result).toContain('jane.smith@jpgacademy.org')
+		expect(result).toContain('jane.smith@school.org')
 	})
 
 	test('replaces multiple occurrences of same placeholder', () => {

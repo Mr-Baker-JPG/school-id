@@ -56,6 +56,7 @@ export function AdminShell({ children, headerActions }: AdminShellProps) {
 					: []),
 				{ to: '/admin/card-designs', label: 'Card Designs', icon: 'pencil-1' },
 				{ to: '/admin/cache', label: 'Cache', icon: 'settings' },
+				{ to: '/admin/settings/school', label: 'School Settings', icon: 'settings' },
 			]
 		: []
 
@@ -73,6 +74,9 @@ export function AdminShell({ children, headerActions }: AdminShellProps) {
 	const usersItem = adminNavItems.find((i) => i.to === '/admin/users')
 	const syncItem = adminNavItems.find((i) => i.to === '/admin/sync-status')
 	const cacheItem = adminNavItems.find((i) => i.to === '/admin/cache')
+	const schoolSettingsItem = adminNavItems.find(
+		(i) => i.to === '/admin/settings/school',
+	)
 
 	const toolsItems: NavItem[] = [
 		printItem,
@@ -94,7 +98,7 @@ export function AdminShell({ children, headerActions }: AdminShellProps) {
 					},
 					{
 						label: 'System',
-						items: [usersItem!, syncItem!, cacheItem!].filter(
+						items: [usersItem!, syncItem!, cacheItem!, schoolSettingsItem!].filter(
 							(i): i is NavItem => !!i,
 						),
 					},

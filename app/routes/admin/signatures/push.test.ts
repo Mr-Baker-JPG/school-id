@@ -53,7 +53,7 @@ vi.mock('./templates.tsx', () => ({
 		lastName: 'Smith',
 		jobTitle: 'Mathematics Teacher',
 		department: 'Mathematics',
-		email: 'jane.smith@jpgacademy.org',
+		email: 'jane.smith@school.org',
 	},
 	SAMPLE_EMPLOYEE: {
 		fullName: 'Jane A. Smith',
@@ -61,14 +61,14 @@ vi.mock('./templates.tsx', () => ({
 		lastName: 'Smith',
 		jobTitle: 'Mathematics Teacher',
 		department: 'Mathematics',
-		email: 'jane.smith@jpgacademy.org',
+		email: 'jane.smith@school.org',
 		phone: '(555) 123-4567',
-		schoolName: 'JPG Academy',
+		schoolName: 'Your School',
 	},
 }))
 
 const defaultSchoolSettings = {
-	schoolName: 'JPG Academy',
+	schoolName: 'Your School',
 	schoolPhone: '(555) 123-4567',
 	schoolAddress: '123 Education Lane',
 	schoolWebsite: 'https://example.com',

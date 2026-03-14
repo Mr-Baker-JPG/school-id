@@ -67,7 +67,7 @@ async function createStudent(overrides: Partial<{
 	sisStudentId: string
 	status: string
 }> = {}) {
-	const email = overrides.email ?? `test-student-${faker.string.uuid()}@jpgacademy.org`
+	const email = overrides.email ?? `test-student-${faker.string.uuid()}@school.org`
 	const firstName = overrides.firstName ?? faker.person.firstName()
 	const lastName = overrides.lastName ?? faker.person.lastName()
 	return prisma.student.create({
@@ -136,10 +136,10 @@ function createMockGoogleProfile(email: string, name?: string) {
 // TESTS: Student OAuth Integration
 // ============================================================================
 
-test('student can authenticate with Google OAuth using @jpgacademy.org email', async () => {
+test('student can authenticate with Google OAuth using @school.org email', async () => {
 	// Create a student in the database
 	const student = await createStudent({
-		email: 'test-student-auth@jpgacademy.org',
+		email: 'test-student-auth@school.org',
 		fullName: 'Test Student',
 	})
 
@@ -173,7 +173,7 @@ test('student can authenticate with Google OAuth using @jpgacademy.org email', a
 test('first-time student login creates StudentID if in SIS', async () => {
 	// Create a student in SIS (Student table)
 	const student = await createStudent({
-		email: 'test-student-first@jpgacademy.org',
+		email: 'test-student-first@school.org',
 	})
 
 	// Mock the authenticator
@@ -203,7 +203,7 @@ test('first-time student login creates StudentID if in SIS', async () => {
 test('returning students can log in successfully', async () => {
 	// Create a student in SIS
 	const student = await createStudent({
-		email: 'test-student-return@jpgacademy.org',
+		email: 'test-student-return@school.org',
 	})
 
 	// First login
@@ -236,7 +236,7 @@ test('returning students can log in successfully', async () => {
 
 test('session is created and maintained correctly for students', async () => {
 	const student = await createStudent({
-		email: 'test-student-session@jpgacademy.org',
+		email: 'test-student-session@school.org',
 	})
 
 	const profile = createMockGoogleProfile(student.email)
@@ -271,13 +271,13 @@ test('session is created and maintained correctly for students', async () => {
 test('students are distinguished from employees in the system', async () => {
 	// Create a student
 	const student = await createStudent({
-		email: 'test-student-distinct@jpgacademy.org',
+		email: 'test-student-distinct@school.org',
 	})
 
 	// Create an employee with different email
 	await prisma.employee.create({
 		data: {
-			email: 'test-employee-distinct@jpgacademy.org',
+			email: 'test-employee-distinct@school.org',
 			fullName: 'Test Employee',
 			firstName: 'Test',
 			lastName: 'Employee',
@@ -318,7 +318,7 @@ test('students are distinguished from employees in the system', async () => {
 
 test('student is redirected to student ID page, not employee ID page', async () => {
 	const student = await createStudent({
-		email: 'test-student-redirect@jpgacademy.org',
+		email: 'test-student-redirect@school.org',
 	})
 
 	const profile = createMockGoogleProfile(student.email)
@@ -334,7 +334,7 @@ test('student is redirected to student ID page, not employee ID page', async () 
 
 test('student without existing StudentID gets one created automatically', async () => {
 	const student = await createStudent({
-		email: 'test-student-auto-id@jpgacademy.org',
+		email: 'test-student-auto-id@school.org',
 	})
 
 	// Verify no StudentID exists yet
@@ -364,7 +364,7 @@ test('student without existing StudentID gets one created automatically', async 
 
 test('existing StudentID is preserved on subsequent logins', async () => {
 	const student = await createStudent({
-		email: 'test-student-preserve-id@jpgacademy.org',
+		email: 'test-student-preserve-id@school.org',
 	})
 
 	// Create StudentID with custom expiration
@@ -392,7 +392,7 @@ test('existing StudentID is preserved on subsequent logins', async () => {
 
 test('student with inactive status can still authenticate', async () => {
 	const student = await createStudent({
-		email: 'test-student-inactive@jpgacademy.org',
+		email: 'test-student-inactive@school.org',
 		status: 'inactive',
 	})
 
@@ -414,7 +414,7 @@ test('student with inactive status can still authenticate', async () => {
 
 test('student not in SIS goes to onboarding', async () => {
 	// Don't create a student in SIS
-	const email = 'test-student-not-in-sis@jpgacademy.org'
+	const email = 'test-student-not-in-sis@school.org'
 
 	const profile = createMockGoogleProfile(email)
 	vi.mocked(authenticator.authenticate).mockResolvedValueOnce(profile)
@@ -428,7 +428,7 @@ test('student not in SIS goes to onboarding', async () => {
 
 test('admin student goes to admin dashboard, not student ID page', async () => {
 	const student = await createStudent({
-		email: 'test-student-admin@jpgacademy.org',
+		email: 'test-student-admin@school.org',
 	})
 
 	// First, create user and login

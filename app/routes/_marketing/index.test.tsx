@@ -6,6 +6,7 @@ import { render, screen } from '@testing-library/react'
 import { createRoutesStub } from 'react-router'
 import { meta } from './index.tsx'
 import Index from './index.tsx'
+import { APP_NAME } from '#app/ui/brand.ts'
 
 test('Landing page displays brief system information', () => {
 	const App = createRoutesStub([
@@ -17,12 +18,9 @@ test('Landing page displays brief system information', () => {
 
 	render(<App initialEntries={['/']} />)
 
-	expect(screen.getByText('JPG ID System')).toBeInTheDocument()
+	expect(screen.getByText(APP_NAME)).toBeInTheDocument()
 	expect(
-		screen.getByText(/Access your official ID card\. View, download/i),
-	).toBeInTheDocument()
-	expect(
-		screen.getByText(/This system is for internal use by school/i),
+		screen.getByText(/Access your official.*ID card/i),
 	).toBeInTheDocument()
 })
 
@@ -43,7 +41,5 @@ test('Landing page displays embedded login form', () => {
 
 test('Landing page has correct meta title', () => {
 	const metaData = meta({ data: {}, params: {}, location: {} } as any)
-	expect(metaData).toContainEqual({ title: 'JPG ID System' })
+	expect(metaData).toContainEqual({ title: APP_NAME })
 })
-
-

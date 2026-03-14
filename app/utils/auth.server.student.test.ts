@@ -40,7 +40,7 @@ async function createStudent(overrides: Partial<{
 	sisStudentId: string
 	status: string
 }> = {}) {
-	const email = overrides.email ?? `test-redirect-student-${faker.string.uuid()}@jpgacademy.org`
+	const email = overrides.email ?? `test-redirect-student-${faker.string.uuid()}@school.org`
 	const firstName = overrides.firstName ?? faker.person.firstName()
 	const lastName = overrides.lastName ?? faker.person.lastName()
 	return prisma.student.create({
@@ -67,7 +67,7 @@ async function createEmployee(overrides: Partial<{
 	jobTitle: string
 	status: string
 }> = {}) {
-	const email = overrides.email ?? `test-redirect-employee-${faker.string.uuid()}@jpgacademy.org`
+	const email = overrides.email ?? `test-redirect-employee-${faker.string.uuid()}@school.org`
 	const firstName = overrides.firstName ?? faker.person.firstName()
 	const lastName = overrides.lastName ?? faker.person.lastName()
 	return prisma.employee.create({
@@ -109,7 +109,7 @@ async function createUserWithRoles(
 // ============================================================================
 
 test('redirects admin users to /admin', async () => {
-	const email = `test-redirect-admin-${faker.string.uuid()}@jpgacademy.org`
+	const email = `test-redirect-admin-${faker.string.uuid()}@school.org`
 	const user = await createUserWithRoles(email, ['user', 'admin'])
 
 	const redirectPath = await getRedirectPathForUser(user.id)
@@ -117,7 +117,7 @@ test('redirects admin users to /admin', async () => {
 })
 
 test('redirects employees to /employee/id', async () => {
-	const email = `test-redirect-employee-${faker.string.uuid()}@jpgacademy.org`
+	const email = `test-redirect-employee-${faker.string.uuid()}@school.org`
 	await createEmployee({ email })
 	const user = await createUserWithRoles(email, ['user'])
 
@@ -126,7 +126,7 @@ test('redirects employees to /employee/id', async () => {
 })
 
 test('redirects students to /student/id', async () => {
-	const email = `test-redirect-student-${faker.string.uuid()}@jpgacademy.org`
+	const email = `test-redirect-student-${faker.string.uuid()}@school.org`
 	await createStudent({ email })
 	const user = await createUserWithRoles(email, ['user'])
 
@@ -135,7 +135,7 @@ test('redirects students to /student/id', async () => {
 })
 
 test('prioritizes admin role over employee record', async () => {
-	const email = `test-redirect-admin-employee-${faker.string.uuid()}@jpgacademy.org`
+	const email = `test-redirect-admin-employee-${faker.string.uuid()}@school.org`
 	await createEmployee({ email })
 	const user = await createUserWithRoles(email, ['user', 'admin'])
 
@@ -145,7 +145,7 @@ test('prioritizes admin role over employee record', async () => {
 })
 
 test('prioritizes admin role over student record', async () => {
-	const email = `test-redirect-admin-student-${faker.string.uuid()}@jpgacademy.org`
+	const email = `test-redirect-admin-student-${faker.string.uuid()}@school.org`
 	await createStudent({ email })
 	const user = await createUserWithRoles(email, ['user', 'admin'])
 
@@ -155,7 +155,7 @@ test('prioritizes admin role over student record', async () => {
 })
 
 test('prioritizes employee over student when both exist', async () => {
-	const email = `test-redirect-both-${faker.string.uuid()}@jpgacademy.org`
+	const email = `test-redirect-both-${faker.string.uuid()}@school.org`
 	await createEmployee({ email })
 	await createStudent({ email })
 	const user = await createUserWithRoles(email, ['user'])
@@ -180,7 +180,7 @@ test('returns / for non-existent user', async () => {
 })
 
 test('handles inactive employee correctly', async () => {
-	const email = `test-redirect-inactive-employee-${faker.string.uuid()}@jpgacademy.org`
+	const email = `test-redirect-inactive-employee-${faker.string.uuid()}@school.org`
 	await createEmployee({ email, status: 'inactive' })
 	const user = await createUserWithRoles(email, ['user'])
 
@@ -190,7 +190,7 @@ test('handles inactive employee correctly', async () => {
 })
 
 test('handles inactive student correctly', async () => {
-	const email = `test-redirect-inactive-student-${faker.string.uuid()}@jpgacademy.org`
+	const email = `test-redirect-inactive-student-${faker.string.uuid()}@school.org`
 	await createStudent({ email, status: 'inactive' })
 	const user = await createUserWithRoles(email, ['user'])
 

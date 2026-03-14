@@ -675,13 +675,13 @@ describe('FACTS SIS Student Sync Service', () => {
 				studentId: 123,
 				firstName: 'John',
 				lastName: 'Doe',
-				email: 'john.doe@jpgacademy.org',
+				email: 'john.doe@school.org',
 			})
 
 			const result = await fetchStudentById(mockStudent.studentId)
 
 			expect(result).not.toBeNull()
-			expect(result?.email).toBe('john.doe@jpgacademy.org')
+			expect(result?.email).toBe('john.doe@school.org')
 		})
 
 		test('Service successfully authenticates with FACTS API using API key', async () => {
@@ -695,13 +695,13 @@ describe('FACTS SIS Student Sync Service', () => {
 				studentId: 456,
 				firstName: 'Jane',
 				lastName: 'Smith',
-				email: 'jane.smith@jpgacademy.org',
+				email: 'jane.smith@school.org',
 			})
 
 			const result = await fetchStudentById(mockStudent.studentId)
 
 			expect(result).not.toBeNull()
-			expect(result?.email).toBe('jane.smith@jpgacademy.org')
+			expect(result?.email).toBe('jane.smith@school.org')
 
 			// Restore original subscription key
 			if (originalSubscriptionKey) {
@@ -736,7 +736,7 @@ describe('FACTS SIS Student Sync Service', () => {
 				studentId: 1,
 				firstName: 'Alice',
 				lastName: 'Johnson',
-				email: 'alice.johnson@jpgacademy.org',
+				email: 'alice.johnson@school.org',
 				active: true,
 			})
 
@@ -744,7 +744,7 @@ describe('FACTS SIS Student Sync Service', () => {
 				studentId: 2,
 				firstName: 'Bob',
 				lastName: 'Williams',
-				email: 'bob.williams@jpgacademy.org',
+				email: 'bob.williams@school.org',
 				active: true,
 			})
 
@@ -755,13 +755,13 @@ describe('FACTS SIS Student Sync Service', () => {
 			const alice = result.find((s) => s.sisStudentId === student1.studentId.toString())
 			expect(alice).toBeDefined()
 			expect(alice?.fullName).toBe('Alice Johnson')
-			expect(alice?.email).toBe('alice.johnson@jpgacademy.org')
+			expect(alice?.email).toBe('alice.johnson@school.org')
 			expect(alice?.status).toBe('active')
 
 			const bob = result.find((s) => s.sisStudentId === student2.studentId.toString())
 			expect(bob).toBeDefined()
 			expect(bob?.fullName).toBe('Bob Williams')
-			expect(bob?.email).toBe('bob.williams@jpgacademy.org')
+			expect(bob?.email).toBe('bob.williams@school.org')
 			expect(bob?.status).toBe('active')
 		})
 
@@ -773,7 +773,7 @@ describe('FACTS SIS Student Sync Service', () => {
 					studentId: 1000 + i,
 					firstName: `Student${i}`,
 					lastName: `Test${i}`,
-					email: `student${i}@jpgacademy.org`,
+					email: `student${i}@school.org`,
 				})
 			}
 
@@ -805,7 +805,7 @@ describe('FACTS SIS Student Sync Service', () => {
 				studentId: 789,
 				firstName: 'Charlie',
 				lastName: 'Brown',
-				email: 'charlie.brown@jpgacademy.org',
+				email: 'charlie.brown@school.org',
 				grade: '10',
 			})
 
@@ -814,7 +814,7 @@ describe('FACTS SIS Student Sync Service', () => {
 			expect(result).not.toBeNull()
 			expect(result?.sisStudentId).toBe(mockStudent.studentId.toString())
 			expect(result?.fullName).toBe('Charlie Brown')
-			expect(result?.email).toBe('charlie.brown@jpgacademy.org')
+			expect(result?.email).toBe('charlie.brown@school.org')
 			expect(result?.status).toBe('active')
 		})
 
@@ -831,7 +831,7 @@ describe('FACTS SIS Student Sync Service', () => {
 				studentId: 555,
 				firstName: 'David',
 				lastName: 'Lee',
-				email: 'david.lee@jpgacademy.org',
+				email: 'david.lee@school.org',
 				active: true,
 			})
 
@@ -840,7 +840,7 @@ describe('FACTS SIS Student Sync Service', () => {
 			expect(result).toEqual({
 				sisStudentId: '555',
 				fullName: 'David Lee',
-				email: 'david.lee@jpgacademy.org',
+				email: 'david.lee@school.org',
 				status: 'active',
 			})
 		})
@@ -850,7 +850,7 @@ describe('FACTS SIS Student Sync Service', () => {
 				studentId: 666,
 				firstName: 'Eve',
 				lastName: 'Davis',
-				email: 'eve.davis@jpgacademy.org',
+				email: 'eve.davis@school.org',
 			})
 
 			const result = await fetchStudentById(mockStudent.studentId)
@@ -863,7 +863,7 @@ describe('FACTS SIS Student Sync Service', () => {
 				studentId: 777,
 				firstName: 'Frank',
 				lastName: 'Miller',
-				email: 'frank.miller@jpgacademy.org',
+				email: 'frank.miller@school.org',
 			})
 
 			const result = await fetchStudentById(mockStudent.studentId)
@@ -881,12 +881,12 @@ describe('FACTS SIS Student Sync Service', () => {
 
 			// Manually set email2 in demographics
 			if (mockStudent.demographics?.person) {
-				mockStudent.demographics.person.email2 = 'grace.wilson@jpgacademy.org'
+				mockStudent.demographics.person.email2 = 'grace.wilson@school.org'
 			}
 
 			const result = await fetchStudentById(mockStudent.studentId)
 
-			expect(result?.email).toBe('grace.wilson@jpgacademy.org')
+			expect(result?.email).toBe('grace.wilson@school.org')
 		})
 
 		test('Service correctly maps active status', async () => {
@@ -894,7 +894,7 @@ describe('FACTS SIS Student Sync Service', () => {
 				studentId: 111,
 				firstName: 'Active',
 				lastName: 'Student',
-				email: 'active@jpgacademy.org',
+				email: 'active@school.org',
 				active: true, // Will be mapped to 'Enrolled' status
 			})
 
@@ -902,7 +902,7 @@ describe('FACTS SIS Student Sync Service', () => {
 				studentId: 222,
 				firstName: 'Inactive',
 				lastName: 'Student',
-				email: 'inactive@jpgacademy.org',
+				email: 'inactive@school.org',
 				active: false, // Will be mapped to 'Withdrawn' status
 			})
 
@@ -920,13 +920,13 @@ describe('FACTS SIS Student Sync Service', () => {
 				firstName: '  Henry  ',
 				lastName: '  Taylor  ',
 				middleName: '', // Empty middle name for predictable output
-				email: '  henry.taylor@jpgacademy.org  ',
+				email: '  henry.taylor@school.org  ',
 			})
 
 			const result = await fetchStudentById(mockStudent.studentId)
 
 			expect(result?.fullName).toBe('Henry Taylor')
-			expect(result?.email).toBe('henry.taylor@jpgacademy.org')
+			expect(result?.email).toBe('henry.taylor@school.org')
 		})
 	})
 

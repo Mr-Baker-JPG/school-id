@@ -72,7 +72,7 @@ describe('Admin Employee Detail - Gmail Signature Display', () => {
 				sisEmployeeId: 'GMAIL001',
 				fullName: 'Gmail Test User',
 				jobTitle: 'Faculty - Science',
-				email: 'gmailtest@jpgacademy.org',
+				email: 'gmailtest@school.org',
 				status: 'active',
 			},
 		})
