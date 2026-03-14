@@ -23,7 +23,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		lastName: 'Baker',
 		fullName: 'Samantha Marie Baker',
 		personType: 'FACULTY' as const,
-		email: 'sbaker@jpgacademy.org',
+		email: 'jdoe@school.org',
 		status: 'active',
 		sisEmployeeId: '100247',
 		photoUrl: null,

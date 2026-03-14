@@ -10,19 +10,36 @@ import { type BrandingConfig } from './branding.server.ts'
 import { FontFamilies } from './font-families.ts'
 import { getFirstAndLastName } from './misc.tsx'
 
-// Design constants
-const NAVY = '#1B2A4A'
-const MAROON = '#8B1A2B'
-const CREAM = '#F5F0E8'
+// Default design constants (fallbacks — actual values come from branding config)
+const DEFAULT_PRIMARY = '#1B2A4A'
+const DEFAULT_SECONDARY = '#8B1A2B'
+const DEFAULT_ACCENT = '#F5F0E8'
 
 // Standard ID card dimensions (wallet size)
 export const PDF_CARD_WIDTH = 243
 export const PDF_CARD_HEIGHT = 153
 
-// School contact info (shared across all designs)
-const SCHOOL_ADDRESS_LINE1 = '1522 Carmel Dr.'
-const SCHOOL_ADDRESS_LINE2 = 'Lafayette, LA 70501'
-const SCHOOL_PHONE = '337-889-5345'
+/**
+ * Get design colors from branding config
+ */
+export function getDesignColors(branding: BrandingConfig) {
+	return {
+		NAVY: branding.primaryColor || DEFAULT_PRIMARY,
+		MAROON: branding.secondaryColor || DEFAULT_SECONDARY,
+		CREAM: branding.accentColor || DEFAULT_ACCENT,
+	}
+}
+
+/**
+ * Get school contact info from branding config
+ */
+export function getSchoolContactInfo(branding: BrandingConfig) {
+	return {
+		addressLine1: branding.addressLine1 || '',
+		addressLine2: branding.addressLine2 || '',
+		phone: branding.phone || '',
+	}
+}
 
 /**
  * Props for PDF card front components
@@ -51,14 +68,15 @@ export interface PDFCardBackProps {
 /**
  * Shared styles helper
  */
-function createStyles() {
+function createStyles(branding?: BrandingConfig) {
+	const colors = branding ? getDesignColors(branding) : { NAVY: DEFAULT_PRIMARY, MAROON: DEFAULT_SECONDARY, CREAM: DEFAULT_ACCENT }
 	return StyleSheet.create({
 		// Common elements
 		photoFrame: {
 			width: 54,
 			height: 68,
 			borderWidth: 1.5,
-			borderColor: NAVY,
+			borderColor: colors.NAVY,
 			borderRadius: 3,
 			overflow: 'hidden',
 		},
@@ -108,7 +126,9 @@ function createStyles() {
  * DESIGN 1: "Classic Band" — Navy top/bottom bands, cream body
  * ================================================================ */
 export function PDFDesign1Front(props: PDFCardFrontProps) {
-	const styles = createStyles()
+	const styles = createStyles(props.branding)
+	const { NAVY, MAROON, CREAM } = getDesignColors(props.branding)
+	const { addressLine1: SCHOOL_ADDRESS_LINE1, addressLine2: SCHOOL_ADDRESS_LINE2, phone: SCHOOL_PHONE } = getSchoolContactInfo(props.branding)
 	const name = getFirstAndLastName(props.fullName).toUpperCase()
 
 	return (
@@ -157,7 +177,9 @@ export function PDFDesign1Front(props: PDFCardFrontProps) {
 }
 
 export function PDFDesign1Back(props: PDFCardBackProps) {
-	const styles = createStyles()
+	const styles = createStyles(props.branding)
+	const { NAVY, MAROON, CREAM } = getDesignColors(props.branding)
+	const { addressLine1: SCHOOL_ADDRESS_LINE1, addressLine2: SCHOOL_ADDRESS_LINE2, phone: SCHOOL_PHONE } = getSchoolContactInfo(props.branding)
 
 	return (
 		<View style={{ width: PDF_CARD_WIDTH, height: PDF_CARD_HEIGHT, backgroundColor: CREAM, overflow: 'hidden', position: 'relative' }}>
@@ -196,7 +218,9 @@ export function PDFDesign1Back(props: PDFCardBackProps) {
  * DESIGN 2: "Full-Height Photo" — Photo spans right edge
  * ================================================================ */
 export function PDFDesign2Front(props: PDFCardFrontProps) {
-	const styles = createStyles()
+	const styles = createStyles(props.branding)
+	const { NAVY, MAROON, CREAM } = getDesignColors(props.branding)
+	const { addressLine1: SCHOOL_ADDRESS_LINE1, addressLine2: SCHOOL_ADDRESS_LINE2, phone: SCHOOL_PHONE } = getSchoolContactInfo(props.branding)
 	const name = getFirstAndLastName(props.fullName).toUpperCase()
 
 	return (
@@ -241,7 +265,9 @@ export function PDFDesign2Front(props: PDFCardFrontProps) {
 }
 
 export function PDFDesign2Back(props: PDFCardBackProps) {
-	const styles = createStyles()
+	const styles = createStyles(props.branding)
+	const { NAVY, MAROON, CREAM } = getDesignColors(props.branding)
+	const { addressLine1: SCHOOL_ADDRESS_LINE1, addressLine2: SCHOOL_ADDRESS_LINE2, phone: SCHOOL_PHONE } = getSchoolContactInfo(props.branding)
 
 	return (
 		<View style={{ width: PDF_CARD_WIDTH, height: PDF_CARD_HEIGHT, backgroundColor: '#fff', overflow: 'hidden', position: 'relative' }}>
@@ -275,7 +301,9 @@ export function PDFDesign2Back(props: PDFCardBackProps) {
  * DESIGN 3: "Light Executive" — Design 4 layout, Design 5 colors
  * ================================================================ */
 export function PDFDesign3Front(props: PDFCardFrontProps) {
-	const styles = createStyles()
+	const styles = createStyles(props.branding)
+	const { NAVY, MAROON, CREAM } = getDesignColors(props.branding)
+	const { addressLine1: SCHOOL_ADDRESS_LINE1, addressLine2: SCHOOL_ADDRESS_LINE2, phone: SCHOOL_PHONE } = getSchoolContactInfo(props.branding)
 	const name = getFirstAndLastName(props.fullName).toUpperCase()
 
 	return (
@@ -332,7 +360,9 @@ export function PDFDesign3Front(props: PDFCardFrontProps) {
 }
 
 export function PDFDesign3Back(props: PDFCardBackProps) {
-	const styles = createStyles()
+	const styles = createStyles(props.branding)
+	const { NAVY, MAROON, CREAM } = getDesignColors(props.branding)
+	const { addressLine1: SCHOOL_ADDRESS_LINE1, addressLine2: SCHOOL_ADDRESS_LINE2, phone: SCHOOL_PHONE } = getSchoolContactInfo(props.branding)
 
 	return (
 		<View style={{ width: PDF_CARD_WIDTH, height: PDF_CARD_HEIGHT, backgroundColor: '#fff', overflow: 'hidden', position: 'relative' }}>
@@ -366,7 +396,9 @@ export function PDFDesign3Back(props: PDFCardBackProps) {
  * DESIGN 4: "Dark Executive" — Navy card, white/gold text
  * ================================================================ */
 export function PDFDesign4Front(props: PDFCardFrontProps) {
-	const styles = createStyles()
+	const styles = createStyles(props.branding)
+	const { NAVY, MAROON, CREAM } = getDesignColors(props.branding)
+	const { addressLine1: SCHOOL_ADDRESS_LINE1, addressLine2: SCHOOL_ADDRESS_LINE2, phone: SCHOOL_PHONE } = getSchoolContactInfo(props.branding)
 	const name = getFirstAndLastName(props.fullName).toUpperCase()
 
 	return (
@@ -420,7 +452,9 @@ export function PDFDesign4Front(props: PDFCardFrontProps) {
 }
 
 export function PDFDesign4Back(props: PDFCardBackProps) {
-	const styles = createStyles()
+	const styles = createStyles(props.branding)
+	const { NAVY, MAROON, CREAM } = getDesignColors(props.branding)
+	const { addressLine1: SCHOOL_ADDRESS_LINE1, addressLine2: SCHOOL_ADDRESS_LINE2, phone: SCHOOL_PHONE } = getSchoolContactInfo(props.branding)
 
 	return (
 		<View style={{ width: PDF_CARD_WIDTH, height: PDF_CARD_HEIGHT, backgroundColor: NAVY, overflow: 'hidden', position: 'relative' }}>
@@ -454,7 +488,9 @@ export function PDFDesign4Back(props: PDFCardBackProps) {
  * DESIGN 5: "Modern Minimal" — White card, thin accents
  * ================================================================ */
 export function PDFDesign5Front(props: PDFCardFrontProps) {
-	const styles = createStyles()
+	const styles = createStyles(props.branding)
+	const { NAVY, MAROON, CREAM } = getDesignColors(props.branding)
+	const { addressLine1: SCHOOL_ADDRESS_LINE1, addressLine2: SCHOOL_ADDRESS_LINE2, phone: SCHOOL_PHONE } = getSchoolContactInfo(props.branding)
 	const name = getFirstAndLastName(props.fullName).toUpperCase()
 
 	return (
@@ -514,7 +550,9 @@ export function PDFDesign5Back(props: PDFCardBackProps) {
  * DESIGN 6: "Ribbon Banner" — Maroon ribbon band across center
  * ================================================================ */
 export function PDFDesign6Front(props: PDFCardFrontProps) {
-	const styles = createStyles()
+	const styles = createStyles(props.branding)
+	const { NAVY, MAROON, CREAM } = getDesignColors(props.branding)
+	const { addressLine1: SCHOOL_ADDRESS_LINE1, addressLine2: SCHOOL_ADDRESS_LINE2, phone: SCHOOL_PHONE } = getSchoolContactInfo(props.branding)
 	const name = getFirstAndLastName(props.fullName).toUpperCase()
 
 	return (
@@ -569,7 +607,9 @@ export function PDFDesign6Back(props: PDFCardBackProps) {
  * DESIGN 7: "Centered Portrait" — Photo centered top, symmetric
  * ================================================================ */
 export function PDFDesign7Front(props: PDFCardFrontProps) {
-	const styles = createStyles()
+	const styles = createStyles(props.branding)
+	const { NAVY, MAROON, CREAM } = getDesignColors(props.branding)
+	const { addressLine1: SCHOOL_ADDRESS_LINE1, addressLine2: SCHOOL_ADDRESS_LINE2, phone: SCHOOL_PHONE } = getSchoolContactInfo(props.branding)
 	const name = getFirstAndLastName(props.fullName).toUpperCase()
 
 	return (
@@ -615,7 +655,9 @@ export function PDFDesign7Back(props: PDFCardBackProps) {
  * DESIGN 8: "Sidebar Accent" — Bold navy left sidebar
  * ================================================================ */
 export function PDFDesign8Front(props: PDFCardFrontProps) {
-	const styles = createStyles()
+	const styles = createStyles(props.branding)
+	const { NAVY, MAROON, CREAM } = getDesignColors(props.branding)
+	const { addressLine1: SCHOOL_ADDRESS_LINE1, addressLine2: SCHOOL_ADDRESS_LINE2, phone: SCHOOL_PHONE } = getSchoolContactInfo(props.branding)
 	const name = getFirstAndLastName(props.fullName).toUpperCase()
 
 	return (
@@ -670,7 +712,9 @@ export function PDFDesign8Back(props: PDFCardBackProps) {
  * DESIGN 9: "Heritage Frame" — Cream, ornamental double border
  * ================================================================ */
 export function PDFDesign9Front(props: PDFCardFrontProps) {
-	const styles = createStyles()
+	const styles = createStyles(props.branding)
+	const { NAVY, MAROON, CREAM } = getDesignColors(props.branding)
+	const { addressLine1: SCHOOL_ADDRESS_LINE1, addressLine2: SCHOOL_ADDRESS_LINE2, phone: SCHOOL_PHONE } = getSchoolContactInfo(props.branding)
 	const name = getFirstAndLastName(props.fullName).toUpperCase()
 
 	return (
@@ -727,7 +771,9 @@ export function PDFDesign9Back(props: PDFCardBackProps) {
  * DESIGN 10: "Split Tone" — Navy left / white right
  * ================================================================ */
 export function PDFDesign10Front(props: PDFCardFrontProps) {
-	const styles = createStyles()
+	const styles = createStyles(props.branding)
+	const { NAVY, MAROON, CREAM } = getDesignColors(props.branding)
+	const { addressLine1: SCHOOL_ADDRESS_LINE1, addressLine2: SCHOOL_ADDRESS_LINE2, phone: SCHOOL_PHONE } = getSchoolContactInfo(props.branding)
 	const name = getFirstAndLastName(props.fullName).toUpperCase()
 
 	return (
@@ -780,7 +826,9 @@ export function PDFDesign10Back(props: PDFCardBackProps) {
  * DESIGN 11: "Top Photo Strip" — Navy header with overlapping photo
  * ================================================================ */
 export function PDFDesign11Front(props: PDFCardFrontProps) {
-	const styles = createStyles()
+	const styles = createStyles(props.branding)
+	const { NAVY, MAROON, CREAM } = getDesignColors(props.branding)
+	const { addressLine1: SCHOOL_ADDRESS_LINE1, addressLine2: SCHOOL_ADDRESS_LINE2, phone: SCHOOL_PHONE } = getSchoolContactInfo(props.branding)
 	const name = getFirstAndLastName(props.fullName).toUpperCase()
 
 	return (
@@ -837,7 +885,9 @@ export function PDFDesign11Back(props: PDFCardBackProps) {
  * DESIGN 12: "Monogram Shield" — Large faded initial background
  * ================================================================ */
 export function PDFDesign12Front(props: PDFCardFrontProps) {
-	const styles = createStyles()
+	const styles = createStyles(props.branding)
+	const { NAVY, MAROON, CREAM } = getDesignColors(props.branding)
+	const { addressLine1: SCHOOL_ADDRESS_LINE1, addressLine2: SCHOOL_ADDRESS_LINE2, phone: SCHOOL_PHONE } = getSchoolContactInfo(props.branding)
 	const name = getFirstAndLastName(props.fullName).toUpperCase()
 	const initial = name.charAt(0)
 

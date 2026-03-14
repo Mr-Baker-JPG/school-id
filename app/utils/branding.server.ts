@@ -1,9 +1,11 @@
 /**
  * School branding configuration
  * Used for PDF ID generation and verification pages
+ *
+ * This is now a thin wrapper around SchoolConfig for backward compatibility.
  */
 
-import { SCHOOL_NAME, LOGO_SRC } from '#app/ui/brand.ts'
+import { getSchoolConfig, type SchoolConfig } from './school-config.server.ts'
 
 export interface BrandingConfig {
 	/**
@@ -22,21 +24,50 @@ export interface BrandingConfig {
 	 * Secondary brand color (hex format, e.g., "#ffffff")
 	 */
 	secondaryColor: string
+	/**
+	 * Accent/background color (hex format)
+	 */
+	accentColor: string
+	/**
+	 * School address line 1
+	 */
+	addressLine1: string
+	/**
+	 * School address line 2
+	 */
+	addressLine2: string
+	/**
+	 * School phone number
+	 */
+	phone: string
+	/**
+	 * School website URL
+	 */
+	schoolWebsite: string
 }
 
 /**
- * Gets the school branding configuration from environment variables
- * Falls back to brand.ts configuration, then to sensible defaults if not configured
+ * Gets the school branding configuration from the database
+ * with environment variable and sensible defaults as fallbacks.
  */
-export function getBrandingConfig(): BrandingConfig {
+export async function getBrandingConfig(): Promise<BrandingConfig> {
+	const config = await getSchoolConfig()
+	return brandingFromSchoolConfig(config)
+}
+
+/**
+ * Convert a SchoolConfig to a BrandingConfig (sync helper for when you already have config)
+ */
+export function brandingFromSchoolConfig(config: SchoolConfig): BrandingConfig {
 	return {
-		schoolName:
-			process.env.SCHOOL_NAME ||
-			process.env.SCHOOL_BRAND_NAME ||
-			SCHOOL_NAME ||
-			'School',
-		logoUrl: process.env.SCHOOL_LOGO_URL || LOGO_SRC,
-		primaryColor: process.env.SCHOOL_PRIMARY_COLOR || '#1a1a1a',
-		secondaryColor: process.env.SCHOOL_SECONDARY_COLOR || '#ffffff',
+		schoolName: config.schoolName,
+		logoUrl: config.logoUrl,
+		primaryColor: config.primaryColor,
+		secondaryColor: config.secondaryColor,
+		accentColor: config.accentColor,
+		addressLine1: config.addressLine1,
+		addressLine2: config.addressLine2,
+		phone: config.phone,
+		schoolWebsite: config.schoolWebsite,
 	}
 }

@@ -1,7 +1,7 @@
 {
-	"name": "JPG ID System",
-	"short_name": "JPG ID",
-	"description": "Employee and student ID card management for JPG Academy",
+	"name": "School ID System",
+	"short_name": "School ID",
+	"description": "Employee and student ID card management system",
 	"start_url": "/",
 	"icons": [
 		{

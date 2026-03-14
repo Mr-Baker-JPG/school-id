@@ -54,11 +54,16 @@ describe('generateEmployeeIDPDF', () => {
 		vi.spyOn(console, 'warn').mockImplementation(() => {})
 
 		// Mock branding config
-		vi.mocked(getBrandingConfig).mockReturnValue({
+		vi.mocked(getBrandingConfig).mockResolvedValue({
 			schoolName: 'Test School',
 			logoUrl: 'https://example.com/logo.png',
 			primaryColor: '#1a1a1a',
 			secondaryColor: '#ffffff',
+			accentColor: '#F5F0E8',
+			addressLine1: '123 Main St',
+			addressLine2: 'City, ST 12345',
+			phone: '555-1234',
+			schoolWebsite: 'https://test.school',
 		})
 
 		// Mock QR code generation with valid PNG
@@ -165,8 +170,13 @@ describe('generateEmployeeIDPDF', () => {
 			logoUrl: 'https://example.com/logo.png',
 			primaryColor: '#ff0000',
 			secondaryColor: '#00ff00',
+			accentColor: '#0000ff',
+			addressLine1: '456 Elm St',
+			addressLine2: 'Town, ST 67890',
+			phone: '555-5678',
+			schoolWebsite: 'https://custom.school',
 		}
-		vi.mocked(getBrandingConfig).mockReturnValue(customBranding)
+		vi.mocked(getBrandingConfig).mockResolvedValue(customBranding)
 
 		const pdfBuffer = await generateEmployeeIDPDF(mockEmployee, mockRequest)
 
@@ -198,11 +208,16 @@ describe('generateEmployeeIDPDF', () => {
 	})
 
 	it('handles missing logo gracefully', async () => {
-		vi.mocked(getBrandingConfig).mockReturnValue({
+		vi.mocked(getBrandingConfig).mockResolvedValue({
 			schoolName: 'Test School',
 			logoUrl: undefined,
 			primaryColor: '#1a1a1a',
 			secondaryColor: '#ffffff',
+			accentColor: '#F5F0E8',
+			addressLine1: '123 Main St',
+			addressLine2: 'City, ST 12345',
+			phone: '555-1234',
+			schoolWebsite: 'https://test.school',
 		})
 
 		const pdfBuffer = await generateEmployeeIDPDF(mockEmployee, mockRequest)

@@ -1,7 +1,12 @@
 import { prisma } from '../app/utils/db.server.ts'
 
 async function fixAdminRole() {
-	const email = 'cbaker@jpgacademy.org'
+	const email = process.argv[2]
+
+	if (!email) {
+		console.error('Usage: npx tsx prisma/fix-admin-role.ts <email>')
+		process.exit(1)
+	}
 
 	console.log(`Checking user: ${email}`)
 

@@ -101,9 +101,13 @@ export async function requireSuperAdmin(request: Request) {
 	const userId = await requireUserId(request)
 	const user = await prisma.user.findUnique({
 		where: { id: userId },
-		select: { email: true },
+		select: {
+			email: true,
+			roles: { select: { name: true } },
+		},
 	})
-	if (!user || user.email.toLowerCase() !== 'cbaker@jpgacademy.org') {
+	const isAdmin = user?.roles.some((role) => role.name === 'admin')
+	if (!user || !isAdmin) {
 		throw data(
 			{
 				error: 'Unauthorized',
@@ -223,7 +227,10 @@ export async function signup({
 }) {
 	const hashedPassword = await getPasswordHash(password)
 	const emailLower = email.toLowerCase()
-	const isSuperAdmin = emailLower === 'cbaker@jpgacademy.org'
+
+	// Check if this is the very first user (no existing users) — auto-promote to admin
+	const userCount = await prisma.user.count()
+	const isFirstUser = userCount === 0
 
 	const session = await prisma.session.create({
 		data: {
@@ -234,7 +241,7 @@ export async function signup({
 					username: username.toLowerCase(),
 					name,
 					roles: {
-						connect: isSuperAdmin
+						connect: isFirstUser
 							? [{ name: 'user' }, { name: 'admin' }]
 							: [{ name: 'user' }],
 					},
@@ -268,7 +275,9 @@ export async function signupWithConnection({
 	imageUrl?: string
 }) {
 	const emailLower = email.toLowerCase()
-	const isSuperAdmin = emailLower === 'cbaker@jpgacademy.org'
+	// Check if this is the very first user (no existing users) — auto-promote to admin
+	const userCount = await prisma.user.count()
+	const isFirstUser = userCount === 0
 
 	const user = await prisma.user.create({
 		data: {
@@ -276,7 +285,7 @@ export async function signupWithConnection({
 			username: username.toLowerCase(),
 			name,
 			roles: {
-				connect: isSuperAdmin
+				connect: isFirstUser
 					? [{ name: 'user' }, { name: 'admin' }]
 					: [{ name: 'user' }],
 			},

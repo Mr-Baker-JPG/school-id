@@ -21,6 +21,7 @@ import { href as iconsHref } from './components/ui/icon.tsx'
 import { EpicToaster } from './components/ui/sonner.tsx'
 import { UserDropdown } from './components/user-dropdown.tsx'
 import { useOptionalTheme, useTheme } from './routes/resources/theme-switch.tsx'
+import { getSchoolConfig } from './utils/school-config.server.ts'
 import tailwindStyleSheetUrl from './styles/tailwind.css?url'
 import { getUserId, logout } from './utils/auth.server.ts'
 import { ClientHintCheck, getHints } from './utils/client-hints.tsx'
@@ -62,8 +63,11 @@ export const links: Route.LinksFunction = () => {
 }
 
 export const meta: Route.MetaFunction = ({ data }) => {
+	const appName = data?.schoolConfig?.schoolShortName
+		? `${data.schoolConfig.schoolShortName} ID System`
+		: 'School ID System'
 	return [
-		{ title: data ? 'JPG ID System' : 'Error | JPG ID System' },
+		{ title: data ? appName : `Error | ${appName}` },
 		{
 			name: 'description',
 			content: 'View and download your official ID card',
@@ -137,6 +141,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	}
 	const { toast, headers: toastHeaders } = await getToast(request)
 	const honeyProps = await honeypot.getInputProps()
+	const schoolConfig = await getSchoolConfig()
 
 	return data(
 		{
@@ -153,6 +158,12 @@ export async function loader({ request }: Route.LoaderArgs) {
 			ENV: getEnv(),
 			toast,
 			honeyProps,
+			schoolConfig: {
+				schoolName: schoolConfig.schoolName,
+				schoolShortName: schoolConfig.schoolShortName,
+				logoUrl: schoolConfig.logoUrl,
+				primaryColor: schoolConfig.primaryColor,
+			},
 		},
 		{
 			headers: combineHeaders(
@@ -170,11 +181,13 @@ function Document({
 	nonce,
 	theme = 'light',
 	env = {},
+	appShortName = 'School ID',
 }: {
 	children: React.ReactNode
 	nonce: string
 	theme?: Theme
 	env?: Record<string, string | undefined>
+	appShortName?: string
 }) {
 	const allowIndexing = ENV.ALLOW_INDEXING !== 'false'
 	return (
@@ -190,7 +203,7 @@ function Document({
 				{/* iOS PWA meta tags */}
 				<meta name="apple-mobile-web-app-capable" content="yes" />
 				<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-				<meta name="apple-mobile-web-app-title" content="JPG ID" />
+				<meta name="apple-mobile-web-app-title" content={appShortName} />
 				<Links />
 			</head>
 			<body className="bg-background text-foreground">
@@ -213,8 +226,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 	const data = useLoaderData<typeof loader | null>()
 	const nonce = useNonce()
 	const theme = useOptionalTheme() ?? 'light'
+	const appShortName = data?.schoolConfig?.schoolShortName
+		? `${data.schoolConfig.schoolShortName} ID`
+		: 'School ID'
 	return (
-		<Document nonce={nonce} theme={theme} env={data?.ENV}>
+		<Document nonce={nonce} theme={theme} env={data?.ENV} appShortName={appShortName}>
 			{children}
 		</Document>
 	)
@@ -269,10 +285,12 @@ function App() {
 }
 
 function Logo() {
+	const data = useLoaderData<typeof loader | null>()
+	const shortName = data?.schoolConfig?.schoolShortName || 'School'
 	return (
 		<Link to="/" className="group grid leading-snug">
 			<span className="font-light transition group-hover:-translate-x-1">
-				JPG
+				{shortName}
 			</span>
 			<span className="font-bold transition group-hover:translate-x-1">
 				ID System

@@ -85,19 +85,37 @@ export interface IDCardBackProps {
 	logoDataURL?: string | null
 }
 
-// Design constants
-const NAVY = '#1B2A4A'
-const MAROON = '#8B1A2B'
+// Default design constants (actual values come from branding config)
+const DEFAULT_NAVY = '#1B2A4A'
+const DEFAULT_MAROON = '#8B1A2B'
 
-const SCHOOL_ADDRESS_LINE1 = '1522 Carmel Dr.'
-const SCHOOL_ADDRESS_LINE2 = 'Lafayette, LA 70501'
-const SCHOOL_PHONE = '337-889-5345'
+/**
+ * Get design colors from branding config
+ */
+function getColors(branding: BrandingConfig) {
+	return {
+		NAVY: branding.primaryColor || DEFAULT_NAVY,
+		MAROON: branding.secondaryColor || DEFAULT_MAROON,
+	}
+}
+
+/**
+ * Get school contact info from branding config
+ */
+function getContactInfo(branding: BrandingConfig) {
+	return {
+		addressLine1: branding.addressLine1 || '',
+		addressLine2: branding.addressLine2 || '',
+		phone: branding.phone || '',
+	}
+}
 
 /**
  * Creates PDF styles for the Light Executive design
  * Uses Trajan Pro Bold for titles/names and Garamond for body text
  */
 export function createIDCardPDFStyles(_branding: BrandingConfig) {
+	const { NAVY, MAROON } = getColors(_branding)
 	return StyleSheet.create({
 		page: {
 			width: ID_WIDTH,
@@ -454,6 +472,7 @@ export function IDCardBackContentView({
 	branding,
 	logoDataURL,
 }: IDCardBackProps) {
+	const { addressLine1: SCHOOL_ADDRESS_LINE1, addressLine2: SCHOOL_ADDRESS_LINE2, phone: SCHOOL_PHONE } = getContactInfo(branding)
 	const styles = createIDCardPDFStyles(branding)
 	return (
 		<View style={styles.backCard}>
@@ -517,6 +536,7 @@ export function IDCardFrontPreview({
 	branding,
 	academicYear,
 }: IDCardFrontPreviewProps) {
+	const { NAVY, MAROON } = getColors(branding)
 	const displayName = `${employee.firstName} ${employee.lastName}`.toUpperCase()
 
 	return (
@@ -754,6 +774,8 @@ export function IDCardBackPreview({
 	branding,
 	logoDataURL,
 }: IDCardBackProps) {
+	const { NAVY, MAROON } = getColors(branding)
+	const { addressLine1: SCHOOL_ADDRESS_LINE1, addressLine2: SCHOOL_ADDRESS_LINE2, phone: SCHOOL_PHONE } = getContactInfo(branding)
 	// Use logoDataURL if provided, otherwise fall back to branding.logoUrl
 	const watermarkLogo = logoDataURL || branding.logoUrl
 

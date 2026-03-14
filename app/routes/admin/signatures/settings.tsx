@@ -134,7 +134,7 @@ export default function SignatureSettingsPage() {
 							name="schoolName"
 							value={schoolName}
 							onChange={(e) => setSchoolName(e.target.value)}
-							placeholder="e.g. JPG Academy"
+							placeholder="e.g. Your School"
 							required
 						/>
 						<p className="text-muted-foreground text-xs">
@@ -188,7 +188,7 @@ export default function SignatureSettingsPage() {
 							name="schoolWebsite"
 							value={schoolWebsite}
 							onChange={(e) => setSchoolWebsite(e.target.value)}
-							placeholder="e.g. https://www.jpgacademy.org"
+							placeholder="e.g. https://www.yourschool.org"
 							type="url"
 						/>
 						<p className="text-muted-foreground text-xs">
@@ -206,7 +206,7 @@ export default function SignatureSettingsPage() {
 							name="schoolLogoUrl"
 							value={schoolLogoUrl}
 							onChange={(e) => setSchoolLogoUrl(e.target.value)}
-							placeholder="e.g. https://www.jpgacademy.org/logo.png"
+							placeholder="e.g. https://www.yourschool.org/logo.png"
 							type="url"
 						/>
 						<p className="text-muted-foreground text-xs">

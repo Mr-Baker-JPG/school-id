@@ -142,7 +142,7 @@ export async function generateAppleWalletPass(
 
 		// Get branding configuration
 		const { getBrandingConfig } = await import('./branding.server.ts')
-		const branding = getBrandingConfig()
+		const branding = await getBrandingConfig()
 
 		// Get certificates
 		const certificates = getAppleWalletCertificates()
@@ -295,7 +295,7 @@ export async function generateGooglePayPass(
 
 		// Get branding configuration
 		const { getBrandingConfig } = await import('./branding.server.ts')
-		const branding = getBrandingConfig()
+		const branding = await getBrandingConfig()
 
 		// Get verification URL
 		const baseUrl = getDomainUrl(request)

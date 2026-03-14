@@ -118,7 +118,7 @@ export default function InstallRoute({ actionData }: Route.ComponentProps) {
 		},
 		shouldRevalidate: 'onBlur',
 		defaultValue: {
-			email: 'cbaker@jpgacademy.org',
+			email: '',
 		},
 	})
 

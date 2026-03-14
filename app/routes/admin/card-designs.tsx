@@ -11,7 +11,7 @@ import { data } from 'react-router'
 
 export async function loader({ request }: Route.LoaderArgs) {
 	await requireAdmin(request)
-	const branding = getBrandingConfig()
+	const branding = await getBrandingConfig()
 	const academicYear = getCurrentAcademicYear()
 	const activeDesignId = await getActiveCardDesignId()
 	return { branding, academicYear, activeDesignId }
@@ -54,6 +54,12 @@ export default function CardDesignsPage({ loaderData }: Route.ComponentProps) {
 		logoUrl: branding.logoUrl ?? null,
 		schoolName: branding.schoolName,
 		qrCodeDataURL: undefined,
+		primaryColor: branding.primaryColor,
+		secondaryColor: branding.secondaryColor,
+		accentColor: branding.accentColor,
+		addressLine1: branding.addressLine1,
+		addressLine2: branding.addressLine2,
+		phone: branding.phone,
 	}
 
 	const toggleFace = (id: number) => {

@@ -21,11 +21,35 @@ export interface CardDesignProps {
 	logoUrl: string | null
 	schoolName: string
 	qrCodeDataURL?: string
+	/** Primary brand color (defaults to navy #1B2A4A) */
+	primaryColor?: string
+	/** Secondary brand color (defaults to maroon #8B1A2B) */
+	secondaryColor?: string
+	/** Accent/background color (defaults to cream #F5F0E8) */
+	accentColor?: string
+	/** School address line 1 */
+	addressLine1?: string
+	/** School address line 2 */
+	addressLine2?: string
+	/** School phone */
+	phone?: string
 }
 
-const NAVY = '#1B2A4A'
-const MAROON = '#8B1A2B'
-const CREAM = '#F5F0E8'
+function getColors(props: CardDesignProps) {
+	return {
+		NAVY: props.primaryColor || '#1B2A4A',
+		MAROON: props.secondaryColor || '#8B1A2B',
+		CREAM: props.accentColor || '#F5F0E8',
+	}
+}
+
+function getContactInfo(props: CardDesignProps) {
+	return {
+		SCHOOL_ADDRESS_LINE1: props.addressLine1 || '',
+		SCHOOL_ADDRESS_LINE2: props.addressLine2 || '',
+		SCHOOL_PHONE: props.phone || '',
+	}
+}
 const CW = 324
 const CH = 204
 
@@ -46,7 +70,7 @@ function WM({ logoUrl, opacity = 0.04 }: { logoUrl: string | null; opacity?: num
 	)
 }
 
-function Photo({ url, name, w = 72, h = 90, border = NAVY }: { url: string | null; name: string; w?: number; h?: number; border?: string }) {
+function Photo({ url, name, w = 72, h = 90, border = '#1B2A4A' }: { url: string | null; name: string; w?: number; h?: number; border?: string }) {
 	return (
 		<div style={{ width: w, height: h, border: `2px solid ${border}`, borderRadius: 4, overflow: 'hidden', flexShrink: 0, backgroundColor: '#e5e5e5' }}>
 			{url ? (
@@ -58,11 +82,10 @@ function Photo({ url, name, w = 72, h = 90, border = NAVY }: { url: string | nul
 	)
 }
 
-const SCHOOL_ADDRESS_LINE1 = '1522 Carmel Dr.'
-const SCHOOL_ADDRESS_LINE2 = 'Lafayette, LA 70501'
-const SCHOOL_PHONE = '337-889-5345'
 
 function BackLayout({ props, variant = 'default' }: { props: CardDesignProps; variant?: string }) {
+	const { NAVY, MAROON, CREAM } = getColors(props)
+	const { SCHOOL_ADDRESS_LINE1, SCHOOL_ADDRESS_LINE2, SCHOOL_PHONE } = getContactInfo(props)
 	const bg = variant === 'cream' ? CREAM : variant === 'navy' ? NAVY : '#FFFFFF'
 	const textColor = variant === 'navy' ? '#ccc' : '#555'
 	const headColor = variant === 'navy' ? '#fff' : NAVY
@@ -101,6 +124,7 @@ function BackLayout({ props, variant = 'default' }: { props: CardDesignProps; va
  * DESIGN 1: "Classic Band" — Navy top/bottom bands, cream body
  * ================================================================ */
 export function Design1Front(p: CardDesignProps) {
+	const { NAVY, MAROON, CREAM } = getColors(p)
 	const name = getFirstAndLastName(p.fullName).toUpperCase()
 	return (
 		<Shell bg={CREAM}>
@@ -135,6 +159,7 @@ export function Design1Back(p: CardDesignProps) { return <BackLayout props={p} v
  * DESIGN 2: "Full-Height Photo" — Photo spans right edge
  * ================================================================ */
 export function Design2Front(p: CardDesignProps) {
+	const { NAVY, MAROON, CREAM } = getColors(p)
 	const name = getFirstAndLastName(p.fullName).toUpperCase()
 	return (
 		<Shell bg="#fff">
@@ -173,6 +198,7 @@ export function Design2Back(p: CardDesignProps) { return <BackLayout props={p} /
  * DESIGN 3: "Light Executive" — Design 4 layout, Design 5 colors
  * ================================================================ */
 export function Design3Front(p: CardDesignProps) {
+	const { NAVY, MAROON, CREAM } = getColors(p)
 	const name = getFirstAndLastName(p.fullName).toUpperCase()
 	return (
 		<Shell bg="#FFFFFF">
@@ -215,6 +241,7 @@ export function Design3Back(p: CardDesignProps) { return <BackLayout props={p} /
  * DESIGN 4: "Dark Executive" — Navy card, white/gold text, premium
  * ================================================================ */
 export function Design4Front(p: CardDesignProps) {
+	const { NAVY, MAROON, CREAM } = getColors(p)
 	const name = getFirstAndLastName(p.fullName).toUpperCase()
 	return (
 		<Shell bg={NAVY}>
@@ -256,6 +283,7 @@ export function Design4Back(p: CardDesignProps) { return <BackLayout props={p} v
  * DESIGN 5: "Modern Minimal" — White card, thin accents, spacious
  * ================================================================ */
 export function Design5Front(p: CardDesignProps) {
+	const { NAVY, MAROON, CREAM } = getColors(p)
 	const name = getFirstAndLastName(p.fullName).toUpperCase()
 	return (
 		<Shell bg="#FFFFFF">
@@ -297,6 +325,7 @@ export function Design5Back(p: CardDesignProps) { return <BackLayout props={p} /
  * DESIGN 6: "Ribbon Banner" — Maroon ribbon band across center
  * ================================================================ */
 export function Design6Front(p: CardDesignProps) {
+	const { NAVY, MAROON, CREAM } = getColors(p)
 	const name = getFirstAndLastName(p.fullName).toUpperCase()
 	return (
 		<Shell bg="#FFFFFF">
@@ -335,6 +364,7 @@ export function Design6Back(p: CardDesignProps) { return <BackLayout props={p} /
  * DESIGN 7: "Centered Portrait" — Photo centered top, symmetric
  * ================================================================ */
 export function Design7Front(p: CardDesignProps) {
+	const { NAVY, MAROON, CREAM } = getColors(p)
 	const name = getFirstAndLastName(p.fullName).toUpperCase()
 	return (
 		<Shell bg={CREAM}>
@@ -366,6 +396,7 @@ export function Design7Back(p: CardDesignProps) { return <BackLayout props={p} v
  * DESIGN 8: "Sidebar Accent" — Bold navy left sidebar, role vertical
  * ================================================================ */
 export function Design8Front(p: CardDesignProps) {
+	const { NAVY, MAROON, CREAM } = getColors(p)
 	const name = getFirstAndLastName(p.fullName).toUpperCase()
 	return (
 		<Shell bg="#FFFFFF">
@@ -404,6 +435,7 @@ export function Design8Back(p: CardDesignProps) { return <BackLayout props={p} /
  * DESIGN 9: "Heritage Frame" — Cream card, ornamental double border
  * ================================================================ */
 export function Design9Front(p: CardDesignProps) {
+	const { NAVY, MAROON, CREAM } = getColors(p)
 	const name = getFirstAndLastName(p.fullName).toUpperCase()
 	return (
 		<Shell bg={CREAM}>
@@ -443,6 +475,7 @@ export function Design9Back(p: CardDesignProps) { return <BackLayout props={p} v
  * DESIGN 10: "Split Tone" — Navy left / white right, photo center
  * ================================================================ */
 export function Design10Front(p: CardDesignProps) {
+	const { NAVY, MAROON, CREAM } = getColors(p)
 	const name = getFirstAndLastName(p.fullName).toUpperCase()
 	return (
 		<Shell bg="#FFFFFF">
@@ -483,6 +516,7 @@ export function Design10Back(p: CardDesignProps) { return <BackLayout props={p} 
  * DESIGN 11: "Top Photo Strip" — Wide photo band at top, info below
  * ================================================================ */
 export function Design11Front(p: CardDesignProps) {
+	const { NAVY, MAROON, CREAM } = getColors(p)
 	const name = getFirstAndLastName(p.fullName).toUpperCase()
 	return (
 		<Shell bg="#FFFFFF">
@@ -525,6 +559,7 @@ export function Design11Back(p: CardDesignProps) { return <BackLayout props={p} 
  * DESIGN 12: "Monogram Shield" — Large faded initial as BG element
  * ================================================================ */
 export function Design12Front(p: CardDesignProps) {
+	const { NAVY, MAROON, CREAM } = getColors(p)
 	const name = getFirstAndLastName(p.fullName).toUpperCase()
 	const initial = name.charAt(0)
 	return (

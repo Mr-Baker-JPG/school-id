@@ -10,7 +10,7 @@ import { LOGO_SRC } from '#app/ui/brand.ts'
 interface DossierHeaderProps {
 	/** Person's full name */
 	name: string
-	/** e.g. "Upper School Math Teacher · smitchell@jpgacademy.org" */
+	/** e.g. "Upper School Math Teacher · jdoe@school.org" */
 	subtitle: string
 	/** e.g. "Employee · Faculty" or "Student · Grade 10" */
 	typeLabel: string

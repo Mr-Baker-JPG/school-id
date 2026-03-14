@@ -617,6 +617,6 @@ function FilterChip({
 }
 
 export const meta: Route.MetaFunction = () => [
-	{ title: 'Print ID Cards | Admin | JPG ID System' },
+	{ title: 'Print ID Cards | Admin | School ID System' },
 	{ name: 'description', content: 'Bulk print ID cards for employees and students' },
 ]

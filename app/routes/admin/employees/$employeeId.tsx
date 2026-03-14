@@ -123,7 +123,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	}
 
 	// Get branding config
-	const branding = getBrandingConfig()
+	const branding = await getBrandingConfig()
 	const logoUrl = branding.logoUrl || null
 
 	// Generate QR code for verification

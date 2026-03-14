@@ -141,7 +141,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		}
 	}
 
-	const branding = getBrandingConfig()
+	const branding = await getBrandingConfig()
 	const photoUrl: string | null = studentIdRecord?.photoUrl ?? null
 	const logoUrl = branding.logoUrl || null
 

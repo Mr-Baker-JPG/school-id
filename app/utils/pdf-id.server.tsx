@@ -1,5 +1,5 @@
 import { Document, pdf, Page, View, Svg, Line, Text, StyleSheet } from '@react-pdf/renderer'
-import { getBrandingConfig } from './branding.server.ts'
+import { getBrandingConfig, type BrandingConfig } from './branding.server.ts'
 import { generateEmployeeQRCodeBuffer } from './qr-code.server.ts'
 import { getSignedGetRequestInfo } from './storage.server.ts'
 import { generateBarcodeDataURL } from './barcode.server.ts'
@@ -238,7 +238,7 @@ export async function generateEmployeeIDPDF(
 		}
 
 		// Get branding configuration
-		const branding = getBrandingConfig()
+		const branding = await getBrandingConfig()
 
 		// Fetch employee photo
 		const photoDataURL = await getEmployeePhotoDataURL(employee.photoUrl)
@@ -347,7 +347,7 @@ interface PreparedEmployeeCard {
 	logoDataURL: string | null
 	barcodeDataURL: string | null
 	qrCodeDataURL: string
-	branding: ReturnType<typeof getBrandingConfig>
+	branding: BrandingConfig
 	academicYear: string
 }
 
@@ -358,7 +358,7 @@ async function prepareEmployeeCard(
 	employee: EmployeePDFData,
 	request: Request,
 ): Promise<PreparedEmployeeCard> {
-	const branding = getBrandingConfig()
+	const branding = await getBrandingConfig()
 	const photoDataURL = await getEmployeePhotoDataURL(employee.photoUrl)
 	const logoDataURL = await getSchoolLogoDataURL(branding.logoUrl, request)
 
@@ -507,7 +507,7 @@ export async function generateBulkEmployeeIDPDF(
 		const styles = createBulkPrintStyles()
 
 		// Build page header info
-		const branding = getBrandingConfig()
+		const branding = await getBrandingConfig()
 		const printDate = new Date().toLocaleDateString('en-US', {
 			year: 'numeric',
 			month: 'short',

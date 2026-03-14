@@ -19,6 +19,11 @@ describe('ID Card Layout - Person Type Display (F039)', () => {
 		logoUrl: '/logo.png',
 		primaryColor: '#1a1a1a',
 		secondaryColor: '#ffffff',
+		accentColor: '#F5F0E8',
+		addressLine1: '123 Main St',
+		addressLine2: 'City, ST 12345',
+		phone: '555-1234',
+		schoolWebsite: 'https://test.school',
 	}
 
 	const mockBarcodeDataURL =
@@ -254,6 +259,11 @@ describe('ID Card Layout - Person Type Display (F039)', () => {
 			logoUrl: '/custom-logo.png',
 			primaryColor: '#ff0000',
 			secondaryColor: '#00ff00',
+			accentColor: '#0000ff',
+			addressLine1: '456 Elm St',
+			addressLine2: 'Town, ST 67890',
+			phone: '555-5678',
+			schoolWebsite: 'https://custom.academy',
 		}
 
 		const facultyData: EmployeePDFData = {

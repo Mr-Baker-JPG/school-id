@@ -211,7 +211,7 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
 		<div className="space-y-8">
 			<PageTitle
 				title="Dashboard"
-				subtitle="Overview of the JPG ID System"
+				subtitle="Overview of the School ID System"
 			/>
 
 			{/* Stat Cards - Row 1: People Counts */}
@@ -490,7 +490,7 @@ function SectionCard({
 
 export const meta: Route.MetaFunction = () => {
 	return [
-		{ title: 'Admin Dashboard | JPG ID System' },
+		{ title: 'Admin Dashboard | School ID System' },
 		{ name: 'description', content: 'Admin overview dashboard' },
 	]
 }

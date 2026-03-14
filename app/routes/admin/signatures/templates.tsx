@@ -42,17 +42,17 @@ export const SAMPLE_EMPLOYEE_BASE = {
 	lastName: 'Smith',
 	jobTitle: 'Mathematics Teacher',
 	department: 'Mathematics',
-	email: 'jane.smith@jpgacademy.org',
+	email: 'jane.smith@school.org',
 }
 
 // Full sample with default school settings (for backward compatibility with tests)
 export const SAMPLE_EMPLOYEE = {
 	...SAMPLE_EMPLOYEE_BASE,
 	phone: '(555) 123-4567',
-	schoolName: 'JPG Academy',
+	schoolName: 'Your School',
 	schoolAddress: '123 Education Lane, City, ST 12345',
-	schoolWebsite: 'https://www.jpgacademy.org',
-	schoolLogoUrl: 'https://www.jpgacademy.org/logo.png',
+	schoolWebsite: 'https://www.yourschool.org',
+	schoolLogoUrl: 'https://www.yourschool.org/logo.png',
 }
 
 /**
