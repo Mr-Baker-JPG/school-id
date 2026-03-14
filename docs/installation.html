@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installation — School ID System</title>
+    <meta name="description" content="Step-by-step guide to install and deploy School ID System to Fly.io or your own infrastructure.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        pre {
+            background: #1e293b;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+        }
+        .code-light {
+            background: #f1f5f9;
+            padding: 0.125rem 0.375rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans antialiased">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <a href="index.html" class="flex items-center space-x-2">
+                    <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/>
+                    </svg>
+                    <span class="font-bold text-xl text-gray-900">School ID</span>
+                </a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html#features" class="text-gray-600 hover:text-gray-900 font-medium">Features</a>
+                    <a href="installation.html" class="text-indigo-600 font-medium">Installation</a>
+                    <a href="https://github.com/Mr-Baker-JPG/school-id" class="text-gray-600 hover:text-gray-900 font-medium">GitHub</a>
+                </div>
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-btn" class="text-gray-600 hover:text-gray-900">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <!-- Mobile menu -->
+            <div id="mobile-menu" class="hidden md:hidden pb-4">
+                <a href="index.html#features" class="block py-2 text-gray-600 hover:text-gray-900 font-medium">Features</a>
+                <a href="installation.html" class="block py-2 text-indigo-600 font-medium">Installation</a>
+                <a href="https://github.com/Mr-Baker-JPG/school-id" class="block py-2 text-gray-600 hover:text-gray-900 font-medium">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- Header -->
+        <div class="mb-12">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">Installation Guide</h1>
+            <p class="text-xl text-gray-600">
+                Deploy School ID System to Fly.io or your own infrastructure in minutes.
+            </p>
+        </div>
+
+        <!-- Table of Contents -->
+        <div class="bg-white rounded-xl p-6 shadow-sm mb-12">
+            <h2 class="font-semibold text-gray-900 mb-4">On This Page</h2>
+            <nav class="space-y-2">
+                <a href="#prerequisites" class="block text-gray-600 hover:text-indigo-600">Prerequisites</a>
+                <a href="#deploy-fly" class="block text-gray-600 hover:text-indigo-600">Deploy to Fly.io (Recommended)</a>
+                <a href="#deploy-self" class="block text-gray-600 hover:text-indigo-600">Self-Hosted Deployment</a>
+                <a href="#configuration" class="block text-gray-600 hover:text-indigo-600">Configuration</a>
+                <a href="#google-workspace" class="block text-gray-600 hover:text-indigo-600">Google Workspace Integration</a>
+                <a href="#local-development" class="block text-gray-600 hover:text-indigo-600">Local Development</a>
+            </nav>
+        </div>
+
+        <!-- Prerequisites -->
+        <section id="prerequisites" class="mb-16">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Prerequisites</h2>
+            <div class="bg-white rounded-xl p-6 shadow-sm">
+                <ul class="space-y-4">
+                    <li class="flex items-start">
+                        <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <div>
+                            <strong class="text-gray-900">Node.js 20+</strong>
+                            <p class="text-gray-600">Download from <a href="https://nodejs.org" class="text-indigo-600 hover:underline">nodejs.org</a></p>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <div>
+                            <strong class="text-gray-900">FACTS SIS API Credentials</strong>
+                            <p class="text-gray-600">Subscription key + API key from your FACTS account</p>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <div>
+                            <strong class="text-gray-900">S3-Compatible Storage</strong>
+                            <p class="text-gray-600">For photo storage (Tigris on Fly.io, AWS S3, MinIO, etc.)</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Deploy to Fly.io -->
+        <section id="deploy-fly" class="mb-16">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Deploy to Fly.io (Recommended)</h2>
+            <p class="text-gray-600 mb-6">
+                Fly.io provides the easiest deployment path with built-in Tigris storage for photos.
+            </p>
+
+            <div class="space-y-8">
+                <!-- Step 1 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <span class="inline-flex items-center justify-center w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full text-sm font-bold mr-2">1</span>
+                        Clone & Install
+                    </h3>
+                    <pre class="text-gray-300"><code>git clone https://github.com/Mr-Baker-JPG/school-id.git
+ncd school-id
+npm install</code></pre>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <span class="inline-flex items-center justify-center w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full text-sm font-bold mr-2">2</span>
+                        Create Fly App
+                    </h3>
+                    <pre class="text-gray-300"><code>fly launch --no-deploy</code></pre>
+                    <p class="text-gray-600 mt-3 text-sm">This creates the app but doesn't deploy yet. Choose a region close to your school.</p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <span class="inline-flex items-center justify-center w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full text-sm font-bold mr-2">3</span>
+                        Set Required Secrets
+                    </h3>
+                    <pre class="text-gray-300"><code>fly secrets set \
+  SESSION_SECRET="$(openssl rand -hex 32)" \
+  HONEYPOT_SECRET="$(openssl rand -hex 32)" \
+  INTERNAL_COMMAND_TOKEN="$(openssl rand -hex 32)" \
+  FACTS_SUBSCRIPTION_KEY="your-subscription-key" \
+  FACTS_API_KEY="your-api-key" \
+  FACTS_BASE_URL="https://api.factsmgt.com"</code></pre>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <span class="inline-flex items-center justify-center w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full text-sm font-bold mr-2">4</span>
+                        Create Storage
+                    </h3>
+                    <pre class="text-gray-300"><code>fly storage create</code></pre>
+                    <p class="text-gray-600 mt-3 text-sm">This creates a Tigris bucket and automatically sets <code class="code-light">AWS_ACCESS_KEY_ID</code>, <code class="code-light">AWS_SECRET_ACCESS_KEY</code>, <code class="code-light">AWS_ENDPOINT_URL_S3</code>, <code class="code-light">AWS_REGION</code>, and <code class="code-light">BUCKET_NAME</code>.</p>
+                </div>
+
+                <!-- Step 5 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <span class="inline-flex items-center justify-center w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full text-sm font-bold mr-2">5</span>
+                        Deploy
+                    </h3>
+                    <pre class="text-gray-300"><code>fly deploy</code></pre>
+                </div>
+
+                <!-- Step 6 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <span class="inline-flex items-center justify-center w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full text-sm font-bold mr-2">6</span>
+                        Run Setup Wizard
+                    </h3>
+                    <p class="text-gray-600 mb-4">
+                        Visit your app URL followed by <code class="code-light">/install</code> to configure:
+                    </p>
+                    <pre class="text-gray-300"><code>https://your-app.fly.dev/install</code></pre>
+                    <p class="text-gray-600 mt-3 text-sm">The wizard will guide you through school branding, admin account creation, and optional Google Workspace integration.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Self-Hosted Deployment -->
+        <section id="deploy-self" class="mb-16">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Self-Hosted Deployment</h2>
+            <p class="text-gray-600 mb-6">
+                Deploy to any Node.js hosting provider (DigitalOcean, Render, Railway, your own server).
+            </p>
+
+            <div class="space-y-8">
+                <div class="bg-white rounded-xl p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">1. Clone & Build</h3>
+                    <pre class="text-gray-300"><code>git clone https://github.com/Mr-Baker-JPG/school-id.git
+cd school-id
+npm install
+npm run build</code></pre>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">2. Configure Environment</h3>
+                    <pre class="text-gray-300"><code>cp .env.example .env</code></pre>
+                    <p class="text-gray-600 mt-3 text-sm">Edit <code class="code-light">.env</code> with your values. See Configuration section below.</p>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">3. Initialize Database</h3>
+                    <pre class="text-gray-300"><code>npx prisma migrate deploy
+npx prisma db seed</code></pre>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">4. Start Server</h3>
+                    <pre class="text-gray-300"><code>npm start</code></pre>
+                    <p class="text-gray-600 mt-3 text-sm">Then visit <code class="code-light">http://localhost:3000/install</code> to run the setup wizard.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Configuration -->
+        <section id="configuration" class="mb-16">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Configuration</h2>
+            
+            <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Required Environment Variables</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b">
+                                <th class="text-left py-2 pr-4 font-medium text-gray-900">Variable</th>
+                                <th class="text-left py-2 font-medium text-gray-900">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-600">
+                            <tr class="border-b">
+                                <td class="py-2 pr-4"><code class="code-light">SESSION_SECRET</code></td>
+                                <td class="py-2">Random string for cookie encryption</td>
+                            </tr>
+                            <tr class="border-b">
+                                <td class="py-2 pr-4"><code class="code-light">HONEYPOT_SECRET</code></td>
+                                <td class="py-2">Random string for spam protection</td>
+                            </tr>
+                            <tr class="border-b">
+                                <td class="py-2 pr-4"><code class="code-light">INTERNAL_COMMAND_TOKEN</code></td>
+                                <td class="py-2">Random string for internal API calls</td>
+                            </tr>
+                            <tr class="border-b">
+                                <td class="py-2 pr-4"><code class="code-light">FACTS_SUBSCRIPTION_KEY</code></td>
+                                <td class="py-2">Your FACTS SIS subscription key</td>
+                            </tr>
+                            <tr class="border-b">
+                                <td class="py-2 pr-4"><code class="code-light">FACTS_API_KEY</code></td>
+                                <td class="py-2">Your FACTS SIS API key</td>
+                            </tr>
+                            <tr class="border-b">
+                                <td class="py-2 pr-4"><code class="code-light">FACTS_BASE_URL</code></td>
+                                <td class="py-2">FACTS API URL (usually <code class="code-light">https://api.factsmgt.com</code>)</td>
+                            </tr>
+                            <tr class="border-b">
+                                <td class="py-2 pr-4"><code class="code-light">AWS_ACCESS_KEY_ID</code></td>
+                                <td class="py-2">S3 storage access key</td>
+                            </tr>
+                            <tr class="border-b">
+                                <td class="py-2 pr-4"><code class="code-light">AWS_SECRET_ACCESS_KEY</code></td>
+                                <td class="py-2">S3 storage secret key</td>
+                            </tr>
+                            <tr class="border-b">
+                                <td class="py-2 pr-4"><code class="code-light">AWS_ENDPOINT_URL_S3</code></td>
+                                <td class="py-2">S3 endpoint URL</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 pr-4"><code class="code-light">BUCKET_NAME</code></td>
+                                <td class="py-2">S3 bucket name for photos</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                <p class="text-blue-800 text-sm">
+                    <strong>Note:</strong> School-specific settings (name, colors, branding) are configured through the setup wizard or admin dashboard, not environment variables.
+                </p>
+            </div>
+        </section>
+
+        <!-- Google Workspace -->
+        <section id="google-workspace" class="mb-16">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Google Workspace Integration (Optional)</h2>
+            <p class="text-gray-600 mb-6">
+                Enable Google OAuth login, Gmail signature management, and automatic photo sync to Google Workspace profiles.
+            </p>
+
+            <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Setup Steps</h3>
+                <ol class="list-decimal list-inside space-y-3 text-gray-600">
+                    <li>Create a project in <a href="https://console.cloud.google.com" class="text-indigo-600 hover:underline">Google Cloud Console</a></li>
+                    <li>Enable the <strong>Google+ API</strong> and <strong>Admin SDK API</strong></li>
+                    <li>Create <strong>OAuth 2.0 credentials</strong> (for user login)</li>
+                    <li>Create a <strong>Service Account</strong> with domain-wide delegation (for signatures + photos)</li>
+                    <li>Enter credentials in the setup wizard or admin settings</li>
+                </ol>
+            </div>
+
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                <p class="text-yellow-800 text-sm">
+                    <strong>Important:</strong> Service account domain-wide delegation requires Google Workspace admin access to configure.
+                </p>
+            </div>
+        </section>
+
+        <!-- Local Development -->
+        <section id="local-development" class="mb-16">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Local Development</h2>
+            
+            <div class="bg-white rounded-xl p-6 shadow-sm">
+                <pre class="text-gray-300"><code># Clone the repository
+git clone https://github.com/Mr-Baker-JPG/school-id.git
+cd school-id
+
+# Install dependencies
+npm install
+
+# Copy environment file
+cp .env.example .env
+
+# Edit .env with your values
+
+# Initialize database
+npx prisma migrate deploy
+npx prisma db seed
+
+# Start development server
+npm run dev</code></pre>
+                <p class="text-gray-600 mt-4">
+                    Visit <code class="code-light">http://localhost:3000</code> to see the app, or <code class="code-light">http://localhost:3000/install</code> to run the setup wizard.
+                </p>
+            </div>
+
+            <div class="mt-6 grid md:grid-cols-2 gap-4">
+                <div class="bg-white rounded-xl p-6 shadow-sm">
+                    <h4 class="font-semibold text-gray-900 mb-2">Run Tests</h4>
+                    <pre class="text-gray-300 text-sm"><code>npm run test</code></pre>
+                </div>
+                <div class="bg-white rounded-xl p-6 shadow-sm">
+                    <h4 class="font-semibold text-gray-900 mb-2">Browse Database</h4>
+                    <pre class="text-gray-300 text-sm"><code>npx prisma studio</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Next Steps -->
+        <section class="bg-indigo-50 rounded-xl p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Next Steps</h2>
+            <ul class="space-y-3 text-gray-600">
+                <li class="flex items-center">
+                    <svg class="w-5 h-5 text-indigo-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                    Run the setup wizard at <code class="code-light">/install</code>
+                </li>
+                <li class="flex items-center">
+                    <svg class="w-5 h-5 text-indigo-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                    Sync students from FACTS SIS
+                </li>
+                <li class="flex items-center">
+                    <svg class="w-5 h-5 text-indigo-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                    Upload photos or sync from FACTS
+                </li>
+                <li class="flex items-center">
+                    <svg class="w-5 h-5 text-indigo-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                    Customize ID card designs in admin settings
+                </li>
+                <li class="flex items-center">
+                    <svg class="w-5 h-5 text-indigo-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                    Generate PDFs and print ID cards
+                </li>
+            </ul>
+            <div class="mt-6">
+                <a href="https://github.com/Mr-Baker-JPG/school-id" class="inline-flex items-center text-indigo-600 font-semibold hover:text-indigo-700">
+                    View on GitHub
+                    <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                </a>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-400 py-12 mt-16">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center space-x-2 mb-4 md:mb-0">
+                    <svg class="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/>
+                    </svg>
+                    <span class="font-bold text-xl text-white">School ID</span>
+                </div>
+                <p class="text-sm">
+                    &copy; 2024 School ID System. Built on the <a href="https://www.epicweb.dev/epic-stack" class="text-indigo-400 hover:text-indigo-300">Epic Stack</a>.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>
