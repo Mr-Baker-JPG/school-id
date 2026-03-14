@@ -163,6 +163,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 				schoolShortName: schoolConfig.schoolShortName,
 				logoUrl: schoolConfig.logoUrl,
 				primaryColor: schoolConfig.primaryColor,
+				googleEnabled: schoolConfig.googleEnabled,
 			},
 		},
 		{

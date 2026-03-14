@@ -14,7 +14,7 @@ import { Separator } from '#app/components/ui/separator.tsx'
 import { login, requireAnonymous } from '#app/utils/auth.server.ts'
 import {
 	ProviderConnectionForm,
-	providerNames,
+	useEnabledProviders,
 } from '#app/utils/connections.tsx'
 import { checkHoneypot } from '#app/utils/honeypot.server.ts'
 import { getErrorMessage, useIsPending } from '#app/utils/misc.tsx'
@@ -174,7 +174,7 @@ export default function LoginPage({ actionData }: Route.ComponentProps) {
 			<Separator className="my-4" />
 
 			<ul className="flex flex-col gap-5">
-				{providerNames.map((providerName) => (
+				{useEnabledProviders().map((providerName) => (
 					<li key={providerName}>
 						<ProviderConnectionForm
 							type="Login"

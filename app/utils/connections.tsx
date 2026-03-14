@@ -1,4 +1,4 @@
-import { Form } from 'react-router'
+import { Form, useRouteLoaderData } from 'react-router'
 import { z } from 'zod'
 import { Icon, type IconName } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
@@ -24,6 +24,21 @@ export const providerIcons: Record<ProviderName, React.ReactNode> = {
 	[GITHUB_PROVIDER_NAME]: <Icon name="github-logo" />,
 	[GOOGLE_PROVIDER_NAME]: <Icon name={'google-logo' as IconName} />,
 } as const
+
+/**
+ * Returns provider names filtered by feature flags.
+ * Google is only included if google_enabled is true in SchoolConfig.
+ */
+export function useEnabledProviders(): ProviderName[] {
+	const rootData = useRouteLoaderData('root') as
+		| { schoolConfig?: { googleEnabled?: boolean } }
+		| undefined
+	const googleEnabled = rootData?.schoolConfig?.googleEnabled ?? false
+	return providerNames.filter((name) => {
+		if (name === GOOGLE_PROVIDER_NAME && !googleEnabled) return false
+		return true
+	})
+}
 
 export function ProviderConnectionForm({
 	redirectTo,

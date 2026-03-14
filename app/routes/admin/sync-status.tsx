@@ -6,6 +6,7 @@ import {
 	redirect,
 	useNavigation,
 	useRevalidator,
+	useRouteLoaderData,
 } from 'react-router'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Button } from '#app/components/ui/button.tsx'
@@ -505,6 +506,7 @@ function SyncSection({
 	syncPending,
 	googleSyncPending,
 	gmailSyncPending,
+	googleEnabled = false,
 }: {
 	title: string
 	lastSync: any
@@ -515,6 +517,7 @@ function SyncSection({
 	syncPending: boolean
 	googleSyncPending: boolean
 	gmailSyncPending?: boolean
+	googleEnabled?: boolean
 }) {
 	const revalidator = useRevalidator()
 	const personLinkBase =
@@ -565,6 +568,7 @@ function SyncSection({
 						<Icon name="cloud-sync" className="size-3.5" />
 						Sync {title}
 					</StatusButton>
+					{googleEnabled && (
 					<StatusButton
 						type="button"
 						variant="secondary"
@@ -577,7 +581,8 @@ function SyncSection({
 						<Icon name="update" className="size-3.5" />
 						Google Photos
 					</StatusButton>
-					{personType === 'staff' && (
+					)}
+					{personType === 'staff' && googleEnabled && (
 						<StatusButton
 							type="button"
 							variant="outline"
@@ -885,6 +890,10 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 
 	const syncPending = useIsPending({ formAction: '/admin/sync-status' })
 	const [activeTab, setActiveTab] = useState<'staff' | 'students'>('staff')
+	const rootData = useRouteLoaderData('root') as
+		| { schoolConfig?: { googleEnabled?: boolean } }
+		| undefined
+	const googleEnabled = rootData?.schoolConfig?.googleEnabled ?? false
 
 	return (
 		<div className="font-body h-full overflow-y-auto px-6 py-6">
@@ -932,6 +941,7 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 						syncPending={syncPending}
 						googleSyncPending={syncPending}
 						gmailSyncPending={syncPending}
+						googleEnabled={googleEnabled}
 					/>
 				)}
 
@@ -945,6 +955,7 @@ export default function SyncStatusRoute({ loaderData }: Route.ComponentProps) {
 						personType="students"
 						syncPending={syncPending}
 						googleSyncPending={syncPending}
+						googleEnabled={googleEnabled}
 					/>
 				)}
 			</div>

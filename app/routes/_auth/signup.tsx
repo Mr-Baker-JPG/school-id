@@ -12,7 +12,7 @@ import { Separator } from '#app/components/ui/separator.tsx'
 import { requireAnonymous } from '#app/utils/auth.server.ts'
 import {
 	ProviderConnectionForm,
-	providerNames,
+	useEnabledProviders,
 } from '#app/utils/connections.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { sendEmail } from '#app/utils/email.server.ts'
@@ -172,7 +172,7 @@ export default function SignupRoute({ actionData }: Route.ComponentProps) {
 			</Form>
 			<Separator className="my-4" />
 			<ul className="flex flex-col gap-4 py-4">
-				{providerNames.map((providerName) => (
+				{useEnabledProviders().map((providerName) => (
 					<li key={providerName}>
 						<ProviderConnectionForm
 							type="Signup"

@@ -8,31 +8,6 @@ const STORAGE_ACCESS_KEY = process.env.AWS_ACCESS_KEY_ID
 const STORAGE_SECRET_KEY = process.env.AWS_SECRET_ACCESS_KEY
 const STORAGE_REGION = process.env.AWS_REGION
 
-// #region agent log
-fetch('http://127.0.0.1:7243/ingest/f8fd9c48-202b-4515-856c-d25a50a2f184', {
-	method: 'POST',
-	headers: { 'Content-Type': 'application/json' },
-	body: JSON.stringify({
-		location: 'storage.server.ts:9',
-		message: 'Storage env vars check',
-		data: {
-			endpoint: STORAGE_ENDPOINT
-				? `${STORAGE_ENDPOINT.substring(0, 30)}...`
-				: 'undefined',
-			bucket: STORAGE_BUCKET || 'undefined',
-			accessKeyDefined: !!STORAGE_ACCESS_KEY,
-			accessKeyLength: STORAGE_ACCESS_KEY?.length || 0,
-			secretKeyDefined: !!STORAGE_SECRET_KEY,
-			region: STORAGE_REGION || 'undefined',
-		},
-		timestamp: Date.now(),
-		sessionId: 'debug-session',
-		runId: 'initial',
-		hypothesisId: 'A',
-	}),
-}).catch(() => {})
-// #endregion
-
 async function uploadToStorage(
 	file: File | FileUpload | Buffer,
 	key: string,
@@ -79,66 +54,15 @@ async function uploadToStorage(
 	// Handle File or FileUpload
 	const { url, headers } = getSignedPutRequestInfo(file, key)
 
-	// #region agent log
-	const authHeader = headers.Authorization || headers.authorization || ''
-	const accessKeyFromAuth =
-		authHeader.match(/Credential=([^/]+)/)?.[1] || 'not found'
-	const mocksEnabled = process.env.MOCKS === 'true'
-	const isMockKey = STORAGE_ACCESS_KEY === 'mock-access-key'
-	fetch('http://127.0.0.1:7243/ingest/f8fd9c48-202b-4515-856c-d25a50a2f184', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({
-			location: 'storage.server.ts:57',
-			message: 'Before File upload - auth header check',
-			data: {
-				key,
-				url,
-				accessKeyFromAuth,
-				accessKeyMatches: accessKeyFromAuth === STORAGE_ACCESS_KEY,
-				authHeaderPrefix: authHeader.substring(0, 100),
-				mocksEnabled,
-				isMockKey,
-				storageEndpoint: STORAGE_ENDPOINT,
-				storageBucket: STORAGE_BUCKET,
-			},
-			timestamp: Date.now(),
-			sessionId: 'debug-session',
-			runId: 'initial',
-			hypothesisId: 'B',
-		}),
-	}).catch(() => {})
-	// #endregion
-
 	// Warn if using mock credentials but MSW might not be intercepting
+	const isMockKey = STORAGE_ACCESS_KEY === 'mock-access-key'
+	const mocksEnabled = process.env.MOCKS === 'true'
 	if (isMockKey && !mocksEnabled) {
 		console.warn(
 			`⚠️ Storage: Using mock credentials (${STORAGE_ACCESS_KEY}) but MOCKS=false. ` +
 				`MSW may not intercept requests. If upload fails, ensure MOCKS=true is set.`,
 		)
 	}
-
-	// #region agent log
-	fetch('http://127.0.0.1:7243/ingest/f8fd9c48-202b-4515-856c-d25a50a2f184', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({
-			location: 'storage.server.ts:111',
-			message: 'About to call fetch for storage upload',
-			data: {
-				url,
-				key,
-				fileSize: file instanceof File ? file.size : 'unknown',
-				fileType: file instanceof File ? file.type : 'unknown',
-				headersKeys: Object.keys(headers),
-			},
-			timestamp: Date.now(),
-			sessionId: 'debug-session',
-			runId: 'initial',
-			hypothesisId: 'E',
-		}),
-	}).catch(() => {})
-	// #endregion
 
 	// Convert File to ArrayBuffer for MSW compatibility
 	// MSW may not intercept requests with ReadableStream bodies properly
@@ -173,7 +97,7 @@ async function uploadToStorage(
 			body,
 			signal: controller.signal,
 		})
-		clearTimeout(timeoutId)
+	clearTimeout(timeoutId)
 	} catch (error) {
 		clearTimeout(timeoutId)
 		if (error instanceof Error && error.name === 'AbortError') {
@@ -185,65 +109,11 @@ async function uploadToStorage(
 		throw error
 	}
 
-	// #region agent log
-	fetch('http://127.0.0.1:7243/ingest/f8fd9c48-202b-4515-856c-d25a50a2f184', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({
-			location: 'storage.server.ts:130',
-			message: 'Fetch completed for storage upload',
-			data: {
-				url,
-				key,
-				status: uploadResponse.status,
-				statusText: uploadResponse.statusText,
-				ok: uploadResponse.ok,
-			},
-			timestamp: Date.now(),
-			sessionId: 'debug-session',
-			runId: 'initial',
-			hypothesisId: 'E',
-		}),
-	}).catch(() => {})
-	// #endregion
-
 	if (!uploadResponse.ok) {
 		const errorMessage = `Failed to upload file to storage. Server responded with ${uploadResponse.status}: ${uploadResponse.statusText}`
 		const errorBody = await uploadResponse
 			.text()
 			.catch(() => 'Unable to read error body')
-
-		// #region agent log
-		const authHeader = headers.Authorization || headers.authorization || ''
-		const accessKeyFromAuth =
-			authHeader.match(/Credential=([^/]+)/)?.[1] || 'not found'
-		const mocksEnabled = process.env.MOCKS === 'true'
-		const isMockKey = STORAGE_ACCESS_KEY === 'mock-access-key'
-		fetch('http://127.0.0.1:7243/ingest/f8fd9c48-202b-4515-856c-d25a50a2f184', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				location: 'storage.server.ts:68',
-				message: 'Upload failed - error details',
-				data: {
-					status: uploadResponse.status,
-					statusText: uploadResponse.statusText,
-					errorBody: errorBody.substring(0, 500),
-					key,
-					url,
-					accessKeyFromAuth,
-					accessKeyMatches: accessKeyFromAuth === STORAGE_ACCESS_KEY,
-					mocksEnabled,
-					isMockKey,
-					nodeEnv: process.env.NODE_ENV,
-				},
-				timestamp: Date.now(),
-				sessionId: 'debug-session',
-				runId: 'initial',
-				hypothesisId: 'D',
-			}),
-		}).catch(() => {})
-		// #endregion
 
 		// Provide helpful error message when using mock credentials but MSW isn't intercepting
 		if (isMockKey && !mocksEnabled && uploadResponse.status === 403) {
@@ -310,6 +180,31 @@ export async function uploadEmployeePhoto(
 
 	const timestamp = Date.now()
 	const key = `employees/${employeeId}/photos/${timestamp}-${fileId}.${fileExtension}`
+	return uploadToStorage(file, key, contentType)
+}
+
+export async function uploadSchoolAsset(
+	assetType: 'logo' | 'crest',
+	file: File | FileUpload | Buffer,
+	contentType: string = 'image/png',
+) {
+	const fileId = createId()
+	let fileExtension = 'png'
+
+	if (Buffer.isBuffer(file)) {
+		if (contentType.includes('jpeg') || contentType.includes('jpg')) {
+			fileExtension = 'jpg'
+		} else if (contentType.includes('svg')) {
+			fileExtension = 'svg'
+		} else if (contentType.includes('png')) {
+			fileExtension = 'png'
+		}
+	} else {
+		fileExtension = file.name.split('.').pop() || 'png'
+	}
+
+	const timestamp = Date.now()
+	const key = `school/${assetType}/${timestamp}-${fileId}.${fileExtension}`
 	return uploadToStorage(file, key, contentType)
 }
 
@@ -433,31 +328,6 @@ function getBaseSignedRequestInfo({
 			`Signature=${signature}`,
 		].join(', '),
 	}
-
-	// #region agent log
-	fetch('http://127.0.0.1:7243/ingest/f8fd9c48-202b-4515-856c-d25a50a2f184', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({
-			location: 'storage.server.ts:220',
-			message: 'Signature generation complete',
-			data: {
-				key,
-				accessKey: STORAGE_ACCESS_KEY || 'undefined',
-				accessKeyLength: STORAGE_ACCESS_KEY?.length || 0,
-				credentialScope,
-				algorithm,
-				url,
-				secretKeyDefined: !!STORAGE_SECRET_KEY,
-				secretKeyLength: STORAGE_SECRET_KEY?.length || 0,
-			},
-			timestamp: Date.now(),
-			sessionId: 'debug-session',
-			runId: 'initial',
-			hypothesisId: 'C',
-		}),
-	}).catch(() => {})
-	// #endregion
 
 	return { url, baseHeaders }
 }

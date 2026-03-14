@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { useRouteLoaderData } from 'react-router'
 import { type IconName } from '#app/components/ui/icon.tsx'
 import { BrandHeader } from '../components/BrandHeader.tsx'
 import {
@@ -27,6 +28,10 @@ interface NavGroup {
 export function AdminShell({ children, headerActions }: AdminShellProps) {
 	const user = useOptionalUser()
 	const isAdmin = user ? userHasRole(user, 'admin') : false
+	const rootData = useRouteLoaderData('root') as
+		| { schoolConfig?: { googleEnabled?: boolean } }
+		| undefined
+	const googleEnabled = rootData?.schoolConfig?.googleEnabled ?? false
 
 	const personalNavItems: NavItem[] = [
 		{ to: '/employee/id', label: 'My ID', icon: 'avatar' },
@@ -40,15 +45,40 @@ export function AdminShell({ children, headerActions }: AdminShellProps) {
 				{ to: '/admin/print', label: 'Print IDs', icon: 'file-text' },
 				{ to: '/admin/users', label: 'Users', icon: 'lock-closed' },
 				{ to: '/admin/sync-status', label: 'Sync Status', icon: 'cloud-sync' },
-				{
-					to: '/admin/signatures/templates',
-					label: 'Signatures',
-					icon: 'mail',
-				},
+				...(googleEnabled
+					? [
+							{
+								to: '/admin/signatures/templates',
+								label: 'Signatures',
+								icon: 'mail' as IconName,
+							},
+						]
+					: []),
 				{ to: '/admin/card-designs', label: 'Card Designs', icon: 'pencil-1' },
 				{ to: '/admin/cache', label: 'Cache', icon: 'settings' },
 			]
 		: []
+
+	// Build nav groups dynamically based on feature flags
+	const dashboardItem = adminNavItems.find((i) => i.to === '/admin')
+	const employeesItem = adminNavItems.find((i) => i.to === '/admin/employees')
+	const studentsItem = adminNavItems.find((i) => i.to === '/admin/students')
+	const printItem = adminNavItems.find((i) => i.to === '/admin/print')
+	const signaturesItem = adminNavItems.find((i) =>
+		i.to.includes('signatures'),
+	)
+	const cardDesignsItem = adminNavItems.find(
+		(i) => i.to === '/admin/card-designs',
+	)
+	const usersItem = adminNavItems.find((i) => i.to === '/admin/users')
+	const syncItem = adminNavItems.find((i) => i.to === '/admin/sync-status')
+	const cacheItem = adminNavItems.find((i) => i.to === '/admin/cache')
+
+	const toolsItems: NavItem[] = [
+		printItem,
+		signaturesItem,
+		cardDesignsItem,
+	].filter((i): i is NavItem => !!i)
 
 	const navGroups: NavGroup[] = [
 		{ label: 'Personal', items: personalNavItems },
@@ -56,27 +86,17 @@ export function AdminShell({ children, headerActions }: AdminShellProps) {
 			? [
 					{
 						label: 'People',
-						items: [
-							adminNavItems[0]!, // Dashboard
-							adminNavItems[1]!, // Employees
-							adminNavItems[2]!, // Students
-						],
+						items: [dashboardItem!, employeesItem!, studentsItem!],
 					},
 					{
 						label: 'Tools',
-						items: [
-							adminNavItems[3]!, // Print IDs
-							adminNavItems[6]!, // Signatures
-							adminNavItems[7]!, // Card Designs
-						],
+						items: toolsItems,
 					},
 					{
 						label: 'System',
-						items: [
-							adminNavItems[4]!, // Users
-							adminNavItems[5]!, // Sync Status
-							adminNavItems[8]!, // Cache
-						],
+						items: [usersItem!, syncItem!, cacheItem!].filter(
+							(i): i is NavItem => !!i,
+						),
 					},
 				]
 			: []),
