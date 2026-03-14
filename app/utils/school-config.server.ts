@@ -187,14 +187,14 @@ export async function setSchoolConfigValues(
 }
 
 /**
- * Check if the school has been configured (wizard has been run)
+ * Check if initial setup wizard has been completed
  */
-export async function isSchoolConfigured(): Promise<boolean> {
+export async function isSetupComplete(): Promise<boolean> {
 	try {
 		const setting = await prisma.systemSetting.findUnique({
-			where: { key: 'school_name' },
+			where: { key: 'setup_complete' },
 		})
-		return setting !== null && setting.value !== ''
+		return setting?.value === 'true'
 	} catch {
 		return false
 	}

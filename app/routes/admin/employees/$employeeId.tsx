@@ -1,7 +1,7 @@
 import { invariantResponse } from '@epic-web/invariant'
 import { Img } from 'openimg/react'
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
-import { Form, Link } from 'react-router'
+import { Form, Link, useRouteLoaderData } from 'react-router'
 import {
 	IDCardFrontPreview,
 	IDCardBackPreview,
@@ -257,6 +257,16 @@ export default function AdminEmployeeDetailRoute({
 		formAction: `/admin/employees/${employee.id}`,
 	})
 
+	// Check if Google Workspace is enabled
+	const rootData = useRouteLoaderData('root') as
+		| { schoolConfig?: { googleEnabled?: boolean } }
+		| undefined
+	const googleEnabled = rootData?.schoolConfig?.googleEnabled ?? false
+
+	// Dynamic section numbering — skip Gmail section when Google is off
+	let sectionCounter = 2 // starts after 01 and 02
+	const nextSection = () => String(++sectionCounter).padStart(2, '0')
+
 	// Determine personType based on job title
 	const personType = getEmployeePersonType(employee.department)
 
@@ -408,9 +418,11 @@ export default function AdminEmployeeDetailRoute({
 				</div>
 			</div>
 
-			{/* ── 03 GMAIL SIGNATURE ── */}
-			<div className="mt-10">
-				<SectionTitle number="03">Gmail Signature</SectionTitle>
+			{/* ── 03 GMAIL SIGNATURE (only when Google Workspace is enabled) ── */}
+			{googleEnabled && (
+				<>
+					<div className="mt-10">
+						<SectionTitle number={nextSection()}>Gmail Signature</SectionTitle>
 				{employee.employeeId?.gmailSignature ? (
 					<div>
 						<p className="mb-2 font-mono text-[0.68rem] text-muted-foreground">
@@ -483,12 +495,14 @@ export default function AdminEmployeeDetailRoute({
 					</p>
 				)}
 			</div>
+				</>
+			)}
 
 			{/* ── GOLD RULE ── */}
 			<div className="my-10 h-px bg-gradient-to-r from-transparent via-brand-gold to-transparent" />
 
-			{/* ── 04 ID CARD PREVIEW ── */}
-			<SectionTitle number="04">ID Card Preview</SectionTitle>
+			{/* ── ID CARD PREVIEW ── */}
+			<SectionTitle number={nextSection()}>ID Card Preview</SectionTitle>
 			<div className="grid gap-6 md:grid-cols-2">
 				<div className="border border-border bg-card p-5 shadow-sm">
 					<IdPreviewCard

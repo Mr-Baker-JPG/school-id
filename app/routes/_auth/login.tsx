@@ -1,23 +1,15 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
-import { startAuthentication } from '@simplewebauthn/browser'
-import { useOptimistic, useState, useTransition } from 'react'
-import { data, Form, Link, useNavigate, useSearchParams } from 'react-router'
+import { data, Form } from 'react-router'
 import { HoneypotInputs } from 'remix-utils/honeypot/react'
 import { z } from 'zod'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
-import { CheckboxField, ErrorList, Field } from '#app/components/forms.tsx'
-import { Icon } from '#app/components/ui/icon.tsx'
+import { ErrorList, Field } from '#app/components/forms.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
-import { Separator } from '#app/components/ui/separator.tsx'
 import { login, requireAnonymous } from '#app/utils/auth.server.ts'
-import {
-	ProviderConnectionForm,
-	useEnabledProviders,
-} from '#app/utils/connections.tsx'
 import { checkHoneypot } from '#app/utils/honeypot.server.ts'
-import { getErrorMessage, useIsPending } from '#app/utils/misc.tsx'
+import { useIsPending } from '#app/utils/misc.tsx'
 import { PasswordSchema, UsernameSchema } from '#app/utils/user-validation.ts'
 import { type Route } from './+types/login.ts'
 import { handleNewSession } from './login.server.ts'
@@ -30,12 +22,7 @@ const LoginFormSchema = z.object({
 	username: UsernameSchema,
 	password: PasswordSchema,
 	redirectTo: z.string().optional(),
-	remember: z.boolean().optional(),
 })
-
-const AuthenticationOptionsSchema = z.object({
-	options: z.object({ challenge: z.string() }),
-}) satisfies z.ZodType<{ options: PublicKeyCredentialRequestOptionsJSON }>
 
 export async function loader({ request }: Route.LoaderArgs) {
 	await requireAnonymous(request)
@@ -72,25 +59,22 @@ export async function action({ request }: Route.ActionArgs) {
 		)
 	}
 
-	const { session, remember, redirectTo } = submission.value
+	const { session, redirectTo } = submission.value
 
 	return handleNewSession({
 		request,
 		session,
-		remember: remember ?? false,
+		remember: true,
 		redirectTo,
 	})
 }
 
 export default function LoginPage({ actionData }: Route.ComponentProps) {
 	const isPending = useIsPending()
-	const [searchParams] = useSearchParams()
-	const redirectTo = searchParams.get('redirectTo')
 
 	const [form, fields] = useForm({
 		id: 'login-form',
 		constraint: getZodConstraint(LoginFormSchema),
-		defaultValue: { redirectTo },
 		lastResult: actionData?.result,
 		onValidate({ formData }) {
 			return parseWithZod(formData, { schema: LoginFormSchema })
@@ -99,16 +83,19 @@ export default function LoginPage({ actionData }: Route.ComponentProps) {
 	})
 
 	return (
-		<div className="flex flex-col gap-6">
-			<div className="flex flex-col gap-3 text-center">
-				<h1 className="text-h1">Welcome back!</h1>
-				<p className="text-body-md text-muted-foreground">
-					Please enter your details.
+		<div className="flex flex-col gap-5">
+			<div className="text-center">
+				<h2 className="font-display text-base font-semibold tracking-wide text-primary">
+					Sign In
+				</h2>
+				<p className="mt-1 font-mono text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground/60">
+					Enter your credentials
 				</p>
 			</div>
 
 			<Form method="POST" {...getFormProps(form)}>
 				<HoneypotInputs />
+
 				<Field
 					labelProps={{ children: 'Username' }}
 					inputProps={{
@@ -116,6 +103,7 @@ export default function LoginPage({ actionData }: Route.ComponentProps) {
 						autoFocus: true,
 						className: 'lowercase',
 						autoComplete: 'username',
+						placeholder: 'your.username',
 					}}
 					errors={fields.username.errors}
 				/>
@@ -131,167 +119,30 @@ export default function LoginPage({ actionData }: Route.ComponentProps) {
 					errors={fields.password.errors}
 				/>
 
-				<div className="flex justify-between">
-					<CheckboxField
-						labelProps={{
-							htmlFor: fields.remember.id,
-							children: 'Remember me',
-						}}
-						buttonProps={getInputProps(fields.remember, {
-							type: 'checkbox',
-						})}
-						errors={fields.remember.errors}
-					/>
-					<div>
-						<Link to="/forgot-password" className="text-body-xs font-semibold">
-							Forgot password?
-						</Link>
-					</div>
-				</div>
-
-				<input {...getInputProps(fields.redirectTo, { type: 'hidden' })} />
+				<input
+					{...getInputProps(fields.redirectTo, { type: 'hidden' })}
+				/>
 				<ErrorList errors={form.errors} id={form.errorId} />
 
-				<div className="flex items-center justify-between gap-6 pt-3">
+				<div className="pt-2">
 					<StatusButton
 						className="w-full"
-						status={isPending ? 'pending' : (form.status ?? 'idle')}
+						status={
+							isPending ? 'pending' : (form.status ?? 'idle')
+						}
 						type="submit"
 						disabled={isPending}
 					>
-						Log in
+						Log In
 					</StatusButton>
 				</div>
 			</Form>
-
-			<div className="flex flex-col gap-5">
-				<PasskeyLogin
-					redirectTo={redirectTo}
-					remember={fields.remember.value === 'on'}
-				/>
-			</div>
-
-			<Separator className="my-4" />
-
-			<ul className="flex flex-col gap-5">
-				{useEnabledProviders().map((providerName) => (
-					<li key={providerName}>
-						<ProviderConnectionForm
-							type="Login"
-							providerName={providerName}
-							redirectTo={redirectTo}
-						/>
-					</li>
-				))}
-			</ul>
-
-			<div className="flex items-center justify-center gap-2 pt-6">
-				<span className="text-muted-foreground">New here?</span>
-				<Link
-					to={
-						redirectTo
-							? `/signup?redirectTo=${encodeURIComponent(redirectTo)}`
-							: '/signup'
-					}
-					className="text-primary hover:underline"
-				>
-					Create an account
-				</Link>
-			</div>
 		</div>
 	)
 }
 
-const VerificationResponseSchema = z.discriminatedUnion('status', [
-	z.object({
-		status: z.literal('success'),
-		location: z.string(),
-	}),
-	z.object({
-		status: z.literal('error'),
-		error: z.string(),
-	}),
-])
-
-function PasskeyLogin({
-	redirectTo,
-	remember,
-}: {
-	redirectTo: string | null
-	remember: boolean
-}) {
-	const [isPending] = useTransition()
-	const [error, setError] = useState<string | null>(null)
-	const [passkeyMessage, setPasskeyMessage] = useOptimistic<string | null>(
-		'Login with a passkey',
-	)
-	const navigate = useNavigate()
-
-	async function handlePasskeyLogin() {
-		try {
-			setPasskeyMessage('Generating Authentication Options')
-			// Get authentication options from the server
-			const optionsResponse = await fetch('/webauthn/authentication')
-			const json = await optionsResponse.json()
-			const { options } = AuthenticationOptionsSchema.parse(json)
-
-			setPasskeyMessage('Requesting your authorization')
-			const authResponse = await startAuthentication({ optionsJSON: options })
-			setPasskeyMessage('Verifying your passkey')
-
-			// Verify the authentication with the server
-			const verificationResponse = await fetch('/webauthn/authentication', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ authResponse, remember, redirectTo }),
-			})
-
-			const verificationJson = await verificationResponse.json().catch(() => ({
-				status: 'error',
-				error: 'Unknown error',
-			}))
-
-			const parsedResult =
-				VerificationResponseSchema.safeParse(verificationJson)
-			if (!parsedResult.success) {
-				throw new Error(parsedResult.error.message)
-			} else if (parsedResult.data.status === 'error') {
-				throw new Error(parsedResult.data.error)
-			}
-			const { location } = parsedResult.data
-
-			setPasskeyMessage("You're logged in! Navigating...")
-			await navigate(location ?? '/')
-		} catch (e) {
-			const errorMessage = getErrorMessage(e)
-			setError(`Failed to authenticate with passkey: ${errorMessage}`)
-		}
-	}
-
-	return (
-		<form action={handlePasskeyLogin}>
-			<StatusButton
-				id="passkey-login-button"
-				aria-describedby="passkey-login-button-error"
-				className="w-full"
-				status={isPending ? 'pending' : error ? 'error' : 'idle'}
-				type="submit"
-				disabled={isPending}
-			>
-				<span className="inline-flex items-center gap-1.5">
-					<Icon name="passkey" />
-					<span>{passkeyMessage}</span>
-				</span>
-			</StatusButton>
-			<div className="mt-2">
-				<ErrorList errors={[error]} id="passkey-login-button-error" />
-			</div>
-		</form>
-	)
-}
-
 export const meta: Route.MetaFunction = () => {
-	return [{ title: 'Login to Epic Notes' }]
+	return [{ title: 'Sign In' }]
 }
 
 export function ErrorBoundary() {

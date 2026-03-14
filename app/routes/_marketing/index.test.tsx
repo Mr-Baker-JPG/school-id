@@ -24,7 +24,7 @@ test('Landing page displays brief system information', () => {
 	).toBeInTheDocument()
 })
 
-test('Landing page displays embedded login form', () => {
+test('Landing page displays login button when Google is not enabled', () => {
 	const App = createRoutesStub([
 		{
 			path: '/',
@@ -34,9 +34,10 @@ test('Landing page displays embedded login form', () => {
 
 	render(<App initialEntries={['/']} />)
 
-	// Check for Google OAuth login button
-	const loginButton = screen.getByRole('button', { name: /login with google/i })
-	expect(loginButton).toBeInTheDocument()
+	// When Google is not enabled, show a standard login link
+	const loginLink = screen.getByRole('link', { name: /log in/i })
+	expect(loginLink).toBeInTheDocument()
+	expect(loginLink).toHaveAttribute('href', '/login')
 })
 
 test('Landing page has correct meta title', () => {

@@ -15,7 +15,7 @@ import { Icon } from '#app/components/ui/icon.tsx'
 import { Dialog, DialogContent } from '#app/components/ui/dialog.tsx'
 import { cn } from '#app/utils/misc.tsx'
 import { useOptionalUser } from '#app/utils/user.ts'
-import { APP_NAME, HEADER_LOGO_SRC, headerAccent, LOGO_SRC } from '../brand.ts'
+import { APP_NAME, CREST_SRC, headerAccent } from '../brand.ts'
 import { type loader as rootLoader } from '#app/root.tsx'
 
 interface BrandHeaderProps {
@@ -53,6 +53,11 @@ export function BrandHeader({
 	const formRef = React.useRef<HTMLFormElement>(null)
 	const [settingsOpen, setSettingsOpen] = React.useState(false)
 	const settingsFetcher = useFetcher()
+	const rootData = useRouteLoaderData<typeof rootLoader>('root')
+	const crestSrc = rootData?.schoolConfig?.crestUrl || CREST_SRC
+	const appName = rootData?.schoolConfig?.schoolShortName
+		? `${rootData.schoolConfig.schoolShortName} ID System`
+		: APP_NAME
 
 	// Fetch settings data when modal opens
 	React.useEffect(() => {
@@ -74,15 +79,15 @@ export function BrandHeader({
 					<Link to={homePath} className="flex items-center gap-3">
 						<div className="flex size-9 items-center justify-center rounded-full bg-[#F5F2EB] shadow-sm">
 							<Img
-								src={LOGO_SRC}
-								alt={APP_NAME}
+								src={crestSrc}
+								alt={appName}
 								className="h-7 w-auto object-contain"
 								width={64}
 								height={64}
 							/>
 						</div>
 						<span className="font-display text-sm font-semibold tracking-wide text-brand-gold md:text-base">
-							{APP_NAME}
+							{appName}
 						</span>
 					</Link>
 

@@ -22,6 +22,7 @@ import { Label } from '#app/components/ui/label.tsx'
 import { Separator } from '#app/components/ui/separator.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { prisma } from '#app/utils/db.server.ts'
+import { invalidateFactsConfigCache } from '#app/utils/facts-api.server.ts'
 import { checkHoneypot } from '#app/utils/honeypot.server.ts'
 import { useIsPending } from '#app/utils/misc.tsx'
 import {
@@ -34,6 +35,7 @@ import {
 	setSchoolConfigValues,
 	invalidateSchoolConfigCache,
 } from '#app/utils/school-config.server.ts'
+import { GoogleWorkspaceHelp } from '#app/ui/components/GoogleWorkspaceHelp.tsx'
 import { type Route } from './+types/install.ts'
 import bcrypt from 'bcryptjs'
 
@@ -183,6 +185,17 @@ export async function action({ request }: Route.ActionArgs) {
 		}
 
 		const hashedPassword = await bcrypt.hash(password, 10)
+		// Ensure required roles exist (may not if DB was created without seed data)
+		await prisma.role.upsert({
+			where: { name: 'user' },
+			update: {},
+			create: { name: 'user' },
+		})
+		await prisma.role.upsert({
+			where: { name: 'admin' },
+			update: {},
+			create: { name: 'admin' },
+		})
 		await prisma.user.create({
 			data: {
 				email: email.toLowerCase(),
@@ -214,6 +227,7 @@ export async function action({ request }: Route.ActionArgs) {
 			facts_api_key: v.factsApiKey,
 			facts_base_url: v.factsBaseUrl,
 		})
+		invalidateFactsConfigCache()
 		return data({ step: 'facts', result: submission.reply(), success: true })
 	}
 
@@ -247,10 +261,11 @@ export async function action({ request }: Route.ActionArgs) {
 		// Mark setup as complete
 		await setSchoolConfigValues({ setup_complete: 'true' })
 		invalidateSchoolConfigCache()
-		return redirectWithToast('/admin', {
+		return redirectWithToast('/login', {
 			type: 'success',
 			title: 'Setup Complete!',
-			description: 'Your School ID system is ready to use.',
+			description:
+				'Your School ID system is ready. Please log in to continue.',
 		})
 	}
 
@@ -896,6 +911,37 @@ function FactsStep({
 				</p>
 			</div>
 
+			<div className="rounded-md border border-blue-200 bg-blue-50/50 px-4 py-3 dark:border-blue-900 dark:bg-blue-950/30">
+				<p className="text-body-sm font-medium text-blue-900 dark:text-blue-300">
+					Need to set up your FACTS API?
+				</p>
+				<ol className="mt-1.5 list-decimal ml-4 space-y-1 text-xs text-blue-800 dark:text-blue-400">
+					<li>
+						<a
+							href="https://developers.factsmgt.com/sign-up"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="font-medium underline hover:no-underline"
+						>
+							Sign up for a FACTS Developer account
+						</a>{' '}
+						to get your API credentials.
+					</li>
+					<li>
+						Follow the{' '}
+						<a
+							href="https://www.nbshubhelp.com/FACTS_SIS/System/API_Configuration"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="font-medium underline hover:no-underline"
+						>
+							FACTS API Configuration guide
+						</a>{' '}
+						to enable API access in your FACTS SIS.
+					</li>
+				</ol>
+			</div>
+
 			<Form
 				ref={formRef}
 				method="POST"
@@ -1014,12 +1060,15 @@ function GoogleStep({
 
 	return (
 		<div className="flex flex-col gap-4">
-			<div>
-				<h2 className="text-h3 mb-1">Google Workspace</h2>
-				<p className="text-body-sm text-muted-foreground">
-					Optional. Enable Google OAuth login, Gmail signature
-					management, and photo sync to Google Workspace.
-				</p>
+			<div className="flex items-start justify-between gap-4">
+				<div>
+					<h2 className="text-h3 mb-1">Google Workspace</h2>
+					<p className="text-body-sm text-muted-foreground">
+						Optional. Enable Google OAuth login, Gmail signature
+						management, and photo sync to Google Workspace.
+					</p>
+				</div>
+				<GoogleWorkspaceHelp />
 			</div>
 
 			<Form

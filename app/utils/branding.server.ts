@@ -17,6 +17,10 @@ export interface BrandingConfig {
 	 */
 	logoUrl?: string
 	/**
+	 * URL to school crest image
+	 */
+	crestUrl?: string
+	/**
 	 * Primary brand color (hex format, e.g., "#1a1a1a")
 	 */
 	primaryColor: string
@@ -62,6 +66,7 @@ export function brandingFromSchoolConfig(config: SchoolConfig): BrandingConfig {
 	return {
 		schoolName: config.schoolName,
 		logoUrl: config.logoUrl,
+		crestUrl: config.crestUrl,
 		primaryColor: config.primaryColor,
 		secondaryColor: config.secondaryColor,
 		accentColor: config.accentColor,

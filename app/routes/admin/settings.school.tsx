@@ -1,4 +1,5 @@
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
+import { parseFormData } from '@mjackson/form-data-parser'
 import { useState, useRef } from 'react'
 import { data, Form, useActionData, useNavigation } from 'react-router'
 import { z } from 'zod'
@@ -12,13 +13,16 @@ import { StatusButton } from '#app/components/ui/status-button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { PageTitle } from '#app/ui/components/PageTitle.tsx'
+import { GoogleWorkspaceHelp } from '#app/ui/components/GoogleWorkspaceHelp.tsx'
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
+import { invalidateFactsConfigCache } from '#app/utils/facts-api.server.ts'
 import {
 	setSchoolConfigValues,
 	invalidateSchoolConfigCache,
 	getSchoolConfig,
 } from '#app/utils/school-config.server.ts'
+import { uploadSchoolAsset } from '#app/utils/storage.server.ts'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { type Route } from './+types/settings.school.ts'
 
@@ -121,32 +125,63 @@ export async function loader({ request }: Route.LoaderArgs) {
 export async function action({ request }: Route.ActionArgs) {
 	await requireUserWithRole(request, 'admin')
 
-	const formData = await request.formData()
-	const section = formData.get('section')
+	// Clone request to peek at the section field first
+	const clonedRequest = request.clone()
+	const peekFormData = await clonedRequest.formData()
+	const section = peekFormData.get('section')
 
 	if (section === 'branding') {
-		const submission = parseWithZod(formData, {
-			schema: SectionSchema.options[0],
+		const MAX_FILE_SIZE = 1024 * 1024 * 5 // 5MB
+		const formData = await parseFormData(request, {
+			maxFileSize: MAX_FILE_SIZE,
 		})
-		if (submission.status !== 'success') {
+
+		const schoolName = formData.get('schoolName') as string
+		const schoolShortName = formData.get('schoolShortName') as string
+		const addressLine1 = (formData.get('addressLine1') as string) || ''
+		const addressLine2 = (formData.get('addressLine2') as string) || ''
+		const phone = (formData.get('phone') as string) || ''
+		const emailDomain = (formData.get('emailDomain') as string) || ''
+		const schoolWebsite = (formData.get('schoolWebsite') as string) || ''
+		const primaryColor = formData.get('primaryColor') as string
+		const secondaryColor = formData.get('secondaryColor') as string
+		const accentColor = formData.get('accentColor') as string
+
+		if (!schoolName || !schoolShortName) {
 			return data(
-				{ section: 'branding', result: submission.reply(), success: false },
+				{ section: 'branding', result: null, success: false },
 				{ status: 400 },
 			)
 		}
-		const v = submission.value
-		await setSchoolConfigValues({
-			school_name: v.schoolName,
-			school_short_name: v.schoolShortName,
-			school_address_line1: v.addressLine1 || '',
-			school_address_line2: v.addressLine2 || '',
-			school_phone: v.phone || '',
-			school_email_domain: v.emailDomain || '',
-			school_website: v.schoolWebsite || '',
-			school_primary_color: v.primaryColor,
-			school_secondary_color: v.secondaryColor,
-			school_accent_color: v.accentColor,
-		})
+
+		const configValues: Record<string, string> = {
+			school_name: schoolName,
+			school_short_name: schoolShortName,
+			school_address_line1: addressLine1,
+			school_address_line2: addressLine2,
+			school_phone: phone,
+			school_email_domain: emailDomain,
+			school_website: schoolWebsite,
+			school_primary_color: primaryColor,
+			school_secondary_color: secondaryColor,
+			school_accent_color: accentColor,
+		}
+
+		// Handle logo upload
+		const logoFile = formData.get('logoFile')
+		if (logoFile instanceof File && logoFile.size > 0) {
+			const logoKey = await uploadSchoolAsset('logo', logoFile, logoFile.type)
+			configValues.school_logo_url = `/resources/images?objectKey=${encodeURIComponent(logoKey)}`
+		}
+
+		// Handle crest upload
+		const crestFile = formData.get('crestFile')
+		if (crestFile instanceof File && crestFile.size > 0) {
+			const crestKey = await uploadSchoolAsset('crest', crestFile, crestFile.type)
+			configValues.school_crest_url = `/resources/images?objectKey=${encodeURIComponent(crestKey)}`
+		}
+
+		await setSchoolConfigValues(configValues)
 		invalidateSchoolConfigCache()
 		return redirectWithToast('/admin/settings/school', {
 			type: 'success',
@@ -155,7 +190,10 @@ export async function action({ request }: Route.ActionArgs) {
 		})
 	}
 
-	if (section === 'facts') {
+	// For non-branding sections, use standard formData parsing
+	const formData = await request.formData()
+
+	if (formData.get('section') === 'facts') {
 		const submission = parseWithZod(formData, {
 			schema: SectionSchema.options[1],
 		})
@@ -172,6 +210,7 @@ export async function action({ request }: Route.ActionArgs) {
 			facts_base_url: v.factsBaseUrl,
 		})
 		invalidateSchoolConfigCache()
+		invalidateFactsConfigCache()
 		return redirectWithToast('/admin/settings/school', {
 			type: 'success',
 			title: 'FACTS Settings Updated',
@@ -179,7 +218,7 @@ export async function action({ request }: Route.ActionArgs) {
 		})
 	}
 
-	if (section === 'google') {
+	if (formData.get('section') === 'google') {
 		const submission = parseWithZod(formData, {
 			schema: SectionSchema.options[2],
 		})
@@ -278,6 +317,9 @@ function BrandingSection({
 	isPending: boolean
 	actionData: any
 }) {
+	const [logoPreview, setLogoPreview] = useState<string | null>(null)
+	const [crestPreview, setCrestPreview] = useState<string | null>(null)
+
 	return (
 		<Card>
 			<div className="p-6">
@@ -286,15 +328,37 @@ function BrandingSection({
 						School Branding
 					</h2>
 					<p className="text-body-sm text-muted-foreground">
-						Name, contact info, and brand colors shown on ID cards and
-						throughout the system.
+						Name, contact info, logo, crest, and brand colors shown on ID
+						cards and throughout the system.
 					</p>
 				</div>
 
-				<Form method="POST">
+				<Form method="POST" encType="multipart/form-data">
 					<input type="hidden" name="section" value="branding" />
 
 					<div className="space-y-3">
+						{/* Logo & Crest Uploads */}
+						<div className="grid grid-cols-2 gap-4">
+							<ImageUploadField
+								id="logoFile"
+								label="School Logo"
+								currentSrc={schoolConfig.logoUrl}
+								previewSrc={logoPreview}
+								onPreviewChange={setLogoPreview}
+								hint="Used on ID cards and headers"
+							/>
+							<ImageUploadField
+								id="crestFile"
+								label="School Crest"
+								currentSrc={schoolConfig.crestUrl}
+								previewSrc={crestPreview}
+								onPreviewChange={setCrestPreview}
+								hint="Used on official documents"
+							/>
+						</div>
+
+						<Separator className="my-2" />
+
 						<div className="grid grid-cols-2 gap-3">
 							<div>
 								<Label htmlFor="schoolName">School Name *</Label>
@@ -471,6 +535,37 @@ function FactsSection({
 					</p>
 				</div>
 
+				<div className="mb-4 rounded-md border border-blue-200 bg-blue-50/50 px-4 py-3 dark:border-blue-900 dark:bg-blue-950/30">
+					<p className="text-body-sm font-medium text-blue-900 dark:text-blue-300">
+						Need to set up your FACTS API?
+					</p>
+					<ol className="mt-1.5 list-decimal ml-4 space-y-1 text-xs text-blue-800 dark:text-blue-400">
+						<li>
+							<a
+								href="https://developers.factsmgt.com/sign-up"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="font-medium underline hover:no-underline"
+							>
+								Sign up for a FACTS Developer account
+							</a>{' '}
+							to get your API credentials.
+						</li>
+						<li>
+							Follow the{' '}
+							<a
+								href="https://www.nbshubhelp.com/FACTS_SIS/System/API_Configuration"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="font-medium underline hover:no-underline"
+							>
+								FACTS API Configuration guide
+							</a>{' '}
+							to enable API access in your FACTS SIS.
+						</li>
+					</ol>
+				</div>
+
 				<Form ref={formRef} method="POST">
 					<input type="hidden" name="section" value="facts" />
 
@@ -574,14 +669,17 @@ function GoogleSection({
 	return (
 		<Card>
 			<div className="p-6">
-				<div className="mb-4">
-					<h2 className="font-display text-lg font-semibold text-primary">
-						Google Workspace
-					</h2>
-					<p className="text-body-sm text-muted-foreground">
-						Enable Google OAuth login, Gmail signature management, and
-						photo sync to Google Workspace.
-					</p>
+				<div className="mb-4 flex items-start justify-between gap-4">
+					<div>
+						<h2 className="font-display text-lg font-semibold text-primary">
+							Google Workspace
+						</h2>
+						<p className="text-body-sm text-muted-foreground">
+							Enable Google OAuth login, Gmail signature management, and
+							photo sync to Google Workspace.
+						</p>
+					</div>
+					<GoogleWorkspaceHelp />
 				</div>
 
 				<Form method="POST">
@@ -757,6 +855,94 @@ function ColorField({
 					className="font-mono text-xs"
 					value={color}
 				/>
+			</div>
+		</div>
+	)
+}
+
+function ImageUploadField({
+	id,
+	label,
+	currentSrc,
+	previewSrc,
+	onPreviewChange,
+	hint,
+}: {
+	id: string
+	label: string
+	currentSrc: string
+	previewSrc: string | null
+	onPreviewChange: (src: string | null) => void
+	hint?: string
+}) {
+	const inputRef = useRef<HTMLInputElement>(null)
+	const displaySrc = previewSrc || currentSrc
+	const isPlaceholder = !previewSrc && currentSrc.includes('placeholder')
+
+	return (
+		<div>
+			<Label>{label}</Label>
+			<div className="mt-1 flex flex-col items-center gap-2">
+				<div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50">
+					{isPlaceholder ? (
+						<Icon name="camera" className="h-8 w-8 text-muted-foreground/50" />
+					) : (
+						<img
+							src={displaySrc}
+							alt={label}
+							className="h-full w-full object-contain p-1"
+						/>
+					)}
+				</div>
+				<div className="flex items-center gap-2">
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={() => inputRef.current?.click()}
+					>
+						<Icon name="camera" className="mr-1 h-3 w-3" />
+						{isPlaceholder ? 'Upload' : 'Change'}
+					</Button>
+					{previewSrc && (
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							onClick={() => {
+								onPreviewChange(null)
+								if (inputRef.current) inputRef.current.value = ''
+							}}
+						>
+							<Icon name="cross-1" className="h-3 w-3" />
+						</Button>
+					)}
+				</div>
+				<input
+					ref={inputRef}
+					type="file"
+					id={id}
+					name={id}
+					accept="image/png,image/jpeg,image/svg+xml,image/webp"
+					className="sr-only"
+					onChange={(e) => {
+						const file = e.currentTarget.files?.[0]
+						if (file) {
+							const reader = new FileReader()
+							reader.onload = (event) => {
+								onPreviewChange(
+									event.target?.result?.toString() ?? null,
+								)
+							}
+							reader.readAsDataURL(file)
+						}
+					}}
+				/>
+				{hint && (
+					<p className="text-center text-xs text-muted-foreground">
+						{hint}
+					</p>
+				)}
 			</div>
 		</div>
 	)

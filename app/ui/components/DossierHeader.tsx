@@ -1,11 +1,12 @@
 import * as React from 'react'
 import { Img } from 'openimg/react'
-import { Link } from 'react-router'
+import { Link, useRouteLoaderData } from 'react-router'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
 import { cn } from '#app/utils/misc.tsx'
 import { LOGO_SRC } from '#app/ui/brand.ts'
+import { type loader as rootLoader } from '#app/root.tsx'
 
 interface DossierHeaderProps {
 	/** Person's full name */
@@ -47,6 +48,9 @@ export function DossierHeader({
 	actions,
 	className,
 }: DossierHeaderProps) {
+	const rootData = useRouteLoaderData<typeof rootLoader>('root')
+	const logoSrc = rootData?.schoolConfig?.logoUrl || LOGO_SRC
+
 	return (
 		<div
 			className={cn(
@@ -60,7 +64,7 @@ export function DossierHeader({
 			{/* Watermark crest */}
 			<div className="pointer-events-none absolute -right-2 top-1/2 hidden -translate-y-1/2 opacity-[0.04] sm:block">
 				<img
-					src={LOGO_SRC}
+					src={logoSrc}
 					alt=""
 					aria-hidden="true"
 					className="h-44 w-44 object-contain"

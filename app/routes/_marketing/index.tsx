@@ -1,13 +1,16 @@
 import { Img } from 'openimg/react'
-import { redirect } from 'react-router'
+import { Link, redirect, useRouteLoaderData } from 'react-router'
 import {
 	ProviderConnectionForm,
 	GOOGLE_PROVIDER_NAME,
+	useEnabledProviders,
 } from '#app/utils/connections.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
+import { Button } from '#app/components/ui/button.tsx'
 import { APP_NAME, SCHOOL_NAME, CREST_SRC } from '#app/ui/brand.ts'
 import { type Route } from './+types/index.ts'
 import { getUserId, getRedirectPathForUser } from '#app/utils/auth.server.ts'
+import { type loader as rootLoader } from '#app/root.tsx'
 
 export const meta: Route.MetaFunction = () => [
 	{ title: APP_NAME },
@@ -27,6 +30,13 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export default function Index() {
+	const rootData = useRouteLoaderData<typeof rootLoader>('root')
+	const crestSrc = rootData?.schoolConfig?.crestUrl || CREST_SRC
+	const schoolName = rootData?.schoolConfig?.schoolName || SCHOOL_NAME
+	const appName = rootData?.schoolConfig?.schoolShortName
+		? `${rootData.schoolConfig.schoolShortName} ID System`
+		: APP_NAME
+
 	return (
 		<div className="font-body">
 			{/* Hero */}
@@ -50,8 +60,8 @@ export default function Index() {
 					{/* Crest */}
 					<div className="mx-auto mb-8 flex size-24 items-center justify-center md:size-28">
 						<Img
-							src={CREST_SRC}
-							alt={SCHOOL_NAME}
+							src={crestSrc}
+							alt={schoolName}
 							className="h-full w-auto object-contain drop-shadow-sm"
 							width={112}
 							height={112}
@@ -59,7 +69,7 @@ export default function Index() {
 					</div>
 
 					<h1 className="font-display text-2xl font-bold tracking-wide text-primary md:text-4xl">
-						{APP_NAME}
+						{appName}
 					</h1>
 
 					<div className="mx-auto my-5 h-px w-16 bg-brand-gold/60" />
@@ -76,15 +86,8 @@ export default function Index() {
 
 					{/* Login */}
 					<div className="mx-auto mt-10 w-full max-w-xs">
-						<ProviderConnectionForm
-							type="Login"
-							providerName={GOOGLE_PROVIDER_NAME}
-						/>
+						<LoginButton />
 					</div>
-
-					<p className="mt-4 font-body text-xs text-muted-foreground/60">
-						Sign in with your {SCHOOL_NAME} Google account
-					</p>
 				</div>
 			</section>
 
@@ -131,6 +134,40 @@ export default function Index() {
 				</div>
 			</section>
 		</div>
+	)
+}
+
+/* ----------------------------------------------------------------
+ * Login button – Google OAuth when enabled, otherwise standard login
+ * ---------------------------------------------------------------- */
+
+function LoginButton() {
+	const enabledProviders = useEnabledProviders()
+	const googleEnabled = enabledProviders.includes(GOOGLE_PROVIDER_NAME)
+	const rootData = useRouteLoaderData<typeof rootLoader>('root')
+	const schoolName = rootData?.schoolConfig?.schoolName || SCHOOL_NAME
+
+	if (googleEnabled) {
+		return (
+			<>
+				<ProviderConnectionForm
+					type="Login"
+					providerName={GOOGLE_PROVIDER_NAME}
+				/>
+				<p className="mt-4 font-body text-xs text-muted-foreground/60">
+					Sign in with your {schoolName} Google account
+				</p>
+			</>
+		)
+	}
+
+	return (
+		<Button asChild className="w-full" size="lg">
+			<Link to="/login">
+				<Icon name="lock-closed" className="mr-2 size-4" />
+				Log In
+			</Link>
+		</Button>
 	)
 }
 

@@ -5,6 +5,7 @@ import {
 	Links,
 	Meta,
 	Outlet,
+	redirect,
 	Scripts,
 	ScrollRestoration,
 	useLoaderData,
@@ -21,7 +22,7 @@ import { href as iconsHref } from './components/ui/icon.tsx'
 import { EpicToaster } from './components/ui/sonner.tsx'
 import { UserDropdown } from './components/user-dropdown.tsx'
 import { useOptionalTheme, useTheme } from './routes/resources/theme-switch.tsx'
-import { getSchoolConfig } from './utils/school-config.server.ts'
+import { getSchoolConfig, isSetupComplete } from './utils/school-config.server.ts'
 import tailwindStyleSheetUrl from './styles/tailwind.css?url'
 import { getUserId, logout } from './utils/auth.server.ts'
 import { ClientHintCheck, getHints } from './utils/client-hints.tsx'
@@ -77,6 +78,16 @@ export const meta: Route.MetaFunction = ({ data }) => {
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const timings = makeTimings('root loader')
+
+	// Redirect to setup wizard if initial setup hasn't been completed
+	const url = new URL(request.url)
+	if (!url.pathname.startsWith('/install') && !url.pathname.startsWith('/resources')) {
+		const setupDone = await isSetupComplete()
+		if (!setupDone) {
+			throw redirect('/install')
+		}
+	}
+
 	const userId = await time(() => getUserId(request), {
 		timings,
 		type: 'getUserId',
@@ -162,6 +173,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 				schoolName: schoolConfig.schoolName,
 				schoolShortName: schoolConfig.schoolShortName,
 				logoUrl: schoolConfig.logoUrl,
+				crestUrl: schoolConfig.crestUrl,
 				primaryColor: schoolConfig.primaryColor,
 				googleEnabled: schoolConfig.googleEnabled,
 			},

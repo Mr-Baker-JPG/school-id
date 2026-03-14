@@ -6,6 +6,7 @@
  */
 
 import { invariantResponse } from '@epic-web/invariant'
+import { prisma } from './db.server.ts'
 
 // FACTS API Types based on OpenAPI spec
 export interface FactsPersonVM {
@@ -119,10 +120,53 @@ export class FactsApiError extends Error {
  * Get FACTS API configuration from environment variables
  * Supports sandbox mode by using "SandboxKey" as the API key
  */
-function getFactsConfig() {
+// Simple cache for DB-stored FACTS config
+let factsDbCache: Record<string, string> | null = null
+let factsDbCacheTime = 0
+const FACTS_CACHE_TTL = 30_000 // 30s
+
+async function getFactsDbSettings(): Promise<Record<string, string>> {
+	const now = Date.now()
+	if (factsDbCache && now - factsDbCacheTime < FACTS_CACHE_TTL) {
+		return factsDbCache
+	}
+	try {
+		const rows = await prisma.systemSetting.findMany({
+			where: {
+				key: {
+					in: [
+						'facts_subscription_key',
+						'facts_api_key',
+						'facts_base_url',
+					],
+				},
+			},
+		})
+		const map: Record<string, string> = {}
+		for (const r of rows) {
+			if (r.value) map[r.key] = r.value
+		}
+		factsDbCache = map
+		factsDbCacheTime = now
+		return map
+	} catch {
+		return {}
+	}
+}
+
+/** Call after saving FACTS settings to flush the cached values */
+export function invalidateFactsConfigCache() {
+	factsDbCache = null
+	factsDbCacheTime = 0
+}
+
+async function getFactsConfig() {
+	const db = await getFactsDbSettings()
+
 	// When MOCKS=true, use a default mock key if no credentials are provided
 	const useMocks = process.env.MOCKS === 'true'
 	const subscriptionKey =
+		db.facts_subscription_key ||
 		process.env.FACTS_SUBSCRIPTION_KEY ||
 		(useMocks ? 'MOCK_SUBSCRIPTION_KEY' : undefined)
 
@@ -131,9 +175,14 @@ function getFactsConfig() {
 	const useSandbox = process.env.FACTS_USE_SANDBOX === 'true'
 	const apiKey = useSandbox
 		? 'SandboxKey'
-		: process.env.FACTS_API_KEY || (useMocks ? 'MOCK_API_KEY' : undefined)
+		: db.facts_api_key ||
+			process.env.FACTS_API_KEY ||
+			(useMocks ? 'MOCK_API_KEY' : undefined)
 
-	const baseUrl = process.env.FACTS_BASE_URL || 'https://api.factsmgt.com'
+	const baseUrl =
+		db.facts_base_url ||
+		process.env.FACTS_BASE_URL ||
+		'https://api.factsmgt.com'
 
 	return {
 		subscriptionKey,
@@ -145,8 +194,8 @@ function getFactsConfig() {
 /**
  * Create authenticated headers for FACTS API requests with optional cache bypass
  */
-function createAuthHeaders(bypassCache?: boolean): HeadersInit {
-	const config = getFactsConfig()
+async function createAuthHeaders(bypassCache?: boolean): Promise<HeadersInit> {
+	const config = await getFactsConfig()
 	const headers: HeadersInit = {
 		'Content-Type': 'application/json',
 		Accept: 'application/json',
@@ -181,7 +230,7 @@ async function fetchStaffPage(
 		bypassCache?: boolean
 	},
 ): Promise<FactsPagedResult<FactsStaffVmOutV1_1>> {
-	const config = getFactsConfig()
+	const config = await getFactsConfig()
 
 	invariantResponse(
 		config.subscriptionKey || config.apiKey,
@@ -208,7 +257,7 @@ async function fetchStaffPage(
 
 	const response = await fetch(url.toString(), {
 		method: 'GET',
-		headers: createAuthHeaders(options?.bypassCache),
+		headers: await createAuthHeaders(options?.bypassCache),
 	})
 
 	// Handle rate limiting (429 Too Many Requests)
@@ -454,7 +503,7 @@ export async function fetchStaffById(
 		bypassCache?: boolean
 	},
 ): Promise<FactsEmployeeData | null> {
-	const config = getFactsConfig()
+	const config = await getFactsConfig()
 
 	invariantResponse(
 		config.subscriptionKey || config.apiKey,
@@ -471,7 +520,7 @@ export async function fetchStaffById(
 
 	const response = await fetch(url.toString(), {
 		method: 'GET',
-		headers: createAuthHeaders(options?.bypassCache),
+		headers: await createAuthHeaders(options?.bypassCache),
 	})
 
 	if (response.status === 404) {
@@ -524,7 +573,7 @@ export async function fetchProfilePicture(
 		bypassCache?: boolean
 	},
 ): Promise<Buffer | null> {
-	const config = getFactsConfig()
+	const config = await getFactsConfig()
 
 	invariantResponse(
 		config.subscriptionKey || config.apiKey,
@@ -539,7 +588,7 @@ export async function fetchProfilePicture(
 	try {
 		response = await fetch(url.toString(), {
 			method: 'GET',
-			headers: createAuthHeaders(options?.bypassCache),
+			headers: await createAuthHeaders(options?.bypassCache),
 		})
 	} catch (error) {
 		// Handle network errors gracefully
@@ -675,7 +724,7 @@ async function fetchStudentPage(
 		bypassCache?: boolean
 	},
 ): Promise<FactsPagedResult<FactsStudentModelV1_3>> {
-	const config = getFactsConfig()
+	const config = await getFactsConfig()
 
 	invariantResponse(
 		config.subscriptionKey || config.apiKey,
@@ -701,13 +750,13 @@ async function fetchStudentPage(
 	}
 
 	console.log(`[Student Fetch] URL: ${url.toString()}`)
-	console.log(`[Student Fetch] Headers:`, createAuthHeaders(options?.bypassCache))
+	console.log(`[Student Fetch] Headers:`, await createAuthHeaders(options?.bypassCache))
 
 	let response: Response
 	try {
 		response = await fetch(url.toString(), {
 			method: 'GET',
-			headers: createAuthHeaders(options?.bypassCache),
+			headers: await createAuthHeaders(options?.bypassCache),
 		})
 		console.log(`[Student Fetch] Response status: ${response.status}`)
 	} catch (fetchError) {
@@ -893,7 +942,7 @@ export async function fetchStudentById(
 		bypassCache?: boolean
 	},
 ): Promise<FactsStudentData | null> {
-	const config = getFactsConfig()
+	const config = await getFactsConfig()
 
 	invariantResponse(
 		config.subscriptionKey || config.apiKey,
@@ -910,7 +959,7 @@ export async function fetchStudentById(
 
 	const response = await fetch(url.toString(), {
 		method: 'GET',
-		headers: createAuthHeaders(options?.bypassCache),
+		headers: await createAuthHeaders(options?.bypassCache),
 	})
 
 	if (response.status === 404) {

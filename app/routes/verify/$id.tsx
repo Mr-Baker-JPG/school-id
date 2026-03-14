@@ -2,7 +2,7 @@ import { type SEOHandle } from '@nasa-gcn/remix-seo'
 import { Img } from 'openimg/react'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
-import { SCHOOL_NAME, LOGO_SRC } from '#app/ui/brand.ts'
+import { SCHOOL_NAME, LOGO_SRC, CREST_SRC } from '#app/ui/brand.ts'
 import { KeyValueList } from '#app/ui/components/KeyValueList.tsx'
 import { StatusBadge } from '#app/ui/components/StatusBadge.tsx'
 import { getBrandingConfig } from '#app/utils/branding.server.ts'
@@ -195,6 +195,8 @@ export function meta({ data }: Route.MetaArgs) {
 export default function VerifyId({ loaderData }: Route.ComponentProps) {
 	const { personType, person, verificationStatus, branding } = loaderData
 	const personTypeLabel = personType === 'employee' ? 'Faculty' : 'Student'
+	const logoSrc = branding.logoUrl || LOGO_SRC
+	const crestSrc = branding.crestUrl || CREST_SRC
 
 	const photoSrc =
 		personType === 'employee'
@@ -216,8 +218,8 @@ export default function VerifyId({ loaderData }: Route.ComponentProps) {
 				<div className="mb-10 text-center">
 					<div className="bg-card mx-auto mb-4 flex size-20 items-center justify-center rounded-full shadow-sm">
 						<Img
-							src={LOGO_SRC}
-							alt={`${branding.schoolName} logo`}
+							src={crestSrc}
+							alt={`${branding.schoolName} crest`}
 							className="h-16 w-auto object-contain object-top"
 							width={128}
 							height={128}
@@ -227,7 +229,7 @@ export default function VerifyId({ loaderData }: Route.ComponentProps) {
 						ID Verification
 					</h1>
 					<p className="text-muted-foreground mt-1 font-mono text-[0.65rem] tracking-[0.12em] uppercase">
-						{SCHOOL_NAME}
+						{branding.schoolName}
 					</p>
 				</div>
 
